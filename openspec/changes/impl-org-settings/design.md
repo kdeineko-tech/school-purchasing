@@ -65,11 +65,14 @@
 
 ### 4. Права: GRANT + RLS
 
-| Таблиця | select | insert | update | delete |
-|---|---|---|---|---|
-| `profiles` | власний / admin (шаблон) | — (тригер) | власний `full_name` (шаблон); admin — `role`, `is_active`, дозволи (див. нижче) | — |
-| `departments` | усі активні `authenticated` | admin | — | — |
-| `department_members` | власні рядки / admin | admin | admin (`approves`, `auto_approve`) | admin |
+| Таблиця | select | insert | update | delete | AC |
+|---|---|---|---|---|---|
+| `profiles` | власний / admin (шаблон) | — (тригер) | власний `full_name` (шаблон); admin — `role`, `is_active`, дозволи (див. нижче) | — | 09, 10–12, 17, 18, 21, 25–27, 30–32 |
+| `departments` | усі активні `authenticated` | admin | — | — | 09, 14, 34 |
+| `department_members` | власні рядки / admin | admin | admin (`approves`, `auto_approve`) | admin | 01–06, 09, 15, 19, 20, 24, 33 |
+
+Працівник без ролі `admin` не має insert/update/delete на жодній таблиці налаштувань — це та сама межа, що й відмова
+«Недостатньо прав» на сторінках адміністратора (AC-ORG-09).
 
 - `revoke all … from anon, authenticated`, далі явні колонкові GRANT; політика на кожну операцію `to authenticated`
   з `(select private.current_app_role()) = 'admin'` або `(select auth.uid())`.
@@ -79,10 +82,14 @@
   - нова політика `profiles_update_admin`: `for update to authenticated using ((select private.current_app_role()) =
     'admin') with check ((select private.current_app_role()) = 'admin')`;
   - тригер `before update on profiles` (`private.guard_profile_admin_columns`, `security definer`,
-    `search_path = ''`): якщо змінилась будь-яка з цих колонок (`old.* is distinct from new.*`), а
-    `private.current_app_role()` не `admin` → виняток `FORBIDDEN`. Так працівник через `profiles_update_own` змінює
-    лише `full_name`, а не собі роль чи дозволи; `service_role` (скрипт `users:demo`) — без `auth.uid()`, тригер його
-    пропускає.
+    `search_path = ''`):
+    1. якщо `(select auth.uid()) is null` — зміну зробив не користувач застосунку, а `service_role` (скрипт
+       `users:demo`) чи міграція: пропускаємо явно, `return new`;
+    2. інакше, якщо змінилась будь-яка з цих колонок (`old.* is distinct from new.*`), а
+       `coalesce(private.current_app_role(), '') <> 'admin'` → виняток `FORBIDDEN` (`NULL` — неактивний чи
+       відсутній профіль — теж не `admin`).
+
+    Так працівник через `profiles_update_own` змінює лише `full_name`, а не собі роль чи дозволи (AC-ORG-09).
 - **Деактивований працівник з чинною сесією** (AC-ORG-12): `private.current_app_role()` повертає роль лише активного
   профілю (`… where p.id = (select auth.uid()) and p.is_active`), а всі політики `departments` і `department_members`
   та нові політики `profiles` додатково вимагають `(select private.is_active_user())`. Тож після деактивації запити до
