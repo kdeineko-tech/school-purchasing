@@ -7,8 +7,10 @@
 ## 1. Ролі й доступ до сторінок адміністратора
 
 - [ ] 1.1 Міграція `org_roles`: ролі `requester`/`approver`/`admin` (зняти constraint → дані → default → новий
-  constraint), `profiles.is_active`; `demo-users.json` з ролями `admin`/`requester`; `src/lib/org/access.ts`,
-  `viewer.ts`, `messages.ts`; layout `/admin` з відмовою «Недостатньо прав»; тест.
+  constraint), `profiles.is_active`, `current_app_role()` лише для активного профілю, `private.is_active_user()`,
+  тригер `guard_profile_admin_columns` і політика `profiles_update_admin`; `demo-users.json` з ролями
+  `admin`/`requester`; `src/lib/org/access.ts`, `viewer.ts`, `messages.ts`; layout `/admin` з відмовою
+  «Недостатньо прав»; тест.
   Done when: AC-ORG-09.
 
 ## 2. Відділи й заявники
@@ -31,9 +33,9 @@
 
 ## 5. Деактивація й активний адміністратор
 
-- [ ] 5.1 Тригер `guard_admins` (`LAST_ADMIN`, роль після зняття `admin`); `canChangeAdminState`,
-  `roleAfterAdminRemoval`; actions `setAdminRole`, `setActive`; відмова входу неактивному в `login`; деактивовані поза
-  `approverCandidates`; тести.
+- [ ] 5.1 Тригер `guard_admins` (advisory-блокування, `LAST_ADMIN`, роль після зняття `admin`);
+  `canChangeAdminState`, `roleAfterAdminRemoval`; actions `setAdminRole`, `setActive`; відмова входу неактивному в
+  `login` і `signOut` у `src/proxy.ts`; деактивовані поза `approverCandidates`; тести.
   Done when: AC-ORG-10, AC-ORG-11, AC-ORG-12, AC-ORG-16, AC-ORG-18, AC-ORG-21, AC-ORG-30, AC-ORG-31, AC-ORG-32.
 
 ## 6. Дозволи в профілі

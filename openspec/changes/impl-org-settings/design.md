@@ -56,6 +56,9 @@
   AC-ORG-04, AC-ORG-05, AC-ORG-19, AC-ORG-24). Роль `admin` не змінює (AC-ORG-11, AC-ORG-20).
 - Тригер `after insert/update/delete on department_members` викликає `sync_role`.
 - Тригер `before update of role, is_active on profiles` (`private.guard_admins`):
+  - спершу `perform pg_advisory_xact_lock(hashtext('org_active_admins'))` — одночасні зміни ролі й активності
+    виконуються по черзі, тож дві транзакції не можуть кожна побачити «інший адміністратор ще є» і разом прибрати
+    останнього;
   - зняття ролі `admin` → роль за `sync_role` (AC-ORG-21, AC-ORG-31, AC-ORG-32);
   - якщо після зміни не лишилося жодного активного `admin` → виняток `LAST_ADMIN` (AC-ORG-10, AC-ORG-18).
 - Деактивація змінює лише `is_active` (відповідь PM #35), тож повторна активація повертає все як було (AC-ORG-30).
@@ -64,12 +67,27 @@
 
 | Таблиця | select | insert | update | delete |
 |---|---|---|---|---|
-| `profiles` | власний / admin (шаблон) | — (тригер) | власний `full_name` (шаблон); admin — `role`, `is_active`, дозволи | — |
-| `departments` | усі `authenticated` | admin | — | — |
+| `profiles` | власний / admin (шаблон) | — (тригер) | власний `full_name` (шаблон); admin — `role`, `is_active`, дозволи (див. нижче) | — |
+| `departments` | усі активні `authenticated` | admin | — | — |
 | `department_members` | власні рядки / admin | admin | admin (`approves`, `auto_approve`) | admin |
 
 - `revoke all … from anon, authenticated`, далі явні колонкові GRANT; політика на кожну операцію `to authenticated`
   з `(select private.current_app_role()) = 'admin'` або `(select auth.uid())`.
+- **Адміністративні колонки `profiles`** (`role`, `is_active`, `can_*`): `grant update (role, is_active, can_card_expense,
+  can_check_request, can_vendor_invoice, can_self_purchase) on public.profiles to authenticated` потрібен адміністратору,
+  але шаблонна політика `profiles_update_own` пускає кожного до власного рядка. Тому:
+  - нова політика `profiles_update_admin`: `for update to authenticated using ((select private.current_app_role()) =
+    'admin') with check ((select private.current_app_role()) = 'admin')`;
+  - тригер `before update on profiles` (`private.guard_profile_admin_columns`, `security definer`,
+    `search_path = ''`): якщо змінилась будь-яка з цих колонок (`old.* is distinct from new.*`), а
+    `private.current_app_role()` не `admin` → виняток `FORBIDDEN`. Так працівник через `profiles_update_own` змінює
+    лише `full_name`, а не собі роль чи дозволи; `service_role` (скрипт `users:demo`) — без `auth.uid()`, тригер його
+    пропускає.
+- **Деактивований працівник з чинною сесією** (AC-ORG-12): `private.current_app_role()` повертає роль лише активного
+  профілю (`… where p.id = (select auth.uid()) and p.is_active`), а всі політики `departments` і `department_members`
+  та нові політики `profiles` додатково вимагають `(select private.is_active_user())`. Тож після деактивації запити до
+  Data API з чинним токеном не повертають і не змінюють нічого, крім власного профілю (шаблонні `select`/`update own`).
+  Крім того, `src/proxy.ts` для неактивного профілю робить `signOut` і веде на `/login`.
 
 ### 5. Доменний модуль `src/lib/org/` (чистий TypeScript, без Supabase)
 
