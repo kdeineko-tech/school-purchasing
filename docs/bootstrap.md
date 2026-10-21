@@ -21,7 +21,7 @@ Docker не потрібен: локально — лише npm run dev прот
 - [x] Репо створено з шаблону (**Use this template → Create a new repository**): власник — ваш особистий акаунт, назва —
       `<team-slug>`, **Public** (ruleset на GitHub Free діє лише в публічних репо; PM у нотатці-порівнянні посилається на
       рядки вашого коду) — https://github.com/kdeineko-tech/school-purchasing
-- [x] `git clone https://github.com/<dev>/<team-slug>.git` → `npm ci` → `cp .env.example .env.local`
+- [x] `git clone https://github.com/kdeineko-tech/school-purchasing.git` → `npm ci` → `cp .env.example .env.local`
       (у PowerShell: `Copy-Item .env.example .env.local`)
 - [x] CodeRabbit (GitHub App) встановлено на це репо (github.com/apps/coderabbitai → Configure → Only select repositories) — ![CodeRabbit](img/coderabbit.png)
 - [ ] (Якщо PM надіслав список справжніх назв клієнта особистим повідомленням) — локальний `product/denylist.local.txt`
@@ -68,7 +68,10 @@ Docker не потрібен: локально — лише npm run dev прот
 - [x] Actions → CI → **Run workflow** (гілка `main`, `include_seed` ✓) → job `db-deploy` застосував першу міграцію й сид — міграція `20261012000000_profiles_and_roles.sql`:
       https://github.com/kdeineko-tech/school-purchasing/actions/runs/39664315935; сид `supabase/seed.sql` (`include_seed`): https://github.com/kdeineko-tech/school-purchasing/actions/runs/39667138334
 - [x] `npm run users:demo` (синтетичні користувачі з `supabase/demo-users.json`) → `npm run dev` → `http://localhost:3000` →
-      вхід як `admin@example.test` працює локально й на прод-URL
+      вхід як `admin@example.test` працює локально й на прод-URL — вивід `npm run users:demo`:
+      `✔ admin@example.test — створено, роль admin`, `✔ member1@example.test — створено, роль member`,
+      `✔ member2@example.test — створено, роль member` (пароль скрипт не друкує); вхід перевірено вручну
+      на `http://localhost:3000` і `https://school-purchasing-lemon.vercel.app`
 - [x] CI на `main` зелений: `spec`, `app`, `conformance`, `db-check`, `db-deploy` — https://github.com/kdeineko-tech/school-purchasing/actions/runs/39631610895
 
 ## 6. Ruleset `solo-main` (лише після зеленого CI на `main`)
