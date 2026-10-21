@@ -11,68 +11,78 @@
 Docker не потрібен: локально — лише npm run dev проти вашої бази; міграції на одноразовій базі перевіряє CI (db-check).
 -->
 
-Моє репо: <!-- https://github.com/<dev>/<team-slug> --> · Прод-URL: <!-- https://<slug>.vercel.app -->
-Репо вимог PM: <!-- https://github.com/<pm>/<team-slug>-spec --> · Організація Supabase: <!-- назва -->
+Моє репо: https://github.com/kdeineko-tech/school-purchasing · Прод-URL: https://school-purchasing-lemon.vercel.app
+Репо вимог PM: <!-- https://github.com/<pm>/<team-slug>-spec --> · Організація Supabase: `school-purchasing` (Free)
 
 ## 1. Інструменти й репо
 
-- [ ] Node 24 (`node -v`), Git, GitHub CLI (`gh auth status`); OpenSpec CLI глобально тієї ж версії, що в `package.json`:
+- [x] Node 24 (`node -v`), Git, GitHub CLI (`gh auth status`); OpenSpec CLI глобально тієї ж версії, що в `package.json`:
       `npm i -g @fission-ai/openspec@1.14.1` → `openspec --version` = `1.14.1`
-- [ ] Репо створено з шаблону (**Use this template → Create a new repository**): власник — ваш особистий акаунт, назва —
+- [x] Репо створено з шаблону (**Use this template → Create a new repository**): власник — ваш особистий акаунт, назва —
       `<team-slug>`, **Public** (ruleset на GitHub Free діє лише в публічних репо; PM у нотатці-порівнянні посилається на
-      рядки вашого коду) — <!-- посилання -->
-- [ ] `git clone https://github.com/<dev>/<team-slug>.git` → `npm ci` → `cp .env.example .env.local`
+      рядки вашого коду) — https://github.com/kdeineko-tech/school-purchasing
+- [x] `git clone https://github.com/kdeineko-tech/school-purchasing.git` → `npm ci` → `cp .env.example .env.local`
       (у PowerShell: `Copy-Item .env.example .env.local`)
-- [ ] CodeRabbit (GitHub App) встановлено на це репо (github.com/apps/coderabbitai → Configure → Only select repositories) — <!-- знімок -->
+- [x] CodeRabbit (GitHub App) встановлено на це репо (github.com/apps/coderabbitai → Configure → Only select repositories) — ![CodeRabbit](img/coderabbit.png)
 - [ ] (Якщо PM надіслав список справжніх назв клієнта особистим повідомленням) — локальний `product/denylist.local.txt`
       (у `.gitignore`; `npm run spec:check` читає його й значень не друкує)
 
 ## 2. Supabase: власна база
 
-- [ ] Організацію й проєкт створено у вашому акаунті (один із двох безкоштовних проєктів; регіон — найближчий) — <!-- регіон -->
-- [ ] Authentication: «Allow new users to sign up» **вимкнено**, «Confirm email» **вимкнено**
-      (точні назви й місце перемикачів перевірте в інтерфейсі) — <!-- знімки docs/img/auth-signups.png, docs/img/auth-email.png -->
-- [ ] (Після розділу 4, коли є прод-URL) Authentication → URL Configuration: Site URL = прод-URL Vercel; Redirect URLs
-      `http://localhost:3000/**`, `https://*-<slug>.vercel.app/**` — <!-- знімок -->
-- [ ] `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`
+- [x] Організацію й проєкт створено у вашому акаунті (один із двох безкоштовних проєктів; регіон — найближчий) — `eu-west-1` (Ireland)
+- [x] Authentication: «Allow new users to sign up» **вимкнено**, «Confirm email» **вимкнено**
+      (точні назви й місце перемикачів перевірте в інтерфейсі) — обидва перемикачі в одному блоці User Signups:
+      ![Auth: sign up і Confirm email вимкнено](img/auth-signups.png)
+- [x] (Після розділу 4, коли є прод-URL) Authentication → URL Configuration: Site URL = прод-URL Vercel; Redirect URLs
+      `http://localhost:3000/**`, `https://*-<slug>.vercel.app/**` — Site URL `https://school-purchasing-lemon.vercel.app`,
+      Redirect URLs `http://localhost:3000/**`, `https://*-kate-bdb7.vercel.app/**`: ![URL Configuration](img/auth-urls.png)
+- [x] `.env.local`: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`
       (Project Settings → API Keys; точну назву розділу перевірте в інтерфейсі) і `DEMO_USER_PASSWORD` (≥ 8 символів).
-      Значення не комітимо й не вставляємо в чат — <!-- лише назви -->
+      Значення не комітимо й не вставляємо в чат — задано всі чотири: `NEXT_PUBLIC_SUPABASE_URL`,
+      `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `DEMO_USER_PASSWORD`
 
 ## 3. GitHub: environment `production` і секрети
 
-- [ ] Settings → Environments → `production` (якщо перший прогін CI вже створив його автоматично — відкрийте наявний;
+- [x] Settings → Environments → `production` (якщо перший прогін CI вже створив його автоматично — відкрийте наявний;
       `Production`, яке створює Vercel для своїх деплоїв, — те саме середовище: регістр у назвах GitHub не розрізняє):
-      **Deployment branches** = Selected branches → `main` — <!-- знімок -->
-- [ ] Секрет environment `SUPABASE_DB_URL` = рядок **Session pooler** (порт **5432**, не 6543) з Supabase → **Connect**;
-      пароль у рядку percent-encoded — <!-- лише назва секрету -->
+      **Deployment branches** = Selected branches → `main` — правило `main` (1 branch and 0 tags allowed)
+- [x] Секрет environment `SUPABASE_DB_URL` = рядок **Session pooler** (порт **5432**, не 6543) з Supabase → **Connect**;
+      пароль у рядку percent-encoded — `SUPABASE_DB_URL` у environment `production` (не в Repository secrets);
+      пароль лише з літер і цифр, кодування не потрібне
 - [ ] Запасний шлях (лише якщо `--db-url` не працює): секрети environment `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`,
-      `SUPABASE_PROJECT_ID` (README, «Міграції в прод: запасний шлях») — <!-- не потрібно / назви -->
+      `SUPABASE_PROJECT_ID` (README, «Міграції в прод: запасний шлях») — не потрібно: `--db-url` працює
 - [ ] (Необов'язково) секрет репо `SPEC_DENYLIST` — ті самі справжні назви через кому, для CI
 
 ## 4. Vercel
 
-- [ ] Add New → Project → імпорт вашого репо, Node 24.x — <!-- прод-URL -->
-- [ ] Змінні Production і Preview — лише `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`;
-      `SUPABASE_SECRET_KEY` — **ніколи** — <!-- знімок (лише назви) -->
-- [ ] Settings → Deployment Protection → **Require Log In** вимкнено → Save (інакше PM і викладач не відкриють ваші preview;
-      точну назву перемикача перевірте в інтерфейсі) — <!-- знімок -->
-- [ ] Після змінних — редеплой; прод-URL відкривається — <!-- посилання -->
+- [x] Add New → Project → імпорт вашого репо, Node 24.x — https://school-purchasing-lemon.vercel.app
+- [x] Змінні Production і Preview — лише `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`;
+      `SUPABASE_SECRET_KEY` — **ніколи** — обидві змінні для Production and Preview:
+      ![Vercel: змінні середовища](img/vercel-env.png)
+- [x] Settings → Deployment Protection → **Require Log In** вимкнено → Save (інакше PM і викладач не відкриють ваші preview;
+      точну назву перемикача перевірте в інтерфейсі) — ![Vercel: Require Log In вимкнено](img/vercel-protection.png)
+- [x] Після змінних — редеплой; прод-URL відкривається — https://school-purchasing-lemon.vercel.app/login
 
 ## 5. База й перший зелений CI
 
-- [ ] Actions → CI → **Run workflow** (гілка `main`, `include_seed` ✓) → job `db-deploy` застосував першу міграцію й сид — <!-- посилання на run -->
-- [ ] `npm run users:demo` (синтетичні користувачі з `supabase/demo-users.json`) → `npm run dev` → `http://localhost:3000` →
-      вхід як `admin@example.test` працює локально й на прод-URL
-- [ ] CI на `main` зелений: `spec`, `app`, `conformance`, `db-check`, `db-deploy` — <!-- посилання на run -->
+- [x] Actions → CI → **Run workflow** (гілка `main`, `include_seed` ✓) → job `db-deploy` застосував першу міграцію й сид — міграція `20261012000000_profiles_and_roles.sql`:
+      https://github.com/kdeineko-tech/school-purchasing/actions/runs/39664315935; сид `supabase/seed.sql` (`include_seed`): https://github.com/kdeineko-tech/school-purchasing/actions/runs/39667138334
+- [x] `npm run users:demo` (синтетичні користувачі з `supabase/demo-users.json`) → `npm run dev` → `http://localhost:3000` →
+      вхід як `admin@example.test` працює локально й на прод-URL — вивід `npm run users:demo`:
+      `✔ admin@example.test — створено, роль admin`, `✔ member1@example.test — створено, роль member`,
+      `✔ member2@example.test — створено, роль member` (пароль скрипт не друкує); вхід перевірено вручну
+      на `http://localhost:3000` і `https://school-purchasing-lemon.vercel.app`
+- [x] CI на `main` зелений: `spec`, `app`, `conformance`, `db-check`, `db-deploy` — https://github.com/kdeineko-tech/school-purchasing/actions/runs/39631610895
 
 ## 6. Ruleset `solo-main` (лише після зеленого CI на `main`)
 
-- [ ] Settings → Rules → Rulesets → **New ruleset → Import a ruleset** → `solo-main.json` з курсового репо
+- [x] Settings → Rules → Rulesets → **New ruleset → Import a ruleset** → `solo-main.json` з курсового репо
       (`materials/rulesets/solo-main.json`) або вручну: target — гілка за замовчуванням (`main`); Restrict deletions;
       Block force pushes; Require a pull request — **0 approvals** (колег у вашому репо немає); Require status checks
       (джерело GitHub Actions, без «up to date»): `spec`, `app`, `conformance`, `db-check`; Allowed merge methods —
       **Squash** і **Merge**; Bypass list — **порожній** (навіть для власника); Enforcement — Active
-      (точні назви полів перевірте в інтерфейсі) — <!-- знімок docs/img/ruleset.png -->
+      (точні назви полів перевірте в інтерфейсі) — імпорт `solo-main.json` через `gh api`:
+      ![Ruleset solo-main](img/ruleset.png) ![Ruleset solo-main, правила](img/ruleset-2.png)
 
 ## 7. Перший PR (перевірка ruleset-у)
 
