@@ -6,7 +6,7 @@
 
 ## 1. Ролі й доступ до сторінок адміністратора
 
-- [ ] 1.1 Міграція `org_roles`: ролі `requester`/`approver`/`admin` (зняти constraint → дані → default → новий
+- [x] 1.1 Міграція `org_roles`: ролі `requester`/`approver`/`admin` (зняти constraint → дані → default → новий
   constraint), `profiles.is_active`, `current_app_role()` лише для активного профілю, `private.is_active_user()`,
   тригер `guard_profile_admin_columns` і політика `profiles_update_admin`; `demo-users.json` з ролями
   `admin`/`requester`; `src/lib/org/access.ts`, `viewer.ts`, `messages.ts`; layout `/admin` з відмовою
