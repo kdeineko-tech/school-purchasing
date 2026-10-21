@@ -46,7 +46,8 @@
 
 ## 7. Заглушка форми заявки
 
-- [ ] 7.1 `/requests/new` без збереження: тип заявки, відділ, тип закупівлі, «від імені»; `selectableDepartments`,
+- [ ] 7.1 `/requests/new` без збереження: тип заявки, відділ, тип закупівлі, «від імені»; міграція з функцією
+  `on_behalf_candidates` (private `security definer` + public `security invoker`); `selectableDepartments`,
   `selectablePurchaseTypes`, `onBehalfCandidates`; тести.
   Done when: AC-ORG-22, AC-ORG-23, AC-ORG-28, AC-ORG-29.
 

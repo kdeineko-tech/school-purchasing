@@ -108,6 +108,13 @@
 | `choices.ts` | `approverCandidates`, `onBehalfCandidates`, `selectableDepartments`, `selectablePurchaseTypes` | 16, 22, 23, 28, 29 |
 | `messages.ts` | тексти з PM: «Відділ з такою назвою вже є», «Спершу додайте працівника до відділу як заявника», «Має лишитись хоча б один активний адміністратор», «Недостатньо прав», «Немає схвалювача» | — |
 
+Предикати активності (`is_active` профілю):
+
+- `approverCandidates` — лише активні заявники відділу (AC-ORG-16);
+- `onBehalfCandidates` — лише активні працівники без ролі `admin`, крім самого автора (AC-ORG-28);
+- `departmentsWithoutApprover` — відділ «Немає схвалювача», якщо серед його рядків `department_members` немає жодного
+  з `approves = true` і активним профілем (AC-ORG-14).
+
 Server action спершу перевіряє правило доменною функцією й показує повідомлення PM; база — друга лінія захисту
 (унікальний індекс, тригери, RLS) і на її помилки (`23505`, `LAST_ADMIN`) action показує те саме повідомлення.
 
@@ -119,10 +126,21 @@ Server action спершу перевіряє правило доменною ф
 | `/admin/departments` | admin | `createDepartment` |
 | `/admin/staff`, `/admin/staff/[id]` | admin | `addRequester`, `removeRequester`, `setApprover`, `setAutoApprove`, `setPermissions`, `setAdminRole`, `setActive` |
 | `/profile` | усі | — (власні відділи й дозволені типи) |
-| `/requests/new` | усі | — (заглушка: тип заявки, відділ, тип закупівлі, «від імені»; нічого не зберігає) |
+| `/requests/new` | усі | — (заглушка: тип заявки, відділ, тип закупівлі, «від імені»; нічого не зберігає); список «від імені» — `rpc('on_behalf_candidates')` |
 | `/login` | — | `login`: після входу неактивного — `signOut` і відмова (AC-ORG-12) |
 
 Роль і активність переглядача — `src/lib/org/viewer.ts` (`getClaims()` + `profiles`).
+
+**Список «від імені» (AC-ORG-28).** RLS дає не-адміністратору лише власний профіль і власні рядки `department_members`,
+тому список колег читаємо вузькою функцією, а не відкриваємо чужі профілі:
+
+- `private.on_behalf_candidates()` — `security definer`, `set search_path = ''`, повертає лише `id`, `full_name`:
+  активні працівники без ролі `admin`, що є заявниками хоча б одного відділу, де заявник і переглядач, крім самого
+  переглядача; якщо переглядач неактивний — порожньо; для адміністратора — усі активні працівники, крім нього (матриця
+  прав: «будь-кого»). Глобальну роль `requester` не вимагаємо: `approver` теж може бути заявником відділу;
+- `public.on_behalf_candidates()` — `security invoker`, лише `select * from private.on_behalf_candidates()`;
+  `grant execute … to authenticated`, `revoke … from public, anon`;
+- до відповіді PM на Q1 (ValiaBihun/2026-quitcode-dream-team#42) список не залежить від обраного в заглушці відділу.
 
 ### 7. Тести
 
