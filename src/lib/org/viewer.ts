@@ -18,11 +18,16 @@ export async function getViewer(): Promise<ViewerProfile | null> {
   if (!claims) return null;
 
   // RLS: власний профіль видно завжди, навіть неактивному.
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("id, email, full_name, role, is_active")
     .eq("id", claims.sub)
     .maybeSingle();
+  // Помилку бази (наприклад, міграцію ще не застосовано) не видаємо за «не увійшов»:
+  // інакше сторінка мовчки перекидає на /login і причину не видно.
+  if (error) {
+    throw new Error(`Не вдалося прочитати профіль: ${error.message}`);
+  }
   if (!profile) return null;
 
   return {
