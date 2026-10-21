@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { canOpenAdminPages, type AppRole } from "@/lib/org/access";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "./login/actions";
 
@@ -18,7 +19,7 @@ export default async function Home() {
   // RLS: користувач бачить лише власний профіль.
   const { data: profile } = await supabase
     .from("profiles")
-    .select("email, full_name, role")
+    .select("email, full_name, role, is_active")
     .eq("id", claims.sub)
     .maybeSingle();
 
@@ -31,7 +32,8 @@ export default async function Home() {
         <dt className="text-zinc-500">Роль</dt>
         <dd data-testid="user-role">{profile?.role ?? "профіль не знайдено"}</dd>
       </dl>
-      {profile?.role === "admin" && (
+      {profile &&
+        canOpenAdminPages({ role: profile.role as AppRole, isActive: profile.is_active }) && (
         <Link href="/admin" className="text-sm underline">
           Налаштування
         </Link>
