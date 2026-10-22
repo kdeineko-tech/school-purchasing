@@ -32,6 +32,9 @@ export default async function Home() {
         <dt className="text-zinc-500">Роль</dt>
         <dd data-testid="user-role">{profile?.role ?? "профіль не знайдено"}</dd>
       </dl>
+      <Link href="/profile" className="text-sm underline">
+        Мій профіль
+      </Link>
       {profile &&
         canOpenAdminPages({ role: profile.role as AppRole, isActive: profile.is_active }) && (
         <Link href="/admin" className="text-sm underline">
