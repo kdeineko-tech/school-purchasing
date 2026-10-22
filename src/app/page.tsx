@@ -1,54 +1,46 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { canOpenAdminPages, type AppRole } from "@/lib/org/access";
-import { createClient } from "@/lib/supabase/server";
-import { signOut } from "./login/actions";
+import { PageShell } from "@/components/page-shell";
+import { Card, RoleBadge } from "@/components/ui";
+import { canOpenAdminPages } from "@/lib/org/access";
+import { getViewer } from "@/lib/org/viewer";
 
-// Головна сторінка шаблону: хто увійшов і з якою роллю (з таблиці profiles).
-// Сторінка читає cookies, тому рендериться динамічно (шаблон зібрано з --no-cache-components).
+// Головна: хто увійшов і куди далі. Посилання «Налаштування» — за правилом доступу до /admin (AC-ORG-09).
 export default async function Home() {
-  const supabase = await createClient();
-
-  // getClaims() перевіряє JWT. getSession() для авторизації на сервері не використовуємо.
-  const { data } = await supabase.auth.getClaims();
-  const claims = data?.claims;
-  if (!claims) {
-    redirect("/login");
-  }
-
-  // RLS: користувач бачить лише власний профіль.
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("email, full_name, role, is_active")
-    .eq("id", claims.sub)
-    .maybeSingle();
+  const viewer = await getViewer();
+  if (!viewer) redirect("/login");
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
-      <h1 className="text-2xl font-semibold">Проєкт команди</h1>
-      <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-2 text-sm">
-        <dt className="text-zinc-500">Email</dt>
-        <dd data-testid="user-email">{profile?.email ?? claims.email ?? "—"}</dd>
-        <dt className="text-zinc-500">Роль</dt>
-        <dd data-testid="user-role">{profile?.role ?? "профіль не знайдено"}</dd>
-      </dl>
-      <Link href="/profile" className="text-sm underline">
-        Мій профіль
-      </Link>
-      {profile &&
-        canOpenAdminPages({ role: profile.role as AppRole, isActive: profile.is_active }) && (
-        <Link href="/admin" className="text-sm underline">
-          Налаштування
-        </Link>
-      )}
-      <form action={signOut}>
-        <button
-          type="submit"
-          className="rounded border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
-        >
-          Вийти
-        </button>
-      </form>
-    </main>
+    <PageShell viewer={viewer} title={`Вітаємо, ${viewer.fullName ?? viewer.email ?? ""}`}>
+      <Card>
+        <dl className="grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-3 text-sm">
+          <dt className="text-muted">Email</dt>
+          <dd data-testid="user-email">{viewer.email ?? "—"}</dd>
+          <dt className="text-muted">Роль</dt>
+          <dd data-testid="user-role">
+            <RoleBadge role={viewer.role} />
+          </dd>
+        </dl>
+      </Card>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <NavCard href="/profile" title="Мій профіль" text="Відділи, де ви подаєте заявки" />
+        {canOpenAdminPages(viewer) && (
+          <NavCard href="/admin" title="Налаштування" text="Працівники й відділи школи" />
+        )}
+      </div>
+    </PageShell>
+  );
+}
+
+function NavCard({ href, title, text }: { href: string; title: string; text: string }) {
+  return (
+    <Link
+      href={href}
+      className="group rounded-xl border border-border bg-surface p-5 shadow-sm transition hover:border-accent"
+    >
+      <p className="font-medium group-hover:text-accent">{title} →</p>
+      <p className="mt-1 text-sm text-muted">{text}</p>
+    </Link>
   );
 }
