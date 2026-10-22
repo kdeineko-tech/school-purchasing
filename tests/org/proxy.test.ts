@@ -43,7 +43,7 @@ describe("сесія деактивованого працівника", () => {
     expect(response.cookies.get("sb-auth")?.value).toBe("");
   });
 
-  it("активний працівник проходить далі без виходу з сесії", async () => {
+  it("AC-ORG-12: активний працівник проходить далі без виходу з сесії", async () => {
     state.isActive = true;
     state.signOut.mockClear();
 
