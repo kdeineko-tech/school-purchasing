@@ -33,7 +33,11 @@ export default async function StaffPage() {
         <tbody>
           {(staff ?? []).map((p) => (
             <tr key={p.id} className="border-t border-zinc-200 dark:border-zinc-800">
-              <td className="py-1">{p.full_name ?? "—"}</td>
+              <td className="py-1">
+                <Link href={`/admin/staff/${p.id}`} className="underline">
+                  {p.full_name ?? "—"}
+                </Link>
+              </td>
               <td className="py-1">{p.email ?? "—"}</td>
               <td className="py-1">{p.role}</td>
               <td className="py-1">{p.is_active ? "так" : "ні"}</td>

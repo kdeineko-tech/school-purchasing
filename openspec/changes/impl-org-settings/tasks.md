@@ -15,7 +15,7 @@
 
 ## 2. Відділи й заявники
 
-- [ ] 2.1 Міграція `departments`: `departments` (унікальна назва без регістру), `department_members` з RLS і GRANT;
+- [x] 2.1 Міграція `departments`: `departments` (унікальна назва без регістру), `department_members` з RLS і GRANT;
   ADR `0001-department-membership`; `departments.ts`, `membership.ts` (`addRequester`); сторінки
   `/admin/departments`, `/admin/staff/[id]`, `/profile`; actions `createDepartment`, `addRequester`; тести.
   Done when: AC-ORG-34, AC-ORG-01.

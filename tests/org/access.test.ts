@@ -17,6 +17,9 @@ function viewer(role: AppRole, isActive = true) {
   return { id: "u1", email: "member1@example.test", fullName: null, role, isActive };
 }
 
+// Пропси сторінки App Router: params і searchParams — проміси (Next.js 16).
+const pageProps = { params: Promise.resolve({}), searchParams: Promise.resolve({}) } as never;
+
 const adminPages = [
   ["/admin", AdminHome],
   ["/admin/staff", StaffPage],
@@ -36,13 +39,13 @@ describe("доступ до сторінок адміністратора", () =
 
   it.each(adminPages)("AC-ORG-09: заявник на %s бачить відмову «Недостатньо прав»", async (_path, Page) => {
     vi.mocked(getViewer).mockResolvedValue(viewer("requester"));
-    const element = await Page();
+    const element = await Page(pageProps);
     expect(element.type).toBe(NoAccess);
   });
 
   it.each(adminPages)("AC-ORG-09: схвалювач на %s бачить відмову «Недостатньо прав»", async (_path, Page) => {
     vi.mocked(getViewer).mockResolvedValue(viewer("approver"));
-    const element = await Page();
+    const element = await Page(pageProps);
     expect(element.type).toBe(NoAccess);
   });
 
