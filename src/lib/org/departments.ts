@@ -1,5 +1,18 @@
-// Відділи (AC-ORG-34). Те саме правило в базі: check довжини й унікальний індекс lower(btrim(name)).
+// Відділи (AC-ORG-34, AC-ORG-14). Те саме правило в базі: check довжини й унікальний індекс lower(btrim(name)).
+import type { Department, Membership } from "./membership";
 import { MESSAGES } from "./messages";
+
+// Відділ «Немає схвалювача» — серед його заявників немає жодного активного зі схваленням (AC-ORG-14).
+export function departmentsWithoutApprover(
+  departments: readonly Department[],
+  memberships: readonly Membership[],
+  activeProfileIds: ReadonlySet<string>,
+): Department[] {
+  const approved = new Set(
+    memberships.filter((m) => m.approves && activeProfileIds.has(m.profileId)).map((m) => m.departmentId),
+  );
+  return departments.filter((d) => !approved.has(d.id));
+}
 
 export const DEPARTMENT_NAME_MAX = 100;
 

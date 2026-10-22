@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
-import { Alert, Button, Card, EmptyState, Input } from "@/components/ui";
+import { Alert, Badge, Button, Card, EmptyState, Input } from "@/components/ui";
 import { canOpenAdminPages } from "@/lib/org/access";
+import { departmentsWithoutApprover } from "@/lib/org/departments";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
@@ -20,11 +21,28 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
   const errorMessage = typeof error === "string" && known.includes(error) ? error : null;
 
   const supabase = await createClient();
-  const { data: departments, error: readError } = await supabase
-    .from("departments")
-    .select("id, name")
-    .order("name");
+  const [
+    { data: departments, error: departmentsError },
+    { data: rows, error: membersError },
+    { data: profiles, error: profilesError },
+  ] = await Promise.all([
+    supabase.from("departments").select("id, name").order("name"),
+    supabase.from("department_members").select("profile_id, department_id, approves"),
+    supabase.from("profiles").select("id, is_active"),
+  ]);
+  const readError = departmentsError ?? membersError ?? profilesError;
   if (readError) throw new Error(`Не вдалося прочитати відділи: ${readError.message}`);
+
+  // AC-ORG-14: відділ без жодного активного схвалювача.
+  const memberships = (rows ?? []).map((r) => ({
+    profileId: r.profile_id,
+    departmentId: r.department_id,
+    approves: r.approves,
+  }));
+  const active = new Set((profiles ?? []).filter((p) => p.is_active).map((p) => p.id));
+  const withoutApprover = new Set(
+    departmentsWithoutApprover(departments ?? [], memberships, active).map((d) => d.id),
+  );
 
   return (
     <PageShell
@@ -50,8 +68,9 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
         {departments && departments.length > 0 ? (
           <ul className="divide-y divide-border text-sm" data-testid="departments">
             {departments.map((d) => (
-              <li key={d.id} className="py-2.5">
-                {d.name}
+              <li key={d.id} className="flex items-center justify-between gap-3 py-2.5">
+                <span>{d.name}</span>
+                {withoutApprover.has(d.id) && <Badge tone="danger">{MESSAGES.noApprover}</Badge>}
               </li>
             ))}
           </ul>
