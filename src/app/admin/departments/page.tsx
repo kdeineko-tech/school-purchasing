@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
-import { Alert, Button, Card, EmptyState, Input } from "@/components/ui";
+import { Alert, Badge, Button, Card, EmptyState, Input } from "@/components/ui";
 import { canOpenAdminPages } from "@/lib/org/access";
+import { departmentsWithoutApprover } from "@/lib/org/departments";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
@@ -20,11 +21,29 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
   const errorMessage = typeof error === "string" && known.includes(error) ? error : null;
 
   const supabase = await createClient();
-  const { data: departments, error: readError } = await supabase
-    .from("departments")
-    .select("id, name")
-    .order("name");
+  // Лише активні схвалювачі — фільтр у базі: їх мало, тож ліміт відповіді API (1000 рядків) не обрізає список.
+  const [{ data: departments, error: departmentsError }, { data: rows, error: approversError }] =
+    await Promise.all([
+      supabase.from("departments").select("id, name").order("name"),
+      supabase
+        .from("department_members")
+        .select("profile_id, department_id, profiles!inner(is_active)")
+        .eq("approves", true)
+        .eq("profiles.is_active", true),
+    ]);
+  const readError = departmentsError ?? approversError;
   if (readError) throw new Error(`Не вдалося прочитати відділи: ${readError.message}`);
+
+  // AC-ORG-14: відділ без жодного активного схвалювача.
+  const memberships = (rows ?? []).map((r) => ({
+    profileId: r.profile_id,
+    departmentId: r.department_id,
+    approves: true,
+  }));
+  const active = new Set(memberships.map((m) => m.profileId));
+  const withoutApprover = new Set(
+    departmentsWithoutApprover(departments ?? [], memberships, active).map((d) => d.id),
+  );
 
   return (
     <PageShell
@@ -50,8 +69,9 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
         {departments && departments.length > 0 ? (
           <ul className="divide-y divide-border text-sm" data-testid="departments">
             {departments.map((d) => (
-              <li key={d.id} className="py-2.5">
-                {d.name}
+              <li key={d.id} className="flex items-center justify-between gap-3 py-2.5">
+                <span>{d.name}</span>
+                {withoutApprover.has(d.id) && <Badge tone="danger">{MESSAGES.noApprover}</Badge>}
               </li>
             ))}
           </ul>

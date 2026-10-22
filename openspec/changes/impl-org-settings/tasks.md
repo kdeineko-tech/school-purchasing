@@ -22,7 +22,7 @@
 
 ## 3. Схвалювачі й роль за відділами
 
-- [ ] 3.1 Колонка `approves`, тригер `sync_role`; `setApprover`, `removeRequester`, `roleFor`,
+- [x] 3.1 Колонка `approves`, тригер `sync_role`; `setApprover`, `removeRequester`, `roleFor`,
   `departmentsWithoutApprover`; позначка «Немає схвалювача»; тести.
   Done when: AC-ORG-02, AC-ORG-03, AC-ORG-04, AC-ORG-05, AC-ORG-14, AC-ORG-19, AC-ORG-20, AC-ORG-24.
 
