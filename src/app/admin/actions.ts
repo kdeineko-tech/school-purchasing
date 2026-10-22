@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { canOpenAdminPages } from "@/lib/org/access";
+import { canOpenAdminPages, type AppRole } from "@/lib/org/access";
+import { leavesNoActiveAdmin } from "@/lib/org/admins";
 import { validateNewDepartment } from "@/lib/org/departments";
 import { setApprover as setApproverRule } from "@/lib/org/membership";
 import { MESSAGES } from "@/lib/org/messages";
@@ -116,6 +117,30 @@ export async function setApprover(formData: FormData) {
   // Рядок заявника зник між читанням і записом — те саме правило AC-ORG-02.
   if (!updated || updated.length === 0) backToStaff(profileId, MESSAGES.addAsRequesterFirst);
 
+  backToStaff(profileId);
+}
+
+// AC-ORG-12, AC-ORG-18: адміністратор деактивує й знову активує працівника; останнього активного адміністратора
+// база не деактивує (тригер private.guard_last_admin, виняток LAST_ADMIN).
+export async function setActive(formData: FormData) {
+  await requireAdmin();
+  const profileId = String(formData.get("profileId") ?? "");
+  const activeValue = formData.get("active");
+  if (!UUID.test(profileId)) redirect("/admin/staff");
+  if (activeValue !== "true" && activeValue !== "false") backToStaff(profileId);
+  const active = activeValue === "true";
+
+  const supabase = await createClient();
+  const { data: staff, error: readError } = await supabase.from("profiles").select("id, role, is_active");
+  if (readError) throw new Error(`Не вдалося прочитати працівників: ${readError.message}`);
+  const state = (staff ?? []).map((p) => ({ id: p.id, role: p.role as AppRole, isActive: p.is_active }));
+  if (!active && leavesNoActiveAdmin(state, profileId, active)) backToStaff(profileId, MESSAGES.lastAdmin);
+
+  const { error } = await supabase.from("profiles").update({ is_active: active }).eq("id", profileId);
+  if (error?.message.includes("LAST_ADMIN")) backToStaff(profileId, MESSAGES.lastAdmin);
+  if (error) throw new Error(`Не вдалося змінити активність: ${error.message}`);
+
+  revalidatePath("/admin/staff");
   backToStaff(profileId);
 }
 

@@ -10,6 +10,8 @@ const PUBLIC_PATHS = ["/login", "/auth"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+  // Заголовки кешування з setAll — щоб перенести їх і в перенаправлення після signOut (AC-ORG-12).
+  let authCacheHeaders: Record<string, string> = {};
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,6 +22,8 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet, headers) {
+          // Об'єднуємо: наступний виклик (signOut) не має стерти заголовки з першого запису cookie.
+          authCacheHeaders = { ...authCacheHeaders, ...headers };
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
@@ -49,6 +53,30 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  // AC-ORG-12: працівника деактивували, поки він був у системі, — виходимо з сесії й показуємо повідомлення PM.
+  // Дані йому й так недоступні (RLS: current_app_role() лише активного профілю).
+  if (claims && !isPublic) {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("is_active")
+      .eq("id", claims.sub)
+      .maybeSingle();
+    // Профілю немає — сесія ні до чого не прив'язана: виходимо. Тимчасову помилку бази пропускаємо:
+    // дані закриває RLS, а сторінка покаже помилку читання профілю (getViewer), не виганяючи всіх із сесії.
+    if (!error && (!profile || !profile.is_active)) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = profile ? "?error=deactivated" : "";
+      const response = NextResponse.redirect(url);
+      // Cookie без сесії, які поставив signOut, переносимо у відповідь-перенаправлення.
+      supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+      // Лише заголовки кешування з setAll (Cache-Control тощо), без службових x-middleware-*.
+      Object.entries(authCacheHeaders).forEach(([key, value]) => response.headers.set(key, value));
+      return response;
+    }
   }
 
   // Повертаємо саме supabaseResponse: у ньому оновлені cookie сесії.
