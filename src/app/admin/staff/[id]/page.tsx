@@ -6,7 +6,7 @@ import { requesterDepartments } from "@/lib/org/membership";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
-import { addRequester, removeRequester, setApprover } from "../../actions";
+import { addRequester, removeRequester, setActive, setApprover } from "../../actions";
 import { NoAccess } from "../../no-access";
 
 // Профіль працівника для адміністратора (AC-ORG-09): відділи, де він подає заявки (AC-ORG-01),
@@ -57,6 +57,14 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
         <div className="flex flex-wrap items-center gap-2">
           <RoleBadge role={profile.role} />
           {profile.is_active ? <Badge>Активний</Badge> : <Badge tone="danger">Деактивований</Badge>}
+          {/* AC-ORG-12: деактивований не входить у систему; AC-ORG-18: останнього активного адміністратора не деактивуємо. */}
+          <form action={setActive} className="ml-auto">
+            <input type="hidden" name="profileId" value={profile.id} />
+            <input type="hidden" name="active" value={profile.is_active ? "false" : "true"} />
+            <Button type="submit" variant="secondary">
+              {profile.is_active ? "Деактивувати" : "Активувати"}
+            </Button>
+          </form>
         </div>
       </Card>
 

@@ -51,6 +51,26 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
+  // AC-ORG-12: працівника деактивували, поки він був у системі, — виходимо з сесії й показуємо повідомлення PM.
+  // Дані йому й так недоступні (RLS: current_app_role() лише активного профілю).
+  if (claims && !isPublic) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("is_active")
+      .eq("id", claims.sub)
+      .maybeSingle();
+    if (profile && !profile.is_active) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = "?error=deactivated";
+      const response = NextResponse.redirect(url);
+      // Cookie без сесії, які поставив signOut, переносимо у відповідь-перенаправлення.
+      supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+      return response;
+    }
+  }
+
   // Повертаємо саме supabaseResponse: у ньому оновлені cookie сесії.
   return supabaseResponse;
 }

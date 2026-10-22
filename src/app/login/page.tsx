@@ -1,9 +1,11 @@
 import { Alert, Button, Input } from "@/components/ui";
+import { MESSAGES } from "@/lib/org/messages";
 import { login } from "./actions";
 
 const ERRORS: Record<string, string> = {
   missing: "Вкажіть email і пароль.",
   invalid: "Невірний email або пароль.",
+  deactivated: MESSAGES.deactivated, // AC-ORG-12
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
