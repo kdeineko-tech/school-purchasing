@@ -1,5 +1,6 @@
 // Хто переглядає сторінку: роль і активність з profiles. Перевірку доступу робимо в кожній сторінці,
 // а не в layout: layout не зупиняє рендер вкладених сторінок (Next.js 16, guides/authentication.md).
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole, Viewer } from "./access";
 
@@ -29,6 +30,9 @@ export async function getViewer(): Promise<ViewerProfile | null> {
     throw new Error(`Не вдалося прочитати профіль: ${error.message}`);
   }
   if (!profile) return null;
+  // AC-ORG-12: деактивований працівник не працює з жодною сторінкою, навіть якщо proxy не зміг перевірити
+  // профіль через тимчасову помилку бази.
+  if (!profile.is_active) redirect("/login?error=deactivated");
 
   return {
     id: profile.id,
