@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createDepartment } from "@/app/admin/actions";
+import { addRequester as addRequesterAction, createDepartment } from "@/app/admin/actions";
 import { isDuplicateName, validateNewDepartment } from "@/lib/org/departments";
 import { addRequester, requesterDepartments } from "@/lib/org/membership";
 import { MESSAGES } from "@/lib/org/messages";
@@ -79,6 +79,43 @@ describe("заявники відділу", () => {
     const memberships = addRequester([], "u1", "d1");
 
     expect(requesterDepartments(memberships, departments, "u1").map((d) => d.name)).toEqual(["Початкова школа"]);
+  });
+
+  const P1 = "00000000-0000-4000-8000-000000000001";
+  const D1 = "00000000-0000-4000-8000-0000000000d1";
+
+  function fakeMembersDb() {
+    const insert = vi.fn().mockResolvedValue({ error: null });
+    vi.mocked(createClient).mockResolvedValue({ from: vi.fn(() => ({ insert })) } as never);
+    return { insert };
+  }
+
+  it("AC-ORG-01: дія addRequester адміністратора записує працівника заявником відділу", async () => {
+    vi.mocked(getViewer).mockResolvedValue(admin);
+    const { insert } = fakeMembersDb();
+
+    await expect(addRequesterAction(form({ profileId: P1, departmentId: D1 }))).rejects.toThrow(
+      `REDIRECT /admin/staff/${P1}`,
+    );
+    expect(insert).toHaveBeenCalledWith({ profile_id: P1, department_id: D1 });
+  });
+
+  it("не-адміністратор не додає заявника", async () => {
+    vi.mocked(getViewer).mockResolvedValue({ ...admin, role: "requester" });
+    const { insert } = fakeMembersDb();
+
+    await expect(addRequesterAction(form({ profileId: P1, departmentId: D1 }))).rejects.toThrow("REDIRECT /admin");
+    expect(insert).not.toHaveBeenCalled();
+  });
+
+  it("некоректний ідентифікатор не доходить до бази", async () => {
+    vi.mocked(getViewer).mockResolvedValue(admin);
+    const { insert } = fakeMembersDb();
+
+    await expect(addRequesterAction(form({ profileId: "abc", departmentId: D1 }))).rejects.toThrow(
+      "REDIRECT /admin/staff",
+    );
+    expect(insert).not.toHaveBeenCalled();
   });
 
   it("повторне додавання до того самого відділу не дублює заявника", () => {

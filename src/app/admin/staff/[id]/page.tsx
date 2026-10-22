@@ -15,11 +15,18 @@ export default async function StaffProfilePage({ params }: PageProps<"/admin/sta
 
   const { id } = await params;
   const supabase = await createClient();
-  const [{ data: profile }, { data: departments }, { data: rows }] = await Promise.all([
+  const [
+    { data: profile, error: profileError },
+    { data: departments, error: departmentsError },
+    { data: rows, error: membershipsError },
+  ] = await Promise.all([
     supabase.from("profiles").select("id, email, full_name, role, is_active").eq("id", id).maybeSingle(),
     supabase.from("departments").select("id, name").order("name"),
     supabase.from("department_members").select("profile_id, department_id").eq("profile_id", id),
   ]);
+  // Помилку бази не видаємо за «профілю немає» чи «відділів немає».
+  const readError = profileError ?? departmentsError ?? membershipsError;
+  if (readError) throw new Error(`Не вдалося прочитати профіль працівника: ${readError.message}`);
   if (!profile) notFound();
 
   const memberships = (rows ?? []).map((r) => ({ profileId: r.profile_id, departmentId: r.department_id }));
@@ -56,6 +63,7 @@ export default async function StaffProfilePage({ params }: PageProps<"/admin/sta
             <select
               name="departmentId"
               required
+              aria-label="Відділ"
               className="flex-1 rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
             >
               {others.map((d) => (

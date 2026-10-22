@@ -12,10 +12,14 @@ export default async function ProfilePage() {
 
   const supabase = await createClient();
   // RLS: працівник бачить лише власні рядки department_members.
-  const [{ data: departments }, { data: rows }] = await Promise.all([
-    supabase.from("departments").select("id, name"),
-    supabase.from("department_members").select("profile_id, department_id").eq("profile_id", viewer.id),
-  ]);
+  const [{ data: departments, error: departmentsError }, { data: rows, error: membersError }] =
+    await Promise.all([
+      supabase.from("departments").select("id, name"),
+      supabase.from("department_members").select("profile_id, department_id").eq("profile_id", viewer.id),
+    ]);
+  // Помилку бази не видаємо за «Немає».
+  const readError = departmentsError ?? membersError;
+  if (readError) throw new Error(`Не вдалося прочитати відділи: ${readError.message}`);
   const memberships = (rows ?? []).map((r) => ({ profileId: r.profile_id, departmentId: r.department_id }));
   const mine = requesterDepartments(memberships, departments ?? [], viewer.id);
 

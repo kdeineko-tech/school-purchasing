@@ -12,6 +12,8 @@ import { createClient } from "@/lib/supabase/server";
 // друга лінія захисту, і на її помилки показуємо те саме повідомлення.
 
 const UNIQUE_VIOLATION = "23505";
+const FOREIGN_KEY_VIOLATION = "23503";
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 async function requireAdmin() {
   const viewer = await getViewer();
@@ -50,12 +52,14 @@ export async function addRequester(formData: FormData) {
   await requireAdmin();
   const profileId = String(formData.get("profileId") ?? "");
   const departmentId = String(formData.get("departmentId") ?? "");
-  if (!profileId || !departmentId) redirect(`/admin/staff/${profileId}`);
+  if (!UUID.test(profileId) || !UUID.test(departmentId)) redirect("/admin/staff");
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("department_members")
     .insert({ profile_id: profileId, department_id: departmentId });
+  // Профіль чи відділ тим часом зник — повертаємо до списку працівників.
+  if (error?.code === FOREIGN_KEY_VIOLATION) redirect("/admin/staff");
   // Уже заявник цього відділу — нічого не змінюємо.
   if (error && error.code !== UNIQUE_VIOLATION) {
     throw new Error(`Не вдалося додати заявника: ${error.message}`);

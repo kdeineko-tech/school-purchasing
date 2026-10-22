@@ -35,7 +35,7 @@ export default async function StaffPage() {
             <tr key={p.id} className="border-t border-zinc-200 dark:border-zinc-800">
               <td className="py-1">
                 <Link href={`/admin/staff/${p.id}`} className="underline">
-                  {p.full_name ?? "—"}
+                  {p.full_name ?? p.email ?? "—"}
                 </Link>
               </td>
               <td className="py-1">{p.email ?? "—"}</td>

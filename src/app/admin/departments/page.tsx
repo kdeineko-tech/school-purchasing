@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { canOpenAdminPages } from "@/lib/org/access";
+import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { createDepartment } from "../actions";
@@ -12,9 +13,17 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
   if (!viewer) redirect("/login");
   if (!canOpenAdminPages(viewer)) return <NoAccess />;
 
+  // Показуємо лише власні повідомлення застосунку, а не довільний текст з адреси.
   const { error } = await searchParams;
+  const known: string[] = Object.values(MESSAGES);
+  const errorMessage = typeof error === "string" && known.includes(error) ? error : null;
+
   const supabase = await createClient();
-  const { data: departments } = await supabase.from("departments").select("id, name").order("name");
+  const { data: departments, error: readError } = await supabase
+    .from("departments")
+    .select("id, name")
+    .order("name");
+  if (readError) throw new Error(`Не вдалося прочитати відділи: ${readError.message}`);
 
   return (
     <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
@@ -39,9 +48,9 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
             Створити
           </button>
         </div>
-        {typeof error === "string" && error && (
+        {errorMessage && (
           <p role="alert" data-testid="department-error" className="text-sm text-red-600">
-            {error}
+            {errorMessage}
           </p>
         )}
       </form>
