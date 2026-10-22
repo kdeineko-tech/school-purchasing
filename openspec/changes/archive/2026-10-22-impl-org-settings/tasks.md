@@ -53,7 +53,7 @@
 
 ## 8. Відкладене
 
-- [ ] 8.1 Рядок AC-ORG-13 у `docs/conformance.md` — «відкладено (чекаю відповідь PM на Q2,
+- [x] 8.1 Рядок AC-ORG-13 у `docs/conformance.md` — «відкладено (чекаю відповідь PM на Q2,
   ValiaBihun/2026-quitcode-dream-team#43)».
   Done when: AC-ORG-13 — статус із посиланням на питання PM; `npm run ac:coverage` зелений.
 
