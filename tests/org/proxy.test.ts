@@ -1,10 +1,13 @@
 import { NextRequest } from "next/server";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, type Mock } from "vitest";
 import { updateSession } from "@/lib/supabase/proxy";
 
 // Підставний клієнт @supabase/ssr: сесія є, профіль з потрібною активністю; signOut, як справжній,
 // очищує cookie сесії через setAll і передає заголовки кешування.
-const state = { isActive: true, signOut: vi.fn() };
+const state: { isActive: boolean | null; signOut: Mock<() => void> } = {
+  isActive: true,
+  signOut: vi.fn<() => void>(),
+};
 
 vi.mock("@supabase/ssr", () => ({
   createServerClient: (
@@ -24,7 +27,8 @@ vi.mock("@supabase/ssr", () => ({
     },
     from: () => ({
       select: () => ({
-        eq: () => ({ maybeSingle: async () => ({ data: { is_active: state.isActive }, error: null }) }),
+        eq: () => ({ maybeSingle: async () => ({ data: state.isActive === null ? null : { is_active: state.isActive }, error: null }),
+        }),
       }),
     }),
   }),
@@ -51,5 +55,15 @@ describe("сесія деактивованого працівника", () => {
 
     expect(state.signOut).not.toHaveBeenCalled();
     expect(response.headers.get("location")).toBeNull();
+  });
+
+  it("сесія без профілю — вихід і сторінка входу без повідомлення про деактивацію", async () => {
+    state.isActive = null;
+    state.signOut.mockClear();
+
+    const response = await updateSession(new NextRequest("http://localhost:3000/admin/staff"));
+
+    expect(state.signOut).toHaveBeenCalled();
+    expect(response.headers.get("location")).toBe("http://localhost:3000/login");
   });
 });

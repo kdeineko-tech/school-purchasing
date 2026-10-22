@@ -25,7 +25,7 @@ function form(fields: Record<string, string>) {
 }
 
 // Підставний Supabase для входу: пароль правильний, профіль з потрібною активністю.
-function fakeLoginDb(isActive: boolean) {
+function fakeLoginDb(isActive: boolean | null) {
   const signOut = vi.fn().mockResolvedValue({ error: null });
   const client = {
     auth: {
@@ -33,7 +33,7 @@ function fakeLoginDb(isActive: boolean) {
       signOut,
     },
     from: vi.fn(() => ({
-      select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { is_active: isActive }, error: null }) }) }),
+      select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: isActive === null ? null : { is_active: isActive }, error: null }) }) }),
     })),
   };
   vi.mocked(createClient).mockResolvedValue(client as never);
@@ -56,6 +56,15 @@ describe("деактивація працівника", () => {
 
     await expect(login(form({ email: "member1@example.test", password: "x" }))).rejects.toThrow("REDIRECT /");
     expect(signOut).not.toHaveBeenCalled();
+  });
+
+  it("якщо профіль не вдалося перевірити, вхід не відбувається — нейтральна відмова", async () => {
+    const { signOut } = fakeLoginDb(null);
+
+    await expect(login(form({ email: "member1@example.test", password: "x" }))).rejects.toThrow(
+      "REDIRECT /login?error=invalid",
+    );
+    expect(signOut).toHaveBeenCalled();
   });
 
   it("AC-ORG-12: дія setActive адміністратора деактивує працівника", async () => {

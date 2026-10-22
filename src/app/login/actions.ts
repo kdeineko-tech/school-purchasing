@@ -25,12 +25,17 @@ export async function login(formData: FormData) {
 
   // AC-ORG-12: деактивований працівник не входить і бачить повідомлення PM. Пароль він ввів правильно,
   // тож окреме повідомлення не підказує, чи існує email.
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("is_active")
     .eq("id", data.user.id)
     .maybeSingle();
-  if (profile && !profile.is_active) {
+  // Не вдалося перевірити профіль — не пускаємо: нейтральна відмова, як для неправильного пароля.
+  if (profileError || !profile) {
+    await supabase.auth.signOut();
+    redirect("/login?error=invalid");
+  }
+  if (!profile.is_active) {
     await supabase.auth.signOut();
     redirect("/login?error=deactivated");
   }
