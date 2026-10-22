@@ -21,25 +21,26 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
   const errorMessage = typeof error === "string" && known.includes(error) ? error : null;
 
   const supabase = await createClient();
-  const [
-    { data: departments, error: departmentsError },
-    { data: rows, error: membersError },
-    { data: profiles, error: profilesError },
-  ] = await Promise.all([
-    supabase.from("departments").select("id, name").order("name"),
-    supabase.from("department_members").select("profile_id, department_id, approves"),
-    supabase.from("profiles").select("id, is_active"),
-  ]);
-  const readError = departmentsError ?? membersError ?? profilesError;
+  // Лише активні схвалювачі — фільтр у базі: їх мало, тож ліміт відповіді API (1000 рядків) не обрізає список.
+  const [{ data: departments, error: departmentsError }, { data: rows, error: approversError }] =
+    await Promise.all([
+      supabase.from("departments").select("id, name").order("name"),
+      supabase
+        .from("department_members")
+        .select("profile_id, department_id, profiles!inner(is_active)")
+        .eq("approves", true)
+        .eq("profiles.is_active", true),
+    ]);
+  const readError = departmentsError ?? approversError;
   if (readError) throw new Error(`Не вдалося прочитати відділи: ${readError.message}`);
 
   // AC-ORG-14: відділ без жодного активного схвалювача.
   const memberships = (rows ?? []).map((r) => ({
     profileId: r.profile_id,
     departmentId: r.department_id,
-    approves: r.approves,
+    approves: true,
   }));
-  const active = new Set((profiles ?? []).filter((p) => p.is_active).map((p) => p.id));
+  const active = new Set(memberships.map((m) => m.profileId));
   const withoutApprover = new Set(
     departmentsWithoutApprover(departments ?? [], memberships, active).map((d) => d.id),
   );

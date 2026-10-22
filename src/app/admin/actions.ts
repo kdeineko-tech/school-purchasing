@@ -88,7 +88,10 @@ function backToStaff(profileId: string, error?: string): never {
 export async function setApprover(formData: FormData) {
   await requireAdmin();
   const { profileId, departmentId } = readMemberIds(formData);
-  const approves = formData.get("approves") === "true";
+  const approvesValue = formData.get("approves");
+  // Лише явне «так» чи «ні»: інше значення не має мовчки знімати чинне схвалення.
+  if (approvesValue !== "true" && approvesValue !== "false") backToStaff(profileId);
+  const approves = approvesValue === "true";
 
   const supabase = await createClient();
   const { data: row, error: readError } = await supabase

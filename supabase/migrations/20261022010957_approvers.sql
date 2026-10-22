@@ -69,3 +69,32 @@ revoke execute on function private.department_members_sync_role() from public, a
 create trigger department_members_sync_role
   after insert or update of approves or delete on public.department_members
   for each row execute function private.department_members_sync_role();
+
+-- ── Роль не-адміністратора завжди за відділами ──────────────────────────────
+-- Будь-який запис ролі, крім admin, база перераховує сама: скрипт users:demo (upsert ролі з
+-- demo-users.json) чи інший запит не зробить approver з requester і навпаки всупереч відділам.
+create or replace function private.profiles_role_by_departments()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.role <> 'admin' then
+    new.role := case
+      when exists (
+        select 1 from public.department_members as m
+        where m.profile_id = new.id and m.approves
+      ) then 'approver'
+      else 'requester'
+    end;
+  end if;
+  return new;
+end;
+$$;
+
+revoke execute on function private.profiles_role_by_departments() from public, anon, authenticated;
+
+create trigger profiles_role_by_departments
+  before insert or update of role on public.profiles
+  for each row execute function private.profiles_role_by_departments();

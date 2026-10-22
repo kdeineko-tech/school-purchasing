@@ -103,6 +103,15 @@ describe("схвалювачі відділу", () => {
     expect(update).toHaveBeenCalledWith({ approves: true });
   });
 
+  it("дія setApprover з некоректним значенням approves не змінює схвалення", async () => {
+    const { update } = fakeMembersDb({ profile_id: P1, department_id: PRIMARY, approves: true });
+
+    await expect(setApproverAction(form({ profileId: P1, departmentId: PRIMARY, approves: "yes" }))).rejects.toThrow(
+      `REDIRECT /admin/staff/${P1}`,
+    );
+    expect(update).not.toHaveBeenCalled();
+  });
+
   it("AC-ORG-19: схвалювач «Початкова школа» й «Офіс» після зняття лише з «Офіс» лишається approver і далі схвалює «Початкова школа»", () => {
     const before: Membership[] = [
       { profileId: P1, departmentId: PRIMARY, approves: true },
