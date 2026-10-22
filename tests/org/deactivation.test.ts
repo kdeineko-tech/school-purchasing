@@ -51,7 +51,7 @@ describe("деактивація працівника", () => {
     expect(MESSAGES.deactivated).toBe("Обліковий запис деактивовано. Зверніться до адміністратора");
   });
 
-  it("активний працівник входить у систему", async () => {
+  it("AC-ORG-12: активний працівник входить у систему", async () => {
     const { signOut } = fakeLoginDb(true);
 
     await expect(login(form({ email: "member1@example.test", password: "x" }))).rejects.toThrow("REDIRECT /");
@@ -104,7 +104,23 @@ describe("останній активний адміністратор", () => {
     expect(update).not.toHaveBeenCalled();
   });
 
-  it("за наявності другого активного адміністратора деактивація дозволена", () => {
+  it("AC-ORG-18: відмова бази LAST_ADMIN (зміна між перевіркою й записом) дає те саме повідомлення", async () => {
+    const staff = [
+      { id: ADMIN, role: "admin", is_active: true },
+      { id: P1, role: "admin", is_active: true },
+    ];
+    const update = vi.fn(() => ({ eq: () => Promise.resolve({ error: { message: "LAST_ADMIN" } }) }));
+    vi.mocked(createClient).mockResolvedValue({
+      from: vi.fn(() => ({ select: () => Promise.resolve({ data: staff, error: null }), update })),
+    } as never);
+
+    await expect(setActive(form({ profileId: P1, active: "false" }))).rejects.toThrow(
+      `REDIRECT /admin/staff/${P1}?error=${encodeURIComponent(MESSAGES.lastAdmin)}`,
+    );
+    expect(update).toHaveBeenCalled();
+  });
+
+  it("AC-ORG-18: за наявності другого активного адміністратора деактивація дозволена", () => {
     const staff = [
       { id: ADMIN, role: "admin" as const, isActive: true },
       { id: P1, role: "admin" as const, isActive: true },

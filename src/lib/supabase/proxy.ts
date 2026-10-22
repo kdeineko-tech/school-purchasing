@@ -10,6 +10,8 @@ const PUBLIC_PATHS = ["/login", "/auth"];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+  // Заголовки кешування з setAll — щоб перенести їх і в перенаправлення після signOut (AC-ORG-12).
+  let authCacheHeaders: Record<string, string> = {};
 
   const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -20,6 +22,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet, headers) {
+          authCacheHeaders = headers;
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value),
           );
@@ -67,6 +70,8 @@ export async function updateSession(request: NextRequest) {
       const response = NextResponse.redirect(url);
       // Cookie без сесії, які поставив signOut, переносимо у відповідь-перенаправлення.
       supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+      // Лише заголовки кешування з setAll (Cache-Control тощо), без службових x-middleware-*.
+      Object.entries(authCacheHeaders).forEach(([key, value]) => response.headers.set(key, value));
       return response;
     }
   }
