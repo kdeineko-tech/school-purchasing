@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { PageShell } from "@/components/page-shell";
+import { Badge, Card, EmptyState, RoleBadge } from "@/components/ui";
 import { requesterDepartments } from "@/lib/org/membership";
 import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
@@ -24,23 +25,23 @@ export default async function ProfilePage() {
   const mine = requesterDepartments(memberships, departments ?? [], viewer.id);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
-      <h1 className="text-2xl font-semibold">Мій профіль</h1>
-      <section className="flex flex-col gap-2">
-        <h2 className="font-medium">Відділи, де я подаю заявки</h2>
+    <PageShell viewer={viewer} title="Мій профіль" description={viewer.email ?? undefined}>
+      <Card>
+        <RoleBadge role={viewer.role} />
+      </Card>
+      <Card title="Відділи, де я подаю заявки">
         {mine.length > 0 ? (
-          <ul className="text-sm" data-testid="requester-departments">
+          <ul className="flex flex-wrap gap-2" data-testid="requester-departments">
             {mine.map((d) => (
-              <li key={d.id}>{d.name}</li>
+              <li key={d.id}>
+                <Badge tone="accent">{d.name}</Badge>
+              </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-zinc-500">Немає.</p>
+          <EmptyState>Немає.</EmptyState>
         )}
-      </section>
-      <Link href="/" className="text-sm underline">
-        На головну
-      </Link>
-    </main>
+      </Card>
+    </PageShell>
   );
 }

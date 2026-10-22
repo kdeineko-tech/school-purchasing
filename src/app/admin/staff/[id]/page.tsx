@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { PageShell } from "@/components/page-shell";
+import { Badge, Button, Card, EmptyState, RoleBadge, Select } from "@/components/ui";
 import { canOpenAdminPages } from "@/lib/org/access";
 import { requesterDepartments } from "@/lib/org/membership";
 import { getViewer } from "@/lib/org/viewer";
@@ -11,7 +12,7 @@ import { NoAccess } from "../../no-access";
 export default async function StaffProfilePage({ params }: PageProps<"/admin/staff/[id]">) {
   const viewer = await getViewer();
   if (!viewer) redirect("/login");
-  if (!canOpenAdminPages(viewer)) return <NoAccess />;
+  if (!canOpenAdminPages(viewer)) return <NoAccess viewer={viewer} />;
 
   const { id } = await params;
   const supabase = await createClient();
@@ -34,57 +35,50 @@ export default async function StaffProfilePage({ params }: PageProps<"/admin/sta
   const others = (departments ?? []).filter((d) => !mine.some((m) => m.id === d.id));
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
-      <h1 className="text-2xl font-semibold">{profile.full_name ?? profile.email}</h1>
-      <dl className="grid grid-cols-[max-content_1fr] gap-x-4 gap-y-2 text-sm">
-        <dt className="text-zinc-500">Email</dt>
-        <dd>{profile.email ?? "—"}</dd>
-        <dt className="text-zinc-500">Роль</dt>
-        <dd>{profile.role}</dd>
-        <dt className="text-zinc-500">Активний</dt>
-        <dd>{profile.is_active ? "так" : "ні"}</dd>
-      </dl>
+    <PageShell
+      viewer={viewer}
+      title={profile.full_name ?? profile.email ?? "Працівник"}
+      description={profile.email ?? undefined}
+      back={{ href: "/admin/staff", label: "Працівники" }}
+    >
+      <Card>
+        <div className="flex flex-wrap items-center gap-2">
+          <RoleBadge role={profile.role} />
+          {profile.is_active ? <Badge>Активний</Badge> : <Badge tone="danger">Деактивований</Badge>}
+        </div>
+      </Card>
 
-      <section className="flex flex-col gap-2">
-        <h2 className="font-medium">Відділи, де подає заявки</h2>
+      <Card title="Відділи, де подає заявки">
         {mine.length > 0 ? (
-          <ul className="text-sm" data-testid="requester-departments">
+          <ul className="mb-4 flex flex-wrap gap-2" data-testid="requester-departments">
             {mine.map((d) => (
-              <li key={d.id}>{d.name}</li>
+              <li key={d.id}>
+                <Badge tone="accent">{d.name}</Badge>
+              </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-zinc-500">Немає.</p>
+          <div className="mb-4">
+            <EmptyState>Немає.</EmptyState>
+          </div>
         )}
 
         {others.length > 0 && (
-          <form action={addRequester} className="flex gap-2">
+          <form action={addRequester} className="flex flex-col gap-2 sm:flex-row">
             <input type="hidden" name="profileId" value={profile.id} />
-            <select
-              name="departmentId"
-              required
-              aria-label="Відділ"
-              className="flex-1 rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
-            >
+            <Select name="departmentId" required aria-label="Відділ">
               {others.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
                 </option>
               ))}
-            </select>
-            <button
-              type="submit"
-              className="rounded border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
-            >
+            </Select>
+            <Button type="submit" className="shrink-0">
               Додати як заявника
-            </button>
+            </Button>
           </form>
         )}
-      </section>
-
-      <Link href="/admin/staff" className="text-sm underline">
-        До працівників
-      </Link>
-    </main>
+      </Card>
+    </PageShell>
   );
 }

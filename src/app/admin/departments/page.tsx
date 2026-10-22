@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { PageShell } from "@/components/page-shell";
+import { Alert, Button, Card, EmptyState, Input } from "@/components/ui";
 import { canOpenAdminPages } from "@/lib/org/access";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
@@ -11,7 +12,7 @@ import { NoAccess } from "../no-access";
 export default async function DepartmentsPage({ searchParams }: PageProps<"/admin/departments">) {
   const viewer = await getViewer();
   if (!viewer) redirect("/login");
-  if (!canOpenAdminPages(viewer)) return <NoAccess />;
+  if (!canOpenAdminPages(viewer)) return <NoAccess viewer={viewer} />;
 
   // Показуємо лише власні повідомлення застосунку, а не довільний текст з адреси.
   const { error } = await searchParams;
@@ -26,48 +27,38 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
   if (readError) throw new Error(`Не вдалося прочитати відділи: ${readError.message}`);
 
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-6 py-16">
-      <h1 className="text-2xl font-semibold">Відділи</h1>
+    <PageShell
+      viewer={viewer}
+      title="Відділи"
+      description="Від імені відділу подають заявки; назва унікальна без урахування регістру"
+      back={{ href: "/admin", label: "Налаштування" }}
+    >
+      <Card title="Новий відділ">
+        <form action={createDepartment} className="flex flex-col gap-3">
+          <label htmlFor="name" className="sr-only">
+            Назва відділу
+          </label>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input id="name" name="name" required maxLength={100} placeholder="Наприклад, Початкова школа" />
+            <Button type="submit">Створити</Button>
+          </div>
+          {errorMessage && <Alert testId="department-error">{errorMessage}</Alert>}
+        </form>
+      </Card>
 
-      <form action={createDepartment} className="flex flex-col gap-2">
-        <label htmlFor="name" className="text-sm text-zinc-500">
-          Новий відділ
-        </label>
-        <div className="flex gap-2">
-          <input
-            id="name"
-            name="name"
-            required
-            maxLength={100}
-            className="flex-1 rounded border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
-          />
-          <button
-            type="submit"
-            className="rounded border border-zinc-300 px-4 py-2 text-sm dark:border-zinc-700"
-          >
-            Створити
-          </button>
-        </div>
-        {errorMessage && (
-          <p role="alert" data-testid="department-error" className="text-sm text-red-600">
-            {errorMessage}
-          </p>
+      <Card title={`Усі відділи${departments?.length ? ` · ${departments.length}` : ""}`}>
+        {departments && departments.length > 0 ? (
+          <ul className="divide-y divide-border text-sm" data-testid="departments">
+            {departments.map((d) => (
+              <li key={d.id} className="py-2.5">
+                {d.name}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState>Відділів ще немає.</EmptyState>
         )}
-      </form>
-
-      {departments && departments.length > 0 ? (
-        <ul className="flex flex-col gap-1 text-sm" data-testid="departments">
-          {departments.map((d) => (
-            <li key={d.id}>{d.name}</li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-zinc-500">Відділів ще немає.</p>
-      )}
-
-      <Link href="/admin" className="text-sm underline">
-        До налаштувань
-      </Link>
-    </main>
+      </Card>
+    </PageShell>
   );
 }

@@ -1,16 +1,19 @@
 import Link from "next/link";
+import { PageShell } from "@/components/page-shell";
+import { Alert, Card } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
+import type { ViewerProfile } from "@/lib/org/viewer";
 
 // Відмова для сторінок адміністратора (AC-ORG-09).
-export function NoAccess() {
+export function NoAccess({ viewer = null }: { viewer?: ViewerProfile | null }) {
   return (
-    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-4 px-6 py-16">
-      <p role="alert" data-testid="no-access" className="text-lg font-medium">
-        {MESSAGES.forbidden}
-      </p>
-      <Link href="/" className="text-sm underline">
-        На головну
-      </Link>
-    </main>
+    <PageShell viewer={viewer}>
+      <Card className="flex flex-col items-start gap-4">
+        <Alert testId="no-access">{MESSAGES.forbidden}</Alert>
+        <Link href="/" className="text-sm text-accent hover:underline">
+          На головну
+        </Link>
+      </Card>
+    </PageShell>
   );
 }
