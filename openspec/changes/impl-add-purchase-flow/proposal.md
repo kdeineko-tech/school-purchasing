@@ -18,9 +18,9 @@
   kdeineko-tech/school-purchasing#18);
 - `access-permissions`: AC-ORG-22, AC-ORG-23, AC-ORG-29 (адміністратор у формі закупівлі — з першого зрізу).
 
-Не реалізуємо до відповіді PM: AC-LANG-07, AC-LANG-08 (Q5, ValiaBihun/2026-quitcode-dream-team#57). Від відкритих
-Q6 (ValiaBihun/2026-quitcode-dream-team#58), Q7 (#59) і Q8 (#60) залежать лише окремі частини задач — див. `design.md`,
-Risks.
+Після відповідей PM на Q5–Q8 (ValiaBihun/2026-quitcode-dream-team#57 … #60; зміна специфікації `update-purchase-flow`)
+план покриває ще AC-FRM-14, AC-FRM-15, AC-LANG-08 (задача 4) і уточнений AC-APR-07 (задача 3); AC-LANG-07 PM
+прибрала.
 
 ## Capabilities
 

@@ -29,16 +29,20 @@
   action `decidePurchase`; посилання «Approvals» для `approver` і `admin`; тести.
   Done when: AC-APR-01, AC-APR-02, AC-APR-03, AC-APR-04, AC-APR-05, AC-APR-06, AC-APR-07, AC-FRM-13, AC-LANG-05.
 
-## 4. Після відповідей PM
+## 4. Після відповідей PM (зміна специфікації `update-purchase-flow`)
 
-- [ ] 4.1 Q8 (ValiaBihun/2026-quitcode-dream-team#60): обов'язкові поля рядка — після `/requirements-sync` і зміни
-  специфікації; нова міграція (`not null`/`check`), повідомлення з таблиці PM, `validateSubmission`, тести.
-  Done when: AC-FRM-06, AC-FRM-07 — за відповіддю PM. Якщо PM додасть нові AC про поля рядка, для них — окрема
-  задача з їхніми ID після злитої зміни специфікації.
-- [ ] 4.2 Q6 (#58): текст порожньої сторінки «Мої заявки»; Q7 (#59): де показувати причину відхилення.
-  Done when: AC-FRM-10 і AC-APR-07 за відповідями PM; `npm run ac:coverage` зелений.
-- [ ] 4.3 Q5 (#57): AC-LANG-07, AC-LANG-08 — за відповіддю PM (реалізація або зміна специфікації).
-  Done when: рядки AC-LANG-07, AC-LANG-08 у `docs/conformance.md` — «реалізовано» або причина з посиланням на рішення PM.
+- [ ] 4.1 Обов'язкові поля рядка й порожні «Мої заявки» (відповіді PM на Q8 — ValiaBihun/2026-quitcode-dream-team#60,
+  Q6 — ValiaBihun/2026-quitcode-dream-team#58): нова міграція — `submit_purchase` відхиляє рядок без назви, мети,
+  кількості чи ціни кодом `LINE_FIELDS` (`create or replace function`); `validateSubmission` з тим самим правилом;
+  «Fill in all line fields» і «You have not submitted any requests yet» у `MESSAGES`; порожній стан на `/purchases`;
+  тести.
+  Done when: AC-FRM-14, AC-FRM-15.
+- [ ] 4.2 Підписи ролей: ідентифікатори `requester` / `approver` / `admin` без змін, поруч — англійська назва з таблиці
+  ValiaBihun/2026-quitcode-dream-team#49 (відповідь PM на Q5 — ValiaBihun/2026-quitcode-dream-team#57); тести.
+  Done when: AC-LANG-08.
+
+Причину відхилення на сторінці заявки поруч зі статусом «Rejected» (відповідь PM на Q7 —
+ValiaBihun/2026-quitcode-dream-team#59, уточнений AC-APR-07) показує задача 3.1. AC-LANG-07 PM прибрала (Q5).
 
 ## Workflow follow-up
 
