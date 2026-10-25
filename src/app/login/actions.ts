@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 // Вхід email + пароль. Реєстрації в шаблоні немає: користувачів створює
 // scripts/create-demo-users.mjs (Admin API), бо вбудований SMTP Supabase
 // надсилає лише 2 листи/год і лише членам команди проєкту.
+// auth-ok: дія створює сесію — claims ще немає, вхід перевіряє signInWithPassword.
 export async function login(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -44,6 +45,7 @@ export async function login(formData: FormData) {
   redirect("/");
 }
 
+// auth-ok: дія лише завершує сесію і нічого не читає й не пише.
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();

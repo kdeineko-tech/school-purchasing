@@ -145,6 +145,20 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
 - Supabase MCP (`.mcp.json`, лише Claude Code; Cursor бере MCP з `.cursor/mcp.json`) — лише читання, один проєкт: перед запуском задай `SUPABASE_PROJECT_REF`.
 - `product/denylist.local*` — справжні назви клієнта (список PM надсилає особистим повідомленням; git файл не відстежує): не відкривай і не цитуй (найкраще зусилля, не гарантія: у Claude Code — deny `Read(product/denylist.local*)` у `.claude/settings.json`, у Cursor — `.cursorignore`, який за документацією Cursor не закриває термінал і MCP; чи deny діє на пошук і `cat`, звіряємо на репетиції).
 
+## Архітектурні правила
+
+Окремий workflow `.github/workflows/architecture.yml` (не `ci.yml`: на назвах його jobs тримається ruleset). Перед PR:
+`npm run check:boundary` і `npm run check:auth`.
+
+- **Секретний ключ лише на сервері** (`scripts/check-server-boundary.mjs`): `SUPABASE_SECRET_KEY` — лише в
+  `src/lib/supabase/admin.ts` з `import "server-only"`; admin-клієнт — лише з Server Action чи Route Handler після
+  перевірки ролі; жодного `NEXT_PUBLIC_*SECRET*`.
+- **Вхід і роль перевіряє сервер** (`scripts/check-auth-rules.mjs`, ADR `docs/decisions/0004-role-in-profiles-table.md`):
+  жодного `getSession()` і `middleware.ts` у `src/`; роль і права — лише з `public.profiles`, не з `user_metadata` /
+  `app_metadata`; кожна експортована функція файлу з `"use server"` викликає `getViewer()` / `getClaims()` /
+  `requireAdmin()` раніше за `createClient()`. Виняток — дії, що створюють чи завершують сесію: над функцією
+  `// auth-ok: <причина>`. Не обходь правило винятком без такої причини.
+
 ## Межі
 
 **Завжди:** запускай `npm run lint`, `npm run typecheck`, `npm test` перед комітом; AC ID у назвах тестів;
