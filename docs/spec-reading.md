@@ -52,6 +52,7 @@
 | Q5 | AC-LANG-07, AC-LANG-08, AC-LANG-05 (ValiaBihun/2026-quitcode-dream-team#49) | Як у WS7 перевіряти мовні AC про історію, автосхвалення в заявках, номери `PUR-…` і повернення на доопрацювання, якщо цього у WS7 немає? (скіл) | A: у WS7 — лише наявне; AC-LANG-07 і номери з AC-LANG-08 — у зрізі з історією й номерами; AC-LANG-05 — лише відхилення | ValiaBihun/2026-quitcode-dream-team#57 | очікуємо | у специфікації — текст PM як є, питання в Open questions; у матриці AC-LANG-07 — «відкладено (чекаю відповідь PM на Q5, ValiaBihun/2026-quitcode-dream-team#57)» |
 | Q6 | AC-FRM-10 (ValiaBihun/2026-quitcode-dream-team#47), AC-LANG-01 (ValiaBihun/2026-quitcode-dream-team#49) | Який текст на порожній сторінці «Мої заявки» — обома мовами для таблиці ValiaBihun/2026-quitcode-dream-team#49? (відкрите питання PM, підготував скіл) | A: PM дає текст обома мовами й додає в таблицю ValiaBihun/2026-quitcode-dream-team#49 | ValiaBihun/2026-quitcode-dream-team#58 | очікуємо | у специфікації — текст PM як є, питання в Open questions; до відповіді — порожній стан без вигаданого тексту |
 | Q7 | AC-APR-07 (ValiaBihun/2026-quitcode-dream-team#48) | Де видно збережену причину відхилення, якщо історії у WS7 немає? (скіл) | A: на сторінці заявки поруч зі статусом «Відхилено», для тих, хто бачить заявку | ValiaBihun/2026-quitcode-dream-team#59 | очікуємо | у специфікації — текст PM як є, питання в Open questions; робоче припущення — причина на сторінці заявки |
+| Q8 | AC-FRM-06, AC-FRM-07 (ValiaBihun/2026-quitcode-dream-team#47) | Які поля рядка закупівлі обов'язкові у WS7, якщо «Поза межами» переносить перевірки кількості й ціни, а AC-PUR-09 чернетки ValiaBihun/2026-quitcode-dream-team#3 вимагає всі чотири? (CodeRabbit, kdeineko-tech/school-purchasing#16) | B: усі чотири поля обов'язкові, межі значень — наступний зріз | ValiaBihun/2026-quitcode-dream-team#60 | очікуємо | у специфікації — текст PM як є, питання в Open questions; правила обов'язковості до відповіді немає |
 
 Не ставимо:
 
@@ -82,8 +83,8 @@
 - WS7: другий зріз залежить від дозволів першого (AC-ORG-17, 25, 26, 27 були відкладені; знайшла я) — дозволи реалізовано
   окремим PR kdeineko-tech/school-purchasing#15 перед формою закупівлі (AC-FRM-03, AC-FRM-04).
 - WS7: перевірок рядка закупівлі, яких немає в AC PM, не додаю — перевірки кількості й ціни наступного зрізу («Поза
-  межами» ValiaBihun/2026-quitcode-dream-team#47). Обов'язковість назви й мети PM не описує — не правило, а відкрите
-  питання в proposal.md (знайшов CodeRabbit у kdeineko-tech/school-purchasing#16).
+  межами» ValiaBihun/2026-quitcode-dream-team#47). Обов'язковість назви й мети PM не описує — не правило, а питання Q8
+  ValiaBihun/2026-quitcode-dream-team#60 (знайшов CodeRabbit у kdeineko-tech/school-purchasing#16).
 
 ## Що пропустив би без скіла / що скіл знайшов зайве
 
