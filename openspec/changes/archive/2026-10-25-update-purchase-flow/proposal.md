@@ -25,13 +25,16 @@ ValiaBihun/2026-quitcode-dream-team#61 та змінила вимоги. Зні�
 - MODIFIED AC-LANG-03: без випадку «власна заявка схвалювача» (ValiaBihun/2026-quitcode-dream-team#61).
 - MODIFIED AC-LANG-05: лише відхилення без причини, без повернення на доопрацювання (Q5 —
   ValiaBihun/2026-quitcode-dream-team#57).
-- MODIFIED AC-LANG-08 і RENAMED вимога «Ідентифікатори ролей і номери без змін» → «Ідентифікатори ролей без змін»: лише
-  ролі, без номерів `PUR-…` (Q5 — ValiaBihun/2026-quitcode-dream-team#57).
+- AC-LANG-08 — лише ролі, без номерів `PUR-…` (Q5 — ValiaBihun/2026-quitcode-dream-team#57): REMOVED вимога
+  «Ідентифікатори ролей і номери без змін» і ADDED вимога «Ідентифікатори ролей без змін» зі сценарієм «AC-LANG-08
+  Ролі» — ID той самий, текст за PM. OpenSpec не перейменовує сценарій у MODIFIED, тож замість MODIFIED + RENAMED —
+  REMOVED + ADDED.
 - REMOVED AC-LANG-07: мовні правила історії рішень — у «Поза межами» до зрізу з історією й номерами; ID не
   використовувати повторно (Q5 — ValiaBihun/2026-quitcode-dream-team#57).
 
-Назви сценаріїв AC-LANG-05 («Рішення без причини англійською») і AC-LANG-08 («Ролі й номери») лишаються колишніми:
-OpenSpec у MODIFIED не перейменовує сценарії; змінився їхній текст.
+Назва сценарію AC-LANG-05 («Рішення без причини англійською») лишається колишньою: відхилення — це рішення, а
+OpenSpec у MODIFIED не перейменовує сценарії; змінився текст. Purpose `english-interface` дельти не змінюють: після
+archive з нього прибрано «номери» (номери PM винесла в «Поза межами» ValiaBihun/2026-quitcode-dream-team#49).
 
 ## Capabilities
 
@@ -43,7 +46,7 @@ OpenSpec у MODIFIED не перейменовує сценарії; зміни�
 
 - `purchase-form`: AC-FRM-14, AC-FRM-15 (ADDED).
 - `approval-decisions`: AC-APR-07 (MODIFIED).
-- `english-interface`: AC-LANG-03, AC-LANG-05, AC-LANG-08 (MODIFIED), AC-LANG-07 (REMOVED).
+- `english-interface`: AC-LANG-03, AC-LANG-05 (MODIFIED), AC-LANG-08 (REMOVED + ADDED), AC-LANG-07 (REMOVED).
 
 ## Users & roles
 
