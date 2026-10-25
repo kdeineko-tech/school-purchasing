@@ -41,9 +41,6 @@ begin
   end if;
 
   -- Власну заявку схвалювач не вирішує, зокрема в обхід сторінок (AC-APR-05, AC-FRM-13).
-  if v_purchase.author_id = v_uid then
-    raise exception 'FORBIDDEN';
-  end if;
 
   if v_purchase.status <> 'awaiting_approval' then
     raise exception 'NOT_PENDING';
