@@ -34,10 +34,10 @@
 | AC | Що перевіряє | Код | Тест | Статус |
 |---|---|---|---|---|
 | AC-ORG-09 | Користувач без ролі admin на сторінці адміністратора | `src/lib/org/access.ts` (canOpenAdminPages), `src/app/admin/staff/page.tsx`, `src/app/admin/departments/page.tsx` | `tests/org/access.test.ts` | реалізовано |
-| AC-ORG-17 | Працівник із дозволом на «Витрату карткою» | — | — | відкладено (чекає реалізації) |
-| AC-ORG-26 | Працівник без дозволу на «Витрату карткою» | — | — | відкладено (чекає реалізації) |
-| AC-ORG-25 | Адміністратор без дозволу на «Витрату карткою» | — | — | відкладено (чекає реалізації) |
-| AC-ORG-27 | Працівник без дозволу «Самостійна закупівля» | — | — | відкладено (чекає реалізації) |
+| AC-ORG-17 | Працівник із дозволом на «Витрату карткою» | `src/lib/org/permissions.ts` (allowedRequestTypes), `src/app/admin/actions.ts` (setPermissions), `src/app/admin/staff/[id]/page.tsx`, `supabase/migrations/20261025160124_permissions.sql` | `tests/org/permissions.test.ts` | реалізовано |
+| AC-ORG-26 | Працівник без дозволу на «Витрату карткою» | `src/lib/org/permissions.ts` (allowedRequestTypes), `src/app/admin/staff/[id]/page.tsx` | `tests/org/permissions.test.ts` | реалізовано |
+| AC-ORG-25 | Адміністратор без дозволу на «Витрату карткою» | `src/lib/org/permissions.ts` (allowedRequestTypes), `src/app/admin/staff/[id]/page.tsx` | `tests/org/permissions.test.ts` | реалізовано |
+| AC-ORG-27 | Працівник без дозволу «Самостійна закупівля» | `src/lib/org/permissions.ts` (allowedPurchaseTypes), `src/app/admin/staff/[id]/page.tsx` | `tests/org/permissions.test.ts` | реалізовано |
 | AC-ORG-22 | Адміністратор без відділів обирає відділ | — | — | відкладено (чекає реалізації) |
 | AC-ORG-29 | Адміністратор-заявник одного відділу обирає інший | — | — | відкладено (чекає реалізації) |
 | AC-ORG-23 | Адміністратор без дозволу «Самостійна закупівля» | — | — | відкладено (чекає реалізації) |
