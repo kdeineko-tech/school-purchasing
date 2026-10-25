@@ -28,7 +28,15 @@ const purchase = (status = "awaiting_approval") => ({
 const line = { position: 1, name: "Paper A4", purpose: "Printing", quantity: 3, unit_price: 20 };
 
 // Підставний Supabase для сторінки закупівлі: visible — що повертає RLS (null — чужа закупівля не видна).
-function setPurchaseDb({ visible, approves = [] }: { visible: ReturnType<typeof purchase> | null; approves?: string[] }) {
+function setPurchaseDb({
+  visible,
+  approves = [],
+  departmentError = null,
+}: {
+  visible: ReturnType<typeof purchase> | null;
+  approves?: string[];
+  departmentError?: { message: string } | null;
+}) {
   const ok = <T>(data: T) => Promise.resolve({ data, error: null });
   const client = {
     from: vi.fn((table: string) => {
@@ -40,7 +48,14 @@ function setPurchaseDb({ visible, approves = [] }: { visible: ReturnType<typeof 
         case "department_members":
           return { select: () => ({ eq: () => ({ eq: () => ok(approves.map((d) => ({ department_id: d }))) }) }) };
         case "departments":
-          return { select: () => ({ eq: () => ({ maybeSingle: () => ok({ name: PRIMARY.name }) }) }) };
+          return {
+            select: () => ({
+              eq: () => ({
+                maybeSingle: () =>
+                  Promise.resolve(departmentError ? { data: null, error: departmentError } : { data: { name: PRIMARY.name }, error: null }),
+              }),
+            }),
+          };
         default:
           throw new Error(`unexpected table ${table}`);
       }
@@ -53,6 +68,8 @@ const props = (id: string) => ({ params: Promise.resolve({ id }), searchParams: 
 
 describe("сторінка закупівлі", () => {
   beforeEach(() => {
+    // Лише історія викликів: підставні значення (mockResolvedValue) кожен тест задає сам.
+    vi.clearAllMocks();
     vi.mocked(getViewer).mockResolvedValue(viewer(P1));
   });
 
@@ -125,6 +142,12 @@ describe("сторінка закупівлі", () => {
 
     expect(html).toContain("Not enough permissions");
     expect(createClient).not.toHaveBeenCalled();
+  });
+
+  it("помилка читання відділу не видається за «—»", async () => {
+    setPurchaseDb({ visible: purchase(), departmentError: { message: "connection reset" } });
+
+    await expect(PurchasePage(props(PURCHASE_ID))).rejects.toThrow("Failed to read department");
   });
 
   it("гість — сторінка входу", async () => {

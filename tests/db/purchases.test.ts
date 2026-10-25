@@ -96,7 +96,11 @@ describe("подання закупівлі в базі", () => {
       "select public.submit_purchase($1, 'self_purchase', $2::jsonb) as id",
       [HIGH, LINE],
     );
-    expect(id).toBeTruthy();
+    const [p] = await t.asService<{ author_id: string; department_id: string; purchase_type: string; status: string }>(
+      "select author_id, department_id, purchase_type, status from public.purchases where id = $1",
+      [id],
+    );
+    expect(p).toEqual({ author_id: admin, department_id: HIGH, purchase_type: "self_purchase", status: "awaiting_approval" });
   });
 
   it("працівник не змінює статус заявки напряму — permission denied, статус не змінився", async () => {

@@ -54,11 +54,13 @@ export default async function PurchasePage({ params }: PageProps<"/purchases/[id
     return <NoAccess viewer={viewer} />;
   }
 
-  const { data: department } = await supabase
+  const { data: department, error: departmentError } = await supabase
     .from("departments")
     .select("name")
     .eq("id", purchase.department_id)
     .maybeSingle();
+  // Помилку бази не видаємо за «немає відділу».
+  if (departmentError) throw new Error(`Failed to read department: ${departmentError.message}`);
 
   return (
     <PageShell viewer={viewer} title="Purchase" back={{ href: "/purchases", label: "My requests" }}>
@@ -77,7 +79,7 @@ export default async function PurchasePage({ params }: PageProps<"/purchases/[id
         </dl>
       </Card>
       <Card title="Lines">
-        <table className="w-full text-left text-sm" data-testid="purchase-lines">
+        <table aria-label="Lines" className="w-full text-left text-sm" data-testid="purchase-lines">
           <thead className="text-muted">
             <tr>
               <th className="py-2 font-medium">Item</th>
