@@ -7,11 +7,12 @@
 ## Контекст
 
 Стек шаблону зафіксовано в `AGENTS.md` («Next.js 16.4… не оновлювати без ADR»). `npm run build` на 16.4.0 падає з
-`SecurityFatalError`, а `npm audit` показує для `next >=16.0.0 <=16.4.0` три критичні вразливості:
+`SecurityFatalError`, а `npm audit` показує для `next >=16.0.0 <=16.4.0` три вразливості — дві критичні й одну
+високої серйозності (класифікація GitHub Advisory Database; `npm audit` показує для пакета лише найвищу, critical):
 
-- GHSA-2464-fhr4-w9xw — віддалене виконання коду без входу через Image Optimization API з SVG-файлами;
-- GHSA-p3m5-59mp-jv5r — відмова в обслуговуванні в App Router через Server Actions;
-- GHSA-673q-mjm6-r5xr — віддалене виконання коду без входу у функціях `use cache`, що повертають typed arrays.
+- GHSA-2464-fhr4-w9xw (critical) — віддалене виконання коду без входу через Image Optimization API з SVG-файлами;
+- GHSA-p3m5-59mp-jv5r (high) — відмова в обслуговуванні в App Router через Server Actions;
+- GHSA-673q-mjm6-r5xr (critical) — віддалене виконання коду без входу у функціях `use cache`, що повертають typed arrays.
 
 Застосунок використовує App Router і Server Actions (усі дії адміністратора, вхід), тож друга вразливість стосується
 нас напряму; `next/image` і `use cache` ми не використовуємо, але маршрут `/_next/image` у збірці є.
