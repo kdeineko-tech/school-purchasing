@@ -42,7 +42,7 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
   ]);
   // Помилку бази не видаємо за «профілю немає» чи «відділів немає».
   const readError = profileError ?? departmentsError ?? membershipsError;
-  if (readError) throw new Error(`Не вдалося прочитати профіль працівника: ${readError.message}`);
+  if (readError) throw new Error(`Failed to read employee profile: ${readError.message}`);
   if (!profile) notFound();
 
   const memberships = (rows ?? []).map((r) => ({

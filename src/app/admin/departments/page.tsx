@@ -32,7 +32,7 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
         .eq("profiles.is_active", true),
     ]);
   const readError = departmentsError ?? approversError;
-  if (readError) throw new Error(`Не вдалося прочитати відділи: ${readError.message}`);
+  if (readError) throw new Error(`Failed to read departments: ${readError.message}`);
 
   // AC-ORG-14: відділ без жодного активного схвалювача.
   const memberships = (rows ?? []).map((r) => ({

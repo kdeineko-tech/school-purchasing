@@ -29,7 +29,7 @@ export default async function ProfilePage() {
   ]);
   // Помилку бази не видаємо за «Немає».
   const readError = departmentsError ?? membersError ?? ownError;
-  if (readError || !own) throw new Error(`Не вдалося прочитати профіль: ${readError?.message ?? "немає даних"}`);
+  if (readError || !own) throw new Error(`Failed to read profile: ${readError?.message ?? "no data"}`);
   const memberships = (rows ?? []).map((r) => ({ profileId: r.profile_id, departmentId: r.department_id }));
   const mine = requesterDepartments(memberships, departments ?? [], viewer.id);
   // Власні дозволи — лише перегляд; змінює їх адміністратор (AC-ORG-17, AC-ORG-25 … AC-ORG-27).

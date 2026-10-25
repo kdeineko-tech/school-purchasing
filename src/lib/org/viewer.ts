@@ -27,7 +27,7 @@ export async function getViewer(): Promise<ViewerProfile | null> {
   // Помилку бази (наприклад, міграцію ще не застосовано) не видаємо за «не увійшов»:
   // інакше сторінка мовчки перекидає на /login і причину не видно.
   if (error) {
-    throw new Error(`Не вдалося прочитати профіль: ${error.message}`);
+    throw new Error(`Failed to read profile: ${error.message}`);
   }
   if (!profile) return null;
   // AC-ORG-12: деактивований працівник не працює з жодною сторінкою, навіть якщо proxy не зміг перевірити

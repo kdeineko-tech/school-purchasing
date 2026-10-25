@@ -19,7 +19,7 @@ export default async function StaffPage() {
     .from("profiles")
     .select("id, email, full_name, role, is_active")
     .order("email");
-  if (error) throw new Error(`Не вдалося прочитати працівників: ${error.message}`);
+  if (error) throw new Error(`Failed to read employees: ${error.message}`);
 
   return (
     <PageShell

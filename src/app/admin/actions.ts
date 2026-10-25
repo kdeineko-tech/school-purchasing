@@ -31,7 +31,7 @@ export async function createDepartment(formData: FormData) {
 
   const supabase = await createClient();
   const { data: existing, error: readError } = await supabase.from("departments").select("name");
-  if (readError) throw new Error(`Не вдалося прочитати відділи: ${readError.message}`);
+  if (readError) throw new Error(`Failed to read departments: ${readError.message}`);
 
   const check = validateNewDepartment(name, (existing ?? []).map((d) => d.name));
   if (!check.ok) {
@@ -43,7 +43,7 @@ export async function createDepartment(formData: FormData) {
   if (error?.code === UNIQUE_VIOLATION) {
     redirect(`/admin/departments?error=${encodeURIComponent(MESSAGES.departmentExists)}`);
   }
-  if (error) throw new Error(`Не вдалося створити відділ: ${error.message}`);
+  if (error) throw new Error(`Failed to create department: ${error.message}`);
 
   revalidatePath("/admin/departments");
   redirect("/admin/departments");
@@ -64,7 +64,7 @@ export async function addRequester(formData: FormData) {
   if (error?.code === FOREIGN_KEY_VIOLATION) redirect("/admin/staff");
   // Уже заявник цього відділу — нічого не змінюємо.
   if (error && error.code !== UNIQUE_VIOLATION) {
-    throw new Error(`Не вдалося додати заявника: ${error.message}`);
+    throw new Error(`Failed to add requester: ${error.message}`);
   }
 
   revalidatePath(`/admin/staff/${profileId}`);
@@ -101,7 +101,7 @@ export async function setApprover(formData: FormData) {
     .eq("profile_id", profileId)
     .eq("department_id", departmentId)
     .maybeSingle();
-  if (readError) throw new Error(`Не вдалося прочитати заявника: ${readError.message}`);
+  if (readError) throw new Error(`Failed to read requester: ${readError.message}`);
 
   const memberships = row ? [{ profileId: row.profile_id, departmentId: row.department_id, approves: row.approves }] : [];
   const change = setApproverRule(memberships, profileId, departmentId, approves);
@@ -113,7 +113,7 @@ export async function setApprover(formData: FormData) {
     .eq("profile_id", profileId)
     .eq("department_id", departmentId)
     .select("profile_id");
-  if (error) throw new Error(`Не вдалося змінити схвалювача: ${error.message}`);
+  if (error) throw new Error(`Failed to change approver: ${error.message}`);
   // Рядок заявника зник між читанням і записом — те саме правило AC-ORG-02.
   if (!updated || updated.length === 0) backToStaff(profileId, MESSAGES.addAsRequesterFirst);
 
@@ -138,7 +138,7 @@ export async function setAutoApprove(formData: FormData) {
     .eq("profile_id", profileId)
     .eq("department_id", departmentId)
     .maybeSingle();
-  if (readError) throw new Error(`Не вдалося прочитати заявника: ${readError.message}`);
+  if (readError) throw new Error(`Failed to read requester: ${readError.message}`);
 
   const memberships = row
     ? [{ profileId: row.profile_id, departmentId: row.department_id, autoApprove: row.auto_approve }]
@@ -152,7 +152,7 @@ export async function setAutoApprove(formData: FormData) {
     .eq("profile_id", profileId)
     .eq("department_id", departmentId)
     .select("profile_id");
-  if (error) throw new Error(`Не вдалося змінити автосхвалення: ${error.message}`);
+  if (error) throw new Error(`Failed to change auto-approval: ${error.message}`);
   // Рядок заявника зник між читанням і записом — те саме правило AC-ORG-33.
   if (!updated || updated.length === 0) backToStaff(profileId, MESSAGES.addAsRequesterFirst);
 
@@ -175,7 +175,7 @@ export async function setPermissions(formData: FormData) {
 
   const supabase = await createClient();
   const { error } = await supabase.from("profiles").update(permissions).eq("id", profileId);
-  if (error) throw new Error(`Не вдалося змінити дозволи: ${error.message}`);
+  if (error) throw new Error(`Failed to change permissions: ${error.message}`);
 
   backToStaff(profileId);
 }
@@ -190,13 +190,13 @@ export async function setActive(formData: FormData) {
 
   const supabase = await createClient();
   const { data: staff, error: readError } = await supabase.from("profiles").select("id, role, is_active");
-  if (readError) throw new Error(`Не вдалося прочитати працівників: ${readError.message}`);
+  if (readError) throw new Error(`Failed to read employees: ${readError.message}`);
   const state = (staff ?? []).map((p) => ({ id: p.id, role: p.role as AppRole, isActive: p.is_active }));
   if (!active && leavesNoActiveAdmin(state, profileId, active)) backToStaff(profileId, MESSAGES.lastAdmin);
 
   const { error } = await supabase.from("profiles").update({ is_active: active }).eq("id", profileId);
   if (error?.message.includes("LAST_ADMIN")) backToStaff(profileId, MESSAGES.lastAdmin);
-  if (error) throw new Error(`Не вдалося змінити активність: ${error.message}`);
+  if (error) throw new Error(`Failed to change active status: ${error.message}`);
 
   revalidatePath("/admin/staff");
   backToStaff(profileId);
@@ -213,7 +213,7 @@ export async function removeRequester(formData: FormData) {
     .delete()
     .eq("profile_id", profileId)
     .eq("department_id", departmentId);
-  if (error) throw new Error(`Не вдалося прибрати заявника: ${error.message}`);
+  if (error) throw new Error(`Failed to remove requester: ${error.message}`);
 
   backToStaff(profileId);
 }
