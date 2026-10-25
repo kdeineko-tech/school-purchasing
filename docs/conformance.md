@@ -40,7 +40,7 @@
 | AC-ORG-27 | Працівник без дозволу «Самостійна закупівля» | `src/lib/org/permissions.ts` (allowedPurchaseTypes), `src/app/admin/staff/[id]/page.tsx` | `tests/org/permissions.test.ts` | реалізовано |
 | AC-ORG-22 | Адміністратор без відділів обирає відділ | `src/lib/purchases/form.ts` (formDepartments), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts` | реалізовано |
 | AC-ORG-29 | Адміністратор-заявник одного відділу обирає інший | `src/lib/purchases/form.ts` (formDepartments), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts` | реалізовано |
-| AC-ORG-23 | Адміністратор без дозволу «Самостійна закупівля» | `src/lib/purchases/form.ts` (formPurchaseTypes), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts` | реалізовано |
+| AC-ORG-23 | Адміністратор без дозволу «Самостійна закупівля» | `src/lib/purchases/form.ts` (formPurchaseTypes), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
 | AC-ORG-34 | Дубль назви відділу в іншому регістрі | `src/lib/org/departments.ts` (validateNewDepartment), `src/app/admin/actions.ts` (createDepartment), `supabase/migrations/20261022000503_departments.sql` | `tests/org/departments.test.ts` | реалізовано |
 | AC-ORG-01 | Працівник без відділів стає заявником відділу | `src/lib/org/membership.ts` (addRequester, requesterDepartments), `src/app/admin/actions.ts` (addRequester), `src/app/admin/staff/[id]/page.tsx` | `tests/org/departments.test.ts` | реалізовано |
 | AC-ORG-02 | Призначення схвалювачем не заявника | `src/lib/org/membership.ts` (setApprover), `src/app/admin/actions.ts` (setApprover) | `tests/org/approvers.test.ts` | реалізовано |
@@ -65,18 +65,18 @@
 | AC-ORG-28 | Вибір особи «від імені» | — | — | відкладено (чекає реалізації) |
 | AC-ORG-30 | Повторна активація схвалювача | — | — | відкладено (чекає реалізації) |
 | AC-FRM-01 | Лише відділи, де працівник заявник | `src/lib/purchases/form.ts` (formDepartments), `src/app/purchases/new/page.tsx` | `tests/purchases/form.test.ts`, `tests/purchases/pages.test.ts` | реалізовано |
-| AC-FRM-02 | Подання в чужий відділ напряму | `src/lib/purchases/form.ts` (validateSubmission), `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts` | реалізовано |
+| AC-FRM-02 | Подання в чужий відділ напряму | `src/lib/purchases/form.ts` (validateSubmission), `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
 | AC-FRM-03 | Без дозволу «Самостійна закупівля» у формі | `src/lib/purchases/form.ts` (formPurchaseTypes), `src/app/purchases/new/page.tsx` | `tests/purchases/form.test.ts`, `tests/purchases/pages.test.ts` | реалізовано |
-| AC-FRM-04 | Подання «Самостійної закупівлі» без дозволу напряму | `src/lib/purchases/form.ts` (validateSubmission), `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts` | реалізовано |
+| AC-FRM-04 | Подання «Самостійної закупівлі» без дозволу напряму | `src/lib/purchases/form.ts` (validateSubmission), `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
 | AC-FRM-05 | Форма для працівника без відділів | `src/app/purchases/new/page.tsx`, `src/lib/org/messages.ts` (noDepartments) | `tests/purchases/form.test.ts`, `tests/purchases/pages.test.ts` | реалізовано |
-| AC-FRM-06 | Подання без рядків | `src/lib/purchases/form.ts` (validateSubmission), `src/app/purchases/new/purchase-form.tsx`, `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts` | реалізовано |
-| AC-FRM-07 | Подання закупівлі з одним рядком | `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts`, `tests/purchases/pages.test.ts` | реалізовано |
+| AC-FRM-06 | Подання без рядків | `src/lib/purchases/form.ts` (validateSubmission), `src/app/purchases/new/purchase-form.tsx`, `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
+| AC-FRM-07 | Подання закупівлі з одним рядком | `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts`, `tests/purchases/pages.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
 | AC-FRM-12 | Відділ без активного схвалювача | `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/submit.test.ts` | реалізовано |
 | AC-FRM-13 | Єдиний схвалювач — автор | — | — | відкладено (чекає реалізації) |
 | AC-FRM-11 | Перехід на «Мої заявки» | `src/app/purchases/actions.ts` (submitPurchase), `src/app/purchases/page.tsx` | `tests/purchases/submit.test.ts`, `tests/purchases/pages.test.ts` | реалізовано |
-| AC-FRM-10 | Власна закупівля в «Мої заявки» | `src/app/purchases/page.tsx`, `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) (RLS purchases_select_visible) | `tests/purchases/pages.test.ts` | реалізовано |
-| AC-FRM-08 | Колега відкриває чужу закупівлю | — | — | відкладено (чекає реалізації) |
-| AC-FRM-09 | Гість відкриває форму | `src/app/purchases/new/page.tsx`, `src/app/purchases/page.tsx` | `tests/purchases/pages.test.ts` | реалізовано |
+| AC-FRM-10 | Власна закупівля в «Мої заявки» | `src/app/purchases/page.tsx`, `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) (RLS purchases_select_visible) | `tests/purchases/pages.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
+| AC-FRM-08 | Колега відкриває чужу закупівлю | `src/app/purchases/[id]/page.tsx`, `src/lib/purchases/form.ts` (canSeePurchase), `supabase/migrations/20261025185729_purchases.sql` (RLS purchases_select_visible) | `tests/purchases/purchase-page.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
+| AC-FRM-09 | Гість відкриває форму | `src/app/purchases/new/page.tsx`, `src/app/purchases/page.tsx` | `tests/purchases/pages.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
 | AC-FRM-14 | «Мої заявки» без заявок | — | — | відкладено (чекає реалізації) |
 | AC-FRM-15 | Рядок лише з назвою | — | — | відкладено (чекає реалізації) |
 | AC-APR-01 | Лише заявки свого відділу | — | — | відкладено (чекає реалізації) |
@@ -91,5 +91,5 @@
 | AC-LANG-03 | Відмова без права англійською | `src/lib/org/messages.ts` (forbidden), `src/app/admin/no-access.tsx` | `tests/org/english.test.ts` | реалізовано |
 | AC-LANG-04 | Заявка без рядків англійською | `src/lib/org/messages.ts` (noLines), `src/app/purchases/actions.ts` (submitPurchase) | `tests/purchases/submit.test.ts` | реалізовано |
 | AC-LANG-05 | Рішення без причини англійською | — | — | відкладено (чекає реалізації) |
-| AC-LANG-06 | Підпис статусу | — | — | відкладено (чекає реалізації) |
+| AC-LANG-06 | Підпис статусу | `src/app/purchases/status-badge.tsx`, `src/lib/purchases/form.ts` (STATUS_LABELS) | `tests/purchases/purchase-page.test.ts` | реалізовано |
 | AC-LANG-08 | Ролі | — | — | відкладено (чекає реалізації) |

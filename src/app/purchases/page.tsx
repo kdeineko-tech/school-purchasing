@@ -1,24 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
-import { Badge, Card, Notice } from "@/components/ui";
+import { Card, Notice } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
-import { PURCHASE_TYPE_LABELS, STATUS_LABELS, type PurchaseStatus, type PurchaseTypeId } from "@/lib/purchases/form";
+import { formatSubmittedAt, PURCHASE_TYPE_LABELS, type PurchaseTypeId } from "@/lib/purchases/form";
 import { createClient } from "@/lib/supabase/server";
-
-// Дати й час — за часом America/New_York («Припущення» вимоги ValiaBihun/2026-quitcode-dream-team#47).
-const SUBMITTED_AT = new Intl.DateTimeFormat("sv-SE", {
-  timeZone: "America/New_York",
-  dateStyle: "short",
-  timeStyle: "short",
-});
-
-const STATUS_TONE: Record<PurchaseStatus, "neutral" | "accent" | "danger"> = {
-  awaiting_approval: "neutral",
-  approved: "accent",
-  rejected: "danger",
-};
+import { StatusBadge } from "./status-badge";
 
 // «Мої заявки»: лише власні заявки зі статусом текстом (AC-FRM-10, AC-LANG-06); після подання —
 // «Purchase submitted» (AC-FRM-11). Порожній список — без окремого тексту до відповіді PM на Q6
@@ -56,17 +44,20 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/purch
       <Card>
         <ul className="flex flex-col divide-y divide-border" data-testid="my-requests">
           {(purchases ?? []).map((p) => (
-            <li key={p.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
-              <div className="flex flex-col">
-                <span className="font-medium">{departmentName.get(p.department_id) ?? "—"}</span>
-                <span className="text-muted">
-                  {PURCHASE_TYPE_LABELS[p.purchase_type as PurchaseTypeId] ?? p.purchase_type} ·{" "}
-                  {SUBMITTED_AT.format(new Date(p.created_at))}
-                </span>
-              </div>
-              <Badge tone={STATUS_TONE[p.status as PurchaseStatus] ?? "neutral"}>
-                {STATUS_LABELS[p.status as PurchaseStatus] ?? p.status}
-              </Badge>
+            <li key={p.id}>
+              <Link
+                href={`/purchases/${p.id}`}
+                className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm hover:text-accent"
+              >
+                <div className="flex flex-col">
+                  <span className="font-medium">{departmentName.get(p.department_id) ?? "—"}</span>
+                  <span className="text-muted">
+                    {PURCHASE_TYPE_LABELS[p.purchase_type as PurchaseTypeId] ?? p.purchase_type} ·{" "}
+                    {formatSubmittedAt(p.created_at)}
+                  </span>
+                </div>
+                <StatusBadge status={p.status} />
+              </Link>
             </li>
           ))}
         </ul>
