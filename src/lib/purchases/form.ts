@@ -22,6 +22,17 @@ export const STATUS_LABELS: Record<PurchaseStatus, string> = {
   rejected: "Rejected",
 };
 
+// Дати й час — за часом America/New_York («Припущення» вимоги ValiaBihun/2026-quitcode-dream-team#47).
+const SUBMITTED_AT = new Intl.DateTimeFormat("sv-SE", {
+  timeZone: "America/New_York",
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
+export function formatSubmittedAt(isoTimestamp: string): string {
+  return SUBMITTED_AT.format(new Date(isoTimestamp));
+}
+
 export type PurchaseLineInput = {
   name: string;
   purpose: string;
@@ -90,4 +101,18 @@ export function parseLines(raw: unknown): PurchaseLineInput[] {
 // Формат p_lines для rpc('submit_purchase').
 export function linesForDatabase(lines: readonly PurchaseLineInput[]) {
   return lines.map((l) => ({ name: l.name, purpose: l.purpose, quantity: l.quantity, unit_price: l.unitPrice }));
+}
+
+// Хто бачить закупівлю: автор, схвалювач її відділу, адміністратор (матриця прав requirements/product.md,
+// «Бачити заявки»; AC-FRM-08). Те саме правило в базі — політика purchases_select_visible.
+export function canSeePurchase(
+  viewer: { id: string; role: AppRole },
+  purchase: { authorId: string; departmentId: string },
+  approvedDepartmentIds: readonly string[],
+): boolean {
+  return (
+    viewer.role === "admin" ||
+    purchase.authorId === viewer.id ||
+    approvedDepartmentIds.includes(purchase.departmentId)
+  );
 }
