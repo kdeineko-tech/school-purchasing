@@ -147,29 +147,6 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
         )}
       </Card>
 
-      {others.length > 0 && (
-        <Card title="Another department">
-          {/* AC-ORG-02, AC-ORG-33: у відділі, де працівник не заявник, — відмова з повідомленням PM. */}
-          <form action={setApprover} className="flex flex-col gap-2 sm:flex-row">
-            <input type="hidden" name="profileId" value={profile.id} />
-            <input type="hidden" name="approves" value="true" />
-            <input type="hidden" name="autoApprove" value="true" />
-            <Select name="departmentId" required aria-label="Another department">
-              {others.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </Select>
-            <Button type="submit" variant="secondary" className="shrink-0">
-              Make approver
-            </Button>
-            <Button type="submit" formAction={setAutoApprove} variant="secondary" className="shrink-0">
-              Turn on auto-approval
-            </Button>
-          </form>
-        </Card>
-      )}
       <Card title="Permissions">
         <dl className="mb-4 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
           <dt className="text-muted">Allowed request types</dt>
