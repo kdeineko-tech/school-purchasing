@@ -159,6 +159,27 @@ export async function setAutoApprove(formData: FormData) {
   backToStaff(profileId);
 }
 
+// AC-ORG-17, AC-ORG-26, AC-ORG-27: дозволи на типи заявок і «Самостійну закупівлю» видає й забирає адміністратор.
+// Позначений прапорець — дозвіл є, знятий — дозволу немає (форма надсилає лише позначені).
+export async function setPermissions(formData: FormData) {
+  await requireAdmin();
+  const profileId = String(formData.get("profileId") ?? "");
+  if (!UUID.test(profileId)) redirect("/admin/staff");
+
+  const permissions = {
+    can_card_expense: formData.get("can_card_expense") === "on",
+    can_check_request: formData.get("can_check_request") === "on",
+    can_vendor_invoice: formData.get("can_vendor_invoice") === "on",
+    can_self_purchase: formData.get("can_self_purchase") === "on",
+  };
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("profiles").update(permissions).eq("id", profileId);
+  if (error) throw new Error(`Не вдалося змінити дозволи: ${error.message}`);
+
+  backToStaff(profileId);
+}
+
 export async function setActive(formData: FormData) {
   await requireAdmin();
   const profileId = String(formData.get("profileId") ?? "");

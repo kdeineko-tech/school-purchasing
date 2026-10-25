@@ -1,12 +1,13 @@
 import { notFound, redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
 import { Alert, Badge, Button, Card, EmptyState, RoleBadge, Select } from "@/components/ui";
-import { canOpenAdminPages } from "@/lib/org/access";
+import { canOpenAdminPages, type AppRole } from "@/lib/org/access";
 import { requesterDepartments } from "@/lib/org/membership";
+import { allowedPurchaseTypes, allowedRequestTypes, permissionsFromRow } from "@/lib/org/permissions";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
-import { addRequester, removeRequester, setActive, setApprover, setAutoApprove } from "../../actions";
+import { addRequester, removeRequester, setActive, setApprover, setAutoApprove, setPermissions } from "../../actions";
 import { NoAccess } from "../../no-access";
 
 // Профіль працівника для адміністратора (AC-ORG-09): відділи, де він подає заявки (AC-ORG-01),
@@ -29,7 +30,13 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
     { data: departments, error: departmentsError },
     { data: rows, error: membershipsError },
   ] = await Promise.all([
-    supabase.from("profiles").select("id, email, full_name, role, is_active").eq("id", id).maybeSingle(),
+    supabase
+      .from("profiles")
+      .select(
+        "id, email, full_name, role, is_active, can_card_expense, can_check_request, can_vendor_invoice, can_self_purchase",
+      )
+      .eq("id", id)
+      .maybeSingle(),
     supabase.from("departments").select("id, name").order("name"),
     supabase.from("department_members").select("profile_id, department_id, approves, auto_approve").eq("profile_id", id),
   ]);
@@ -46,6 +53,12 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
   }));
   const mine = requesterDepartments(memberships, departments ?? [], id);
   const others = (departments ?? []).filter((d) => !mine.some((m) => m.id === d.id));
+  // AC-ORG-17, AC-ORG-25 … AC-ORG-27: дозволені типи в профілі працівника.
+  const permissions = permissionsFromRow(profile);
+  const holder = { ...permissions, role: profile.role as AppRole };
+  const requestTypes = allowedRequestTypes(holder);
+  const purchaseTypes = allowedPurchaseTypes(holder);
+
   const approves = (departmentId: string) => memberships.some((m) => m.departmentId === departmentId && m.approves);
   const autoApproves = (departmentId: string) =>
     memberships.some((m) => m.departmentId === departmentId && m.autoApprove);
@@ -157,6 +170,44 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
           </form>
         </Card>
       )}
+      <Card title="Дозволи">
+        <dl className="mb-4 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
+          <dt className="text-muted">Дозволені типи заявок</dt>
+          <dd data-testid="allowed-request-types" className="flex flex-wrap gap-2">
+            {requestTypes.length > 0 ? requestTypes.map((t) => <Badge key={t}>{t}</Badge>) : "—"}
+          </dd>
+          <dt className="text-muted">Дозволені типи закупівлі</dt>
+          <dd data-testid="allowed-purchase-types" className="flex flex-wrap gap-2">
+            {purchaseTypes.map((t) => (
+              <Badge key={t}>{t}</Badge>
+            ))}
+          </dd>
+        </dl>
+        {profile.role !== "admin" && (
+          <form action={setPermissions} className="flex flex-col gap-2 text-sm">
+            <input type="hidden" name="profileId" value={profile.id} />
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="can_card_expense" defaultChecked={permissions.canCardExpense} />
+              Витрата карткою
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="can_check_request" defaultChecked={permissions.canCheckRequest} />
+              Запит на чек
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="can_vendor_invoice" defaultChecked={permissions.canVendorInvoice} />
+              Рахунок постачальника
+            </label>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" name="can_self_purchase" defaultChecked={permissions.canSelfPurchase} />
+              Самостійна закупівля
+            </label>
+            <Button type="submit" variant="secondary" className="mt-2 self-start">
+              Зберегти дозволи
+            </Button>
+          </form>
+        )}
+      </Card>
     </PageShell>
   );
 }
