@@ -35,14 +35,20 @@ function form(fields: Record<string, string>) {
 
 // Підставна база для department_members: читання одного рядка й update.
 function fakeMembersDb(row: { profile_id: string; department_id: string; auto_approve: boolean } | null) {
-  const update = vi.fn(() => ({
-    eq: () => ({ eq: () => ({ select: () => Promise.resolve({ data: row ? [row] : [], error: null }) }) }),
+  // Фільтри UPDATE записуємо, щоб перевірити: змінюється рядок саме цього працівника й цього відділу.
+  type Rows = { select: () => Promise<{ data: unknown[]; error: null }> };
+  const updateEqDepartment = vi.fn<(column: string, value: string) => Rows>(() => ({
+    select: () => Promise.resolve({ data: row ? [row] : [], error: null }),
   }));
+  const updateEqProfile = vi.fn<(column: string, value: string) => { eq: typeof updateEqDepartment }>(() => ({
+    eq: updateEqDepartment,
+  }));
+  const update = vi.fn(() => ({ eq: updateEqProfile }));
   const select = vi.fn(() => ({
     eq: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: row, error: null }) }) }),
   }));
   vi.mocked(createClient).mockResolvedValue({ from: vi.fn(() => ({ select, update })) } as never);
-  return { update };
+  return { update, updateEqProfile, updateEqDepartment };
 }
 
 describe("автосхвалення", () => {
@@ -64,12 +70,18 @@ describe("автосхвалення", () => {
   });
 
   it("AC-ORG-06: дія setAutoApprove записує автосхвалення лише в рядок обраного відділу", async () => {
-    const { update } = fakeMembersDb({ profile_id: P1, department_id: OFFICE, auto_approve: false });
+    const { update, updateEqProfile, updateEqDepartment } = fakeMembersDb({
+      profile_id: P1,
+      department_id: OFFICE,
+      auto_approve: false,
+    });
 
     await expect(
       setAutoApproveAction(form({ profileId: P1, departmentId: OFFICE, autoApprove: "true" })),
     ).rejects.toThrow(`REDIRECT /admin/staff/${P1}`);
     expect(update).toHaveBeenCalledWith({ auto_approve: true });
+    expect(updateEqProfile).toHaveBeenCalledWith("profile_id", P1);
+    expect(updateEqDepartment).toHaveBeenCalledWith("department_id", OFFICE);
   });
 
   it("AC-ORG-15: заявник «Початкова школа» з автосхваленням після зняття як заявника втрачає автосхвалення відділу", () => {
