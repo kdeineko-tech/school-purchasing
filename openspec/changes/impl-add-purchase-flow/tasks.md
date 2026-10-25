@@ -1,6 +1,7 @@
 # Tasks
 
-Вертикальні задачі: кожна — міграція/RLS + доменна функція + server action/сторінка + тест з AC ID. Одна задача —
+Вертикальні задачі: кожна — міграція/RLS + доменна функція + server action/сторінка + тест з AC ID; окремим пунктом —
+тести на відмовні AC (тести бази на PGlite) і мутаційна перевірка. Одна задача —
 одна гілка `task/<коротко>` і один PR «Реалізація». Перевірка — `npm test`, `npm run ac:coverage`, після merge —
 зелений `db-deploy`. Перед кожною міграцією — перевірити, що інша відкрита гілка не змінює схему.
 
@@ -23,10 +24,13 @@
 
 ## 3. Рішення схвалювача
 
-- [ ] 3.1 Міграція `purchase_decisions`: `decide_purchase` (`for update`; `FORBIDDEN`, `NOT_PENDING`,
-  `REASON_REQUIRED`); `canDecide`, `decisionList`, `validateDecision`; сторінка `/approvals` (`requester` — відмова;
+- [ ] 3.1 Міграція `…_purchase_decisions.sql` — лише функції `decide_purchase` (`private` + обгортка `public`) для
+  наявної таблиці `purchases` (колонки рішення вже є; нової таблиці немає): `for update`; `FORBIDDEN`, `NOT_PENDING`,
+  `REASON_REQUIRED`; `canDecide`, `decisionList`, `validateDecision`; сторінка `/approvals` (`requester` — відмова;
   порожньо — «No requests awaiting your decision»); кнопки «Approve» / «Reject» з причиною на `/purchases/[id]`;
   action `decidePurchase`; посилання «Approvals» для `approver` і `admin`; тести.
+  Тести відмов і мутації: тести бази на PGlite для AC-APR-03, AC-APR-04, AC-APR-05, AC-APR-06 (відмова й незмінний
+  статус); мутаційна перевірка на кожен із них — таблиця в описі PR і ≥2 червоні прогони CI мутацією нової міграції.
   Done when: AC-APR-01, AC-APR-02, AC-APR-03, AC-APR-04, AC-APR-05, AC-APR-06, AC-APR-07, AC-FRM-13, AC-LANG-05.
 
 ## 4. Після відповідей PM (зміна специфікації `update-purchase-flow`)
@@ -36,9 +40,12 @@
   кількості чи ціни кодом `LINE_FIELDS` (`create or replace function`); `validateSubmission` з тим самим правилом;
   «Fill in all line fields» і «You have not submitted any requests yet» у `MESSAGES`; порожній стан на `/purchases`;
   тести.
+  Тести відмов і мутації: тест бази на PGlite для AC-FRM-15 — табличний, чотири випадки (рядок без назви, без мети,
+  без кількості, без ціни): у кожному `LINE_FIELDS` і жодної нової заявки; мутаційна перевірка — таблиця в описі PR.
   Done when: AC-FRM-14, AC-FRM-15.
 - [ ] 4.2 Підписи ролей: ідентифікатори `requester` / `approver` / `admin` без змін, поруч — англійська назва з таблиці
   ValiaBihun/2026-quitcode-dream-team#49 (відповідь PM на Q5 — ValiaBihun/2026-quitcode-dream-team#57); тести.
+  Тести відмов і мутації: відмовних AC у задачі немає (лише підписи).
   Done when: AC-LANG-08.
 
 Причину відхилення на сторінці заявки поруч зі статусом «Rejected» (відповідь PM на Q7 —
