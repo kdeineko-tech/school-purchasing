@@ -10,6 +10,8 @@ export const MESSAGES = {
   noDepartments: "You have not been added to any department. Contact your administrator.", // AC-FRM-05
   noLines: "Add at least one line", // AC-FRM-06, AC-LANG-04
   purchaseSubmitted: "Purchase submitted", // AC-FRM-11
+  provideReason: "Provide a reason", // AC-APR-06, AC-LANG-05
+  noDecisionRequests: "No requests awaiting your decision", // список для рішення без заявок
   // Не з тексту PM: кількість чи ціна рядка, які база не приводить до числа (код INVALID_LINE); межі значень —
   // наступний зріз.
   invalidLine: "Check the quantity and price in each line",
