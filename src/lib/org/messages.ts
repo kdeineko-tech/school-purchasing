@@ -1,11 +1,13 @@
-// Тексти повідомлень дослівно з вимог PM (requirements/): тести й сторінки беруть їх лише звідси.
+// Тексти повідомлень дослівно з вимог PM (requirements/): англійською за таблицею вимоги
+// ValiaBihun/2026-quitcode-dream-team#49 (AC-LANG-01, AC-LANG-03). Тести й сторінки беруть їх лише звідси.
 export const MESSAGES = {
-  forbidden: "Недостатньо прав", // AC-ORG-09
-  departmentExists: "Відділ з такою назвою вже є", // AC-ORG-34
-  addAsRequesterFirst: "Спершу додайте працівника до відділу як заявника", // AC-ORG-02, AC-ORG-33
-  noApprover: "Немає схвалювача", // AC-ORG-14
-  deactivated: "Обліковий запис деактивовано. Зверніться до адміністратора", // AC-ORG-12
-  lastAdmin: "Має лишитись хоча б один активний адміністратор", // AC-ORG-10, AC-ORG-18
-  // Не з тексту PM: порожня чи задовга назва (власне припущення, docs/spec-reading.md; межа 100 — «Припущення» PM).
-  departmentNameInvalid: "Вкажіть назву відділу до 100 символів",
+  forbidden: "Not enough permissions", // AC-ORG-09
+  departmentExists: "A department with this name already exists", // AC-ORG-34
+  addAsRequesterFirst: "Add the employee to the department as a requester first", // AC-ORG-02, AC-ORG-33
+  noApprover: "No approver", // AC-ORG-14
+  deactivated: "Account deactivated. Contact your administrator", // AC-ORG-12
+  lastAdmin: "At least one active administrator must remain", // AC-ORG-10, AC-ORG-18
+  // Не з тексту PM: порожня чи задовга назва (власне припущення, docs/spec-reading.md; межа 100 — «Припущення» PM);
+  // англійською в термінах таблиці #49.
+  departmentNameInvalid: "Enter a department name of up to 100 characters",
 } as const;

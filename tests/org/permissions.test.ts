@@ -29,31 +29,31 @@ function form(fields: Record<string, string>) {
 }
 
 describe("дозволені типи заявок і закупівлі", () => {
-  it("AC-ORG-17: працівнику без ролі admin з дозволом на «Витрату карткою» серед дозволених типів заявок є «Витрата карткою»", () => {
-    expect(allowedRequestTypes(employee({ canCardExpense: true }))).toContain("Витрата карткою");
+  it("AC-ORG-17: працівнику без ролі admin з дозволом на «Витрату карткою» серед дозволених типів заявок є «Card expense»", () => {
+    expect(allowedRequestTypes(employee({ canCardExpense: true }))).toContain("Card expense");
   });
 
   it("AC-ORG-26: у працівника без ролі admin і без дозволу на «Витрату карткою» серед дозволених типів заявок її немає", () => {
-    expect(allowedRequestTypes(employee())).not.toContain("Витрата карткою");
-    expect(allowedRequestTypes(employee({ canCheckRequest: true }))).toEqual(["Запит на чек"]);
+    expect(allowedRequestTypes(employee())).not.toContain("Card expense");
+    expect(allowedRequestTypes(employee({ canCheckRequest: true }))).toEqual(["Check request"]);
   });
 
-  it("AC-ORG-25: в адміністратора без дозволу на «Витрату карткою» серед дозволених типів заявок є «Витрата карткою»", () => {
+  it("AC-ORG-25: в адміністратора без дозволу на «Витрату карткою» серед дозволених типів заявок є «Card expense»", () => {
     expect(allowedRequestTypes({ ...none, role: "admin" })).toEqual([
-      "Витрата карткою",
-      "Запит на чек",
-      "Рахунок постачальника",
+      "Card expense",
+      "Check request",
+      "Vendor invoice",
     ]);
   });
 
-  it("AC-ORG-27: у працівника без ролі admin і без дозволу «Самостійна закупівля» серед типів закупівлі лише «Відділ закупівель»", () => {
-    expect(allowedPurchaseTypes(employee())).toEqual(["Відділ закупівель"]);
+  it("AC-ORG-27: у працівника без ролі admin і без дозволу «Self-purchase» серед типів закупівлі лише «Purchasing department»", () => {
+    expect(allowedPurchaseTypes(employee())).toEqual(["Purchasing department"]);
   });
 
-  it("з дозволом «Самостійна закупівля» працівнику доступні обидва типи закупівлі", () => {
+  it("з дозволом «Self-purchase» працівнику доступні обидва типи закупівлі", () => {
     expect(allowedPurchaseTypes(employee({ canSelfPurchase: true }))).toEqual([
-      "Відділ закупівель",
-      "Самостійна закупівля",
+      "Purchasing department",
+      "Self-purchase",
     ]);
   });
 });

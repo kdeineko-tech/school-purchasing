@@ -11,12 +11,12 @@ export default async function Home() {
   if (!viewer) redirect("/login");
 
   return (
-    <PageShell viewer={viewer} title={`Вітаємо, ${viewer.fullName ?? viewer.email ?? ""}`}>
+    <PageShell viewer={viewer} title={`Welcome, ${viewer.fullName ?? viewer.email ?? ""}`}>
       <Card>
         <dl className="grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-3 text-sm">
           <dt className="text-muted">Email</dt>
           <dd data-testid="user-email">{viewer.email ?? "—"}</dd>
-          <dt className="text-muted">Роль</dt>
+          <dt className="text-muted">Role</dt>
           <dd data-testid="user-role">
             <RoleBadge role={viewer.role} />
           </dd>
@@ -24,9 +24,9 @@ export default async function Home() {
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <NavCard href="/profile" title="Мій профіль" text="Відділи, де ви подаєте заявки" />
+        <NavCard href="/profile" title="My profile" text="Departments where you submit requests" />
         {canOpenAdminPages(viewer) && (
-          <NavCard href="/admin" title="Налаштування" text="Працівники й відділи школи" />
+          <NavCard href="/admin" title="Settings" text="School employees and departments" />
         )}
       </div>
     </PageShell>

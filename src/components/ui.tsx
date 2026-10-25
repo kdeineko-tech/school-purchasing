@@ -3,9 +3,9 @@ import type { ComponentProps, ReactNode } from "react";
 import type { AppRole } from "@/lib/org/access";
 
 const ROLE_LABELS: Record<AppRole, string> = {
-  requester: "Заявник",
-  approver: "Схвалювач",
-  admin: "Адміністратор",
+  requester: "Requester",
+  approver: "Approver",
+  admin: "Administrator",
 };
 
 export function roleLabel(role: string): string {

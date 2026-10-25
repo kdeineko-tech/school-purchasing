@@ -25,17 +25,17 @@ export function PageShell({
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span className="grid size-7 place-items-center rounded-lg bg-accent text-sm text-accent-foreground">З</span>
-            Закупівлі школи
+            <span className="grid size-7 place-items-center rounded-lg bg-accent text-sm text-accent-foreground">S</span>
+            School Purchasing
           </Link>
           {viewer && (
             <nav className="flex items-center gap-4 text-sm text-muted">
               <Link href="/profile" className="hover:text-foreground">
-                Мій профіль
+                My profile
               </Link>
               {canOpenAdminPages(viewer) && (
                 <Link href="/admin" className="hover:text-foreground">
-                  Налаштування
+                  Settings
                 </Link>
               )}
             </nav>
@@ -46,7 +46,7 @@ export function PageShell({
               <RoleBadge role={viewer.role} />
               <form action={signOut}>
                 <button type="submit" className="text-muted hover:text-foreground">
-                  Вийти
+                  Sign out
                 </button>
               </form>
             </div>

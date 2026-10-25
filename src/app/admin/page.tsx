@@ -12,10 +12,10 @@ export default async function AdminHome() {
   if (!canOpenAdminPages(viewer)) return <NoAccess viewer={viewer} />;
 
   return (
-    <PageShell viewer={viewer} title="Налаштування" description="Працівники, відділи й ролі школи">
+    <PageShell viewer={viewer} title="Settings" description="School employees, departments and roles">
       <div className="grid gap-4 sm:grid-cols-2">
-        <SettingsCard href="/admin/staff" title="Працівники" text="Ролі, відділи й заявники" />
-        <SettingsCard href="/admin/departments" title="Відділи" text="Створення відділів школи" />
+        <SettingsCard href="/admin/staff" title="Employees" text="Roles, departments and requesters" />
+        <SettingsCard href="/admin/departments" title="Departments" text="Create school departments" />
       </div>
     </PageShell>
   );
