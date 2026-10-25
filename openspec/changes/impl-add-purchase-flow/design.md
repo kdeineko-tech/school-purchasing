@@ -69,15 +69,19 @@
 
 Статус і тип — стабільні ідентифікатори, підписи — лише в інтерфейсі (AC-LANG-06). Межі значень рядка — наступний зріз.
 
-**Права на кожну операцію:**
+**Права на кожну операцію** для ролей застосунку — `authenticated` (і `anon`, у якого немає нічого):
 
 | Таблиця | select | insert | update | delete |
 |---|---|---|---|---|
 | `purchases` | `grant select`; політика `purchases_select_visible`: активний і (автор або `private.approves_department(department_id)` або `admin`) — FRM-08, 10, APR-03 | немає grant — лише `submit_purchase` (FRM-02, 04, 06, 15) | немає grant — лише `decide_purchase` (APR-02, 05, 06, 07); статус, автора й причину користувач напряму не змінює | немає grant |
 | `purchase_lines` | `grant select`; політика: `exists` видимої заявки — FRM-08 | немає grant — лише `submit_purchase` | немає grant | немає grant |
 
-Column grants не потрібні: на `update` немає жодного grant, тож `status`, `author_id`, `rejection_reason` недоступні
-для запису взагалі. `anon` не має нічого (FRM-09).
+Column grants не потрібні: `authenticated` не має жодного grant на `update`, тож `status`, `author_id`,
+`rejection_reason` для користувачів застосунку недоступні для запису. `anon` не має нічого (FRM-09).
+
+`service_role` має `select, insert, update, delete` на обидві таблиці й обходить RLS — це сервісний ключ для Dashboard
+і тестів (`asService` у `tests/db/supabase-pglite.ts`). Застосунок його не використовує: admin-клієнта й
+`SUPABASE_SECRET_KEY` у Vercel немає (розділ «Auth»).
 
 **Функції для привілейованих дій** — `private.*` (`security definer`, `set search_path = ''`) + тонка обгортка
 `public.*` (`security invoker`), `grant execute` лише `authenticated`, `revoke … from public, anon`:

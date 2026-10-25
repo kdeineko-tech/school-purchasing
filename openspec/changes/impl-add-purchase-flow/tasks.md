@@ -39,8 +39,8 @@
   кількості чи ціни кодом `LINE_FIELDS` (`create or replace function`); `validateSubmission` з тим самим правилом;
   «Fill in all line fields» і «You have not submitted any requests yet» у `MESSAGES`; порожній стан на `/purchases`;
   тести.
-  Тести відмов і мутації: тест бази на PGlite для AC-FRM-15 (рядок лише з назвою — `LINE_FIELDS`, нової заявки
-  немає); мутаційна перевірка — таблиця в описі PR.
+  Тести відмов і мутації: тест бази на PGlite для AC-FRM-15 — табличний, чотири випадки (рядок без назви, без мети,
+  без кількості, без ціни): у кожному `LINE_FIELDS` і жодної нової заявки; мутаційна перевірка — таблиця в описі PR.
   Done when: AC-FRM-14, AC-FRM-15.
 - [ ] 4.2 Підписи ролей: ідентифікатори `requester` / `approver` / `admin` без змін, поруч — англійська назва з таблиці
   ValiaBihun/2026-quitcode-dream-team#49 (відповідь PM на Q5 — ValiaBihun/2026-quitcode-dream-team#57); тести.
