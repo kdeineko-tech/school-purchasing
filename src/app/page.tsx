@@ -24,6 +24,8 @@ export default async function Home() {
       </Card>
 
       <div className="grid gap-4 sm:grid-cols-2">
+        <NavCard href="/purchases/new" title="New purchase" text="Request items for your department" />
+        <NavCard href="/purchases" title="My requests" text="Requests you have submitted and their status" />
         <NavCard href="/profile" title="My profile" text="Departments where you submit requests" />
         {canOpenAdminPages(viewer) && (
           <NavCard href="/admin" title="Settings" text="School employees and departments" />

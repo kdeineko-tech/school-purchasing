@@ -1,4 +1,4 @@
-// Allowed request types і закупівлі (AC-ORG-17, AC-ORG-25, AC-ORG-26, AC-ORG-27). Назви — з глосарію
+// Дозволені типи заявок і закупівлі (AC-ORG-17, AC-ORG-25, AC-ORG-26, AC-ORG-27). Назви — з глосарію
 // requirements/product.md; той самий набір перевірятиме форма закупівлі другого зрізу (AC-FRM-03, AC-FRM-04).
 import type { AppRole } from "./access";
 

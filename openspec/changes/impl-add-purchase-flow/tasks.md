@@ -6,7 +6,7 @@
 
 ## 1. Подання закупівлі й «Мої заявки»
 
-- [ ] 1.1 Міграція `purchases`: таблиці `purchases`, `purchase_lines` (design §1), RLS `select` (автор / схвалювач
+- [x] 1.1 Міграція `purchases`: таблиці `purchases`, `purchase_lines` (design §1), RLS `select` (автор / схвалювач
   відділу / `admin`, лише активний), `private.approves_department`, `submit_purchase` (`private` definer + `public`
   invoker; `FORBIDDEN`, `NO_LINES`); ADR `0003-purchase-submission-rpc`; `src/lib/purchases/` (`formDepartments`,
   `formPurchaseTypes`, `validateSubmission`, `STATUS_LABELS`, `PURCHASE_TYPE_LABELS`); нові `MESSAGES`; сторінки

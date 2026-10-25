@@ -67,6 +67,14 @@ export function Alert({ children, testId }: { children: ReactNode; testId?: stri
   );
 }
 
+export function Notice({ children, testId }: { children: ReactNode; testId?: string }) {
+  return (
+    <p role="status" data-testid={testId} className="rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 text-sm text-accent">
+      {children}
+    </p>
+  );
+}
+
 export function EmptyState({ children }: { children: ReactNode }) {
   return <p className="rounded-lg border border-dashed border-border px-4 py-6 text-center text-sm text-muted">{children}</p>;
 }
