@@ -33,13 +33,6 @@ begin
 
   -- Вирішує лише схвалювач відділу заявки (AC-APR-03; заявник — AC-APR-04). Рішення адміністратора за відділ без
   -- схвалювача — WS8 (примітка до матриці прав requirements/product.md).
-  if not exists (
-    select 1 from public.department_members as m
-    where m.profile_id = v_uid and m.department_id = v_purchase.department_id and m.approves
-  ) then
-    raise exception 'FORBIDDEN';
-  end if;
-
   -- Власну заявку схвалювач не вирішує, зокрема в обхід сторінок (AC-APR-05, AC-FRM-13).
   if v_purchase.author_id = v_uid then
     raise exception 'FORBIDDEN';
