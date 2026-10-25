@@ -12,7 +12,7 @@
 - Перший зріз дав: `profiles` (роль, `is_active`, дозволи `can_*`), `departments`, `department_members` (`approves`,
   `auto_approve`), `private.current_app_role()`, `private.is_active_user()`, `src/lib/org/*`, `MESSAGES`.
 - Стек шаблону: Next.js 16.4 App Router (`params`/`searchParams` — проміси, `PageProps<…>`), Supabase (міграції лише
-  через PR і `db-deploy`; у supabase-js немає транзакцій), Vitest без бази, авторизація — `getClaims()`.
+  через PR і `db-deploy`; у supabase-js немає транзакцій), Vitest (тести застосунку й тести бази на PGlite), авторизація — `getClaims()`.
 
 ## Goals / Non-Goals
 
@@ -34,110 +34,97 @@
 
 ## Decisions
 
-### 1. Модель даних (міграція `…_purchases.sql`)
+Рішення згруповано за трьома розділами WS7: «UI і компоненти», «Дані й RLS», «Auth»; далі — тести. Рішення з
+альтернативами винесено в ADR: подання й рішення лише функціями бази — `docs/decisions/0003-purchase-submission-rpc.md`.
+
+## UI і компоненти
+
+| Сторінка | Хто бачить | Що | Порожні стани й помилки (тексти з AC, таблиця #49) | AC |
+|---|---|---|---|---|
+| `/purchases/new` | усі, хто увійшов; гість → `/login` | відділ, тип, рядки (назва, мета, кількість, ціна) | без відділів — «You have not been added to any department. Contact your administrator.» замість полів; без рядків — «Add at least one line»; незаповнене поле рядка — «Fill in all line fields»; чужий відділ чи тип — «Not enough permissions» | FRM-01, 03, 05, 06, 09, 15, ORG-22, 23, 29, LANG-04 |
+| `/purchases` («My requests») | усі, хто увійшов | лише власні заявки, статус текстом, перехід на сторінку заявки | після подання — «Purchase submitted»; без заявок — «You have not submitted any requests yet» | FRM-10, 11, 14, LANG-06 |
+| `/purchases/[id]` | автор, схвалювач відділу, `admin` | статус текстом, відділ, тип, дата, рядки; причина відхилення поруч зі статусом «Rejected»; «Approve» / «Reject» з полем причини, якщо `canDecide` | чужа чи неіснуюча заявка — «Not enough permissions» без даних; відхилення без причини — «Provide a reason» | FRM-08, APR-02, 03, 05–07, LANG-05, 06 |
+| `/approvals` | `approver`, `admin`; `requester` — відмова | список для рішення: «Awaiting approval» відділів, які переглядач схвалює, крім власних | `requester` — «Not enough permissions»; порожньо — «No requests awaiting your decision» | APR-01, APR-04 |
+
+- Компоненти — лише з `@/components/ui` (`Card`, `Button`, `Input`, `Select`, `Badge`, `Alert`, `Notice`,
+  `EmptyState`) і `PageShell`; статус — `StatusBadge` (текст, не лише колір, AC-LANG-06). Після дизайн-системи
+  (DESIGN.md, трек B WS7) ці компоненти беруть лише семантичні токени.
+- Підпис ролі — англійська назва з таблиці #49 поруч з ідентифікатором ролі (AC-LANG-08, задача 4.2).
+- Форма — клієнтський компонент з `useActionState`, поля керовані: після відмови обрані відділ, тип і рядки лишаються
+  (AC-FRM-06). Подання → `redirect('/purchases?submitted=1')` (AC-FRM-11).
+- Дати й час — `America/New_York` (`formatSubmittedAt`).
+- Доменний модуль `src/lib/purchases/` (чистий TypeScript): `formDepartments` (FRM-01, 05, ORG-22, 29),
+  `formPurchaseTypes` (FRM-03, ORG-23), `validateSubmission` (FRM-02, 04, 06, 15), `canSeePurchase` (FRM-08),
+  `canDecide` (APR-02, 05, FRM-13), `decisionList` (APR-01), `validateDecision` (APR-06), `STATUS_LABELS`,
+  `PURCHASE_TYPE_LABELS` (LANG-06).
+
+## Дані й RLS
+
+**Таблиці** (міграція `…_purchases.sql`; `enable row level security`; `revoke all … from anon, authenticated`):
 
 | Таблиця | Ключові колонки | AC |
 |---|---|---|
-| `purchases` | `id uuid`, `author_id → profiles`, `department_id → departments`, `purchase_type text check in ('purchasing_department','self_purchase')`, `status text check in ('awaiting_approval','approved','rejected') default 'awaiting_approval'`, `rejection_reason text`, `decided_by → profiles`, `decided_at timestamptz`, `created_at timestamptz default now()` | FRM-01…13, APR-01…07 |
-| `purchase_lines` | `id`, `purchase_id → purchases on delete cascade`, `position int`, `name text`, `purpose text`, `quantity integer`, `unit_price numeric(12,2)` | FRM-06, FRM-07 |
+| `purchases` | `id`, `author_id → profiles`, `department_id → departments`, `purchase_type` (`purchasing_department` / `self_purchase`), `status` (`awaiting_approval` / `approved` / `rejected`, default `awaiting_approval`), `rejection_reason`, `decided_by`, `decided_at`, `created_at`; `check`: відхилена — лише з причиною | FRM-01…15, APR-01…07 |
+| `purchase_lines` | `id`, `purchase_id → purchases on delete cascade`, `position`, `name`, `purpose`, `quantity integer`, `unit_price numeric(12,2)` | FRM-06, 07, 15 |
 
-- Статус і тип — стабільні ідентифікатори; підписи англійською лише в інтерфейсі (AC-LANG-06, таблиця #49).
-- `check (status <> 'rejected' or btrim(coalesce(rejection_reason, '')) <> '')` — відхилена заявка завжди має причину
-  (AC-APR-06, AC-APR-07).
-- Поля рядка без меж значень (межі кількості й ціни — наступний зріз); обов'язковість усіх чотирьох полів (AC-FRM-15)
-  перевіряє `submit_purchase` (задача 4.1).
+Статус і тип — стабільні ідентифікатори, підписи — лише в інтерфейсі (AC-LANG-06). Межі значень рядка — наступний зріз.
 
-### 2. Подання й рішення — лише функції бази (ADR 0003)
+**Права на кожну операцію:**
 
-Заявка з рядками — кілька записів, а перевірка прав і запис мають бути разом: це функції Postgres через `rpc`, як
-`on_behalf_candidates` у першому зрізі — `private.*` (`security definer`, `set search_path = ''`) і тонка обгортка
-`public.*` (`security invoker`), `grant execute … to authenticated`, `revoke … from public, anon`. Прямих
-`insert`/`update`/`delete` на `purchases` і `purchase_lines` для `authenticated` немає (лише `select`).
+| Таблиця | select | insert | update | delete |
+|---|---|---|---|---|
+| `purchases` | `grant select`; політика `purchases_select_visible`: активний і (автор або `private.approves_department(department_id)` або `admin`) — FRM-08, 10, APR-03 | немає grant — лише `submit_purchase` (FRM-02, 04, 06, 15) | немає grant — лише `decide_purchase` (APR-02, 05, 06, 07); статус, автора й причину користувач напряму не змінює | немає grant |
+| `purchase_lines` | `grant select`; політика: `exists` видимої заявки — FRM-08 | немає grant — лише `submit_purchase` | немає grant | немає grant |
 
-**`submit_purchase(p_department_id uuid, p_purchase_type text, p_lines jsonb) returns uuid`** — в одній транзакції:
+Column grants не потрібні: на `update` немає жодного grant, тож `status`, `author_id`, `rejection_reason` недоступні
+для запису взагалі. `anon` не має нічого (FRM-09).
 
-1. переглядач активний (`private.is_active_user()`), інакше `FORBIDDEN`;
-2. відділ: `admin` — будь-який наявний (AC-ORG-22, AC-ORG-29); інші — лише де є рядок `department_members`
-   (AC-FRM-02), інакше `FORBIDDEN`;
-3. тип: `self_purchase` — лише `admin` або `can_self_purchase` (AC-FRM-04, AC-ORG-23), інакше `FORBIDDEN`;
-4. рядки (AC-FRM-06) — три окремі послідовні `if`, кожен з `NO_LINES`, до будь-якого `insert` (порядок частин `AND`
-   PostgreSQL не гарантує, тож `jsonb_array_length` не має виконатися раніше за перевірку типу):
-   1. `jsonb_typeof(p_lines) is distinct from 'array'` — SQL `NULL`, JSON `null`, не-масив;
-   2. `jsonb_array_length(p_lines) = 0` — порожній масив;
-   3. `exists (select 1 from jsonb_array_elements(p_lines) as line(value) where jsonb_typeof(line.value) is distinct
-      from 'object')` — елемент не об'єкт;
-5. `insert` заявки зі статусом `awaiting_approval` і рядків; наявність схвалювача не перевіряємо (AC-FRM-12, AC-FRM-13).
+**Функції для привілейованих дій** — `private.*` (`security definer`, `set search_path = ''`) + тонка обгортка
+`public.*` (`security invoker`), `grant execute` лише `authenticated`, `revoke … from public, anon`:
 
-**`decide_purchase(p_purchase_id uuid, p_decision text, p_reason text)`** — `p_decision in ('approve','reject')`:
+- `submit_purchase(p_department_id, p_purchase_type, p_lines jsonb)` — одна транзакція: активний (`FORBIDDEN`); відділ
+  — `admin` будь-який (ORG-22, 29), інші — де заявник (FRM-02); `self_purchase` — `admin` або `can_self_purchase`
+  (FRM-04, ORG-23); рядки — три окремі послідовні `if` з `NO_LINES` (`jsonb_typeof` ≠ `array`; порожній масив;
+  елемент не об'єкт) до будь-якого `insert`, бо порядок частин `AND` PostgreSQL не гарантує (FRM-06); незаповнене поле
+  рядка — `LINE_FIELDS` (FRM-15, задача 4.1); значення, які не приводяться до типу колонки, — `INVALID_LINE`; наявність
+  схвалювача не перевіряємо (FRM-12, 13).
+- `decide_purchase(p_purchase_id, p_decision, p_reason)` — `select … for update`; активний і `approves = true` у
+  відділі заявки, інакше `FORBIDDEN` (APR-03, 04); автор ≠ переглядач (APR-05, FRM-13); статус `awaiting_approval`,
+  інакше `NOT_PENDING`; `reject` без причини — `REASON_REQUIRED` (APR-06); `update` статусу, причини, `decided_by`,
+  `decided_at` (APR-02, 07).
+- `private.approves_department(dept)` — `security definer`, `stable`: переглядач схвалює відділ.
 
-1. `select … for update` заявки (два рішення одночасно виконуються по черзі);
-2. переглядач активний і має `approves = true` у відділі заявки, інакше `FORBIDDEN` (AC-APR-03; заявник — AC-APR-04);
-3. автор ≠ переглядач, інакше `FORBIDDEN` (AC-APR-05, AC-FRM-13);
-4. статус `awaiting_approval`, інакше `NOT_PENDING`;
-5. `reject` без причини (`btrim` порожній) → `REASON_REQUIRED` (AC-APR-06);
-6. `update` статусу, `rejection_reason` (для `reject`), `decided_by`, `decided_at`.
+Набір ролей у зрізі не змінюється (drop-first не потрібен).
 
-Server action мапить коди винятків на `MESSAGES`: `FORBIDDEN` → «Not enough permissions», `NO_LINES` → «Add at least one
-line», `REASON_REQUIRED` → «Provide a reason». Перше правило — доменна функція TypeScript (повідомлення без запиту до
-бази), база — друга лінія захисту, як у першому зрізі.
+## Auth
 
-### 3. Хто бачить заявки: RLS `select`
+- `src/proxy.ts` лише оновлює сесію й перенаправляє на `/login` (UX), захистом не є.
+- Кожна сторінка — `getViewer()`: `supabase.auth.getClaims()` (не `getSession()`), профіль і роль — з
+  `public.profiles` за `claims.sub`, ніколи з `user_metadata`; немає claims — `redirect('/login')` (FRM-09);
+  неактивний — `redirect('/login?error=deactivated')`. Layouts рендер не гейтять, тож перевірка — у кожній сторінці.
+- Кожна Server Action (`submitPurchase`, `decidePurchase`) починається з `getViewer()` (getClaims + роль з profiles),
+  потім перевіряє правило доменною функцією з текстом PM, і лише тоді пише — серверним клієнтом користувача через
+  `rpc`, тож діють RLS, GRANT і перевірки функції бази. Ідентифікаторам з форми не довіряємо: відділ і тип — лише зі
+  списків, які рахує сервер; заявку — лише ту, яку повертає RLS.
+- Admin-клієнт і `SUPABASE_SECRET_KEY` у зрізі не потрібні: Admin API зріз не викликає, ключа у Vercel немає.
+- Дії, що створюють сесію (вхід), у зрізі не змінюються.
 
-- `purchases`: `author_id = (select auth.uid())` або `private.approves_department(department_id)` або
-  `(select private.current_app_role()) = 'admin'`; усе — лише для активного (`private.is_active_user()`).
-- `purchase_lines`: `exists` видимої заявки.
-- `private.approves_department(dept uuid)` — `security definer`, `stable`: є рядок `department_members` переглядача з
-  `approves = true`.
-- Заявка, якої RLS не повертає, на сторінці — відмова «Not enough permissions» без даних (AC-FRM-08, AC-APR-03): за
-  відсутнім рядком сторінка не розрізняє «немає» і «чужа», тож нічого не розкриває.
+## Тести
 
-### 4. Доменний модуль `src/lib/purchases/` (чистий TypeScript, без Supabase)
-
-| Функція | Що робить | AC |
-|---|---|---|
-| `formDepartments(viewer, memberships, departments)` | `admin` — усі відділи; інші — де заявник | FRM-01, FRM-05, ORG-22, ORG-29 |
-| `formPurchaseTypes(holder)` | через `allowedPurchaseTypes` з `src/lib/org/permissions.ts` | FRM-03, ORG-23 |
-| `validateSubmission(input, options)` | відділ і тип зі списків форми, хоча б один рядок | FRM-02, FRM-04, FRM-06 |
-| `canSeePurchase(viewer, purchase, approvedDepartmentIds)` | автор / схвалювач відділу / `admin` | FRM-08, APR-03 |
-| `canDecide(viewer, purchase, approvedDepartmentIds)` | схвалює відділ, не автор, статус «Очікує схвалення» | APR-02, APR-05, FRM-13 |
-| `decisionList(purchases, viewerId, approvedDepartmentIds)` | «Очікує схвалення», відділи схвалювача, крім власних | APR-01 |
-| `validateDecision(decision, reason)` | `reject` без причини → «Provide a reason» | APR-06 |
-| `STATUS_LABELS`, `PURCHASE_TYPE_LABELS` | «Awaiting approval» / «Approved» / «Rejected»; «Purchasing department» / «Self-purchase» | LANG-06 |
-
-Нові тексти в `MESSAGES` дослівно з таблиці #49: «You have not been added to any department. Contact your
-administrator.» (AC-FRM-05), «Add at least one line» (AC-FRM-06, AC-LANG-04), «Purchase submitted» (AC-FRM-11),
-«Provide a reason» (AC-APR-06, AC-LANG-05), «No requests awaiting your decision» (порожній список для рішення).
-
-### 5. Сторінки й server actions
-
-| Сторінка | Хто | Що | AC |
-|---|---|---|---|
-| `/purchases/new` | усі, хто увійшов; гість → `/login` | відділ, тип, рядки (назва, мета, кількість, ціна); без відділів — повідомлення замість полів | FRM-01, 03, 05, 06, 09, ORG-22, 23, 29 |
-| `/purchases` («My requests») | усі | лише власні заявки зі статусом-текстом; після подання — «Purchase submitted» | FRM-10, FRM-11, LANG-06 |
-| `/purchases/[id]` | автор, схвалювач відділу, `admin`; інші — «Not enough permissions» | рядки, статус; кнопки «Approve» / «Reject» з полем причини, якщо `canDecide` | FRM-08, APR-02, 03, 05–07 |
-| `/approvals` | схвалювач і `admin`; `requester` — «Not enough permissions» | список для рішення | APR-01, APR-04 |
-
-- Форма — клієнтський компонент з `useActionState`: рядки додаються без перезавантаження, а після відмови
-  (`NO_LINES`) обрані відділ і тип лишаються у формі (AC-FRM-06). Action `submitPurchase` → `rpc('submit_purchase')` →
-  `redirect('/purchases?submitted=1')` (AC-FRM-11).
-- Action `decidePurchase` → `rpc('decide_purchase')`; відмова чи «Provide a reason» — на сторінці заявки, статус не
-  змінено (AC-APR-03, AC-APR-05, AC-APR-06).
-- Гість: `getViewer()` → `redirect('/login')` у кожній сторінці (layouts не гейтять рендер у Next.js 16) (AC-FRM-09).
-- Шапка й головна: «New purchase», «My requests», «Approvals» (останнє — для `approver` і `admin`).
-
-### 6. Тести
-
-- `tests/purchases/*.test.ts`: доменні функції; actions з підставним Supabase (`rpc` повертає код винятку — action
-  показує повідомлення й не переводить на «Мої заявки»); сторінки — рендер з підставним переглядачем, як
-  `tests/org/access.test.ts` і `tests/org/english.test.ts`. Назви тестів починаються з AC ID.
-- Правила в SQL перевіряє `db-check` (міграції на одноразовій базі) і ручна перевірка на проді трьома демо-користувачами
-  (заявник, схвалювач, адміністратор) перед записом екрана; обхід сторінок — `curl` до `/rest/v1/rpc/submit_purchase`
-  з токеном заявника.
+- **Тести бази на PGlite** (`tests/db/*.test.ts`, `tests/db/supabase-pglite.ts`): на кожен відмовний AC — запит від
+  імені забороненої ролі, чужого користувача (`asUser`) чи гостя (`asAnon`), перевірка відмови **і** незмінних даних
+  (`asService`). AC: FRM-02, 04, 06, 08, 09, 15, APR-03, 04, 05, 06.
+- **Тести застосунку** (`tests/purchases/*.test.ts`): доменні функції; actions з підставним Supabase (код винятку → текст
+  PM, без переходу); сторінки — рендер з підставним переглядачем. Назви починаються з AC ID.
+- **Мутаційна перевірка** для кожного відмовного AC задачі: тимчасово послабити політику, grant чи перевірку функції →
+  саме цей тест червоний → повернути; таблиця в описі PR. Застосовані міграції не змінюємо навіть тимчасово: мутації —
+  у тестовій базі PGlite або в новій міграції PR (≥2 червоні прогони CI за зріз — у задачі 3.1).
+- Ручна перевірка на проді демо-користувачами (заявник, схвалювач, адміністратор) перед записом екрана.
 
 ## Risks / Trade-offs
 
-- Тести без бази: правило в TypeScript і у функції SQL може розійтися. Тримаємо їх поруч у цьому design і перевіряємо
-  вручну на проді; pgTAP — коли з'явиться Docker.
+- Тести бази на PGlite емулюють Auth і JWT спрощено (`auth.uid()` читає `request.jwt.claim.sub`); налаштування
+  хмарного проєкту вони не перевіряють — це ручна перевірка на проді.
 - Q8 (#60) — відповідь B: усі чотири поля рядка обов'язкові (AC-FRM-15, «Fill in all line fields»), межі значень —
   наступний зріз. Задача 4.1: правило в `validateSubmission` і в `submit_purchase` (код `LINE_FIELDS`). Кількість чи
   ціну, які база не приводить до числа, `submit_purchase` уже повертає кодом `INVALID_LINE` (ADR 0003).
