@@ -24,17 +24,17 @@ export default async function StaffPage() {
   return (
     <PageShell
       viewer={viewer}
-      title="Працівники"
-      description="Оберіть працівника, щоб керувати його відділами"
-      back={{ href: "/admin", label: "Налаштування" }}
+      title="Employees"
+      description="Choose an employee to manage their departments"
+      back={{ href: "/admin", label: "Settings" }}
     >
       <Card className="overflow-x-auto p-0">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border text-xs tracking-wide text-muted uppercase">
             <tr>
-              <th className="px-5 py-3 font-medium">Працівник</th>
-              <th className="px-5 py-3 font-medium">Роль</th>
-              <th className="px-5 py-3 font-medium">Стан</th>
+              <th className="px-5 py-3 font-medium">Employee</th>
+              <th className="px-5 py-3 font-medium">Role</th>
+              <th className="px-5 py-3 font-medium">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -50,7 +50,7 @@ export default async function StaffPage() {
                   <RoleBadge role={p.role} />
                 </td>
                 <td className="px-5 py-3">
-                  {p.is_active ? <Badge>Активний</Badge> : <Badge tone="danger">Деактивований</Badge>}
+                  {p.is_active ? <Badge>Active</Badge> : <Badge tone="danger">Deactivated</Badge>}
                 </td>
               </tr>
             ))}

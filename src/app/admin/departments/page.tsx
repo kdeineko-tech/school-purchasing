@@ -48,24 +48,24 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
   return (
     <PageShell
       viewer={viewer}
-      title="Відділи"
-      description="Від імені відділу подають заявки; назва унікальна без урахування регістру"
-      back={{ href: "/admin", label: "Налаштування" }}
+      title="Departments"
+      description="Requests are submitted on behalf of a department; names are unique regardless of case"
+      back={{ href: "/admin", label: "Settings" }}
     >
-      <Card title="Новий відділ">
+      <Card title="New department">
         <form action={createDepartment} className="flex flex-col gap-3">
           <label htmlFor="name" className="sr-only">
-            Назва відділу
+            Department name
           </label>
           <div className="flex flex-col gap-2 sm:flex-row">
-            <Input id="name" name="name" required maxLength={100} placeholder="Наприклад, Початкова школа" />
-            <Button type="submit">Створити</Button>
+            <Input id="name" name="name" required maxLength={100} placeholder="For example, Primary School" />
+            <Button type="submit">Create</Button>
           </div>
           {errorMessage && <Alert testId="department-error">{errorMessage}</Alert>}
         </form>
       </Card>
 
-      <Card title={`Усі відділи${departments?.length ? ` · ${departments.length}` : ""}`}>
+      <Card title={`All departments${departments?.length ? ` · ${departments.length}` : ""}`}>
         {departments && departments.length > 0 ? (
           <ul className="divide-y divide-border text-sm" data-testid="departments">
             {departments.map((d) => (
@@ -76,7 +76,7 @@ export default async function DepartmentsPage({ searchParams }: PageProps<"/admi
             ))}
           </ul>
         ) : (
-          <EmptyState>Відділів ще немає.</EmptyState>
+          <EmptyState>No departments yet.</EmptyState>
         )}
       </Card>
     </PageShell>

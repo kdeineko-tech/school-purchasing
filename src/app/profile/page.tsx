@@ -38,11 +38,11 @@ export default async function ProfilePage() {
   const purchaseTypes = allowedPurchaseTypes(holder);
 
   return (
-    <PageShell viewer={viewer} title="Мій профіль" description={viewer.email ?? undefined}>
+    <PageShell viewer={viewer} title="My profile" description={viewer.email ?? undefined}>
       <Card>
         <RoleBadge role={viewer.role} />
       </Card>
-      <Card title="Відділи, де я подаю заявки">
+      <Card title="Departments where I submit requests">
         {mine.length > 0 ? (
           <ul className="flex flex-wrap gap-2" data-testid="requester-departments">
             {mine.map((d) => (
@@ -52,7 +52,7 @@ export default async function ProfilePage() {
             ))}
           </ul>
         ) : (
-          <EmptyState>Немає.</EmptyState>
+          <EmptyState>None.</EmptyState>
         )}
       </Card>
       <Card title="Мої дозволи">

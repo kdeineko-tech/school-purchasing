@@ -48,7 +48,7 @@ describe("деактивація працівника", () => {
       "REDIRECT /login?error=deactivated",
     );
     expect(signOut).toHaveBeenCalled();
-    expect(MESSAGES.deactivated).toBe("Обліковий запис деактивовано. Зверніться до адміністратора");
+    expect(MESSAGES.deactivated).toBe("Account deactivated. Contact your administrator");
   });
 
   it("AC-ORG-12: активний працівник входить у систему", async () => {
@@ -108,7 +108,7 @@ describe("останній активний адміністратор", () => {
     } as never);
 
     await expect(setActive(form({ profileId: ADMIN, active: "false" }))).rejects.toThrow(
-      `REDIRECT /admin/staff/${ADMIN}?error=${encodeURIComponent("Має лишитись хоча б один активний адміністратор")}`,
+      `REDIRECT /admin/staff/${ADMIN}?error=${encodeURIComponent("At least one active administrator must remain")}`,
     );
     expect(update).not.toHaveBeenCalled();
   });

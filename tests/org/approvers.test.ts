@@ -50,7 +50,7 @@ describe("схвалювачі відділу", () => {
   it("AC-ORG-02: працівника, який не є заявником «Вища школа», не призначено схвалювачем — «Спершу додайте працівника до відділу як заявника»", () => {
     expect(setApprover([], P1, HIGH, true)).toEqual({
       ok: false,
-      error: "Спершу додайте працівника до відділу як заявника",
+      error: "Add the employee to the department as a requester first",
     });
   });
 
@@ -153,6 +153,6 @@ describe("відділи без схвалювача", () => {
     const flagged = departmentsWithoutApprover(departments, memberships, new Set([P1]));
 
     expect(flagged.map((d) => d.name)).toEqual(["Офіс"]);
-    expect(MESSAGES.noApprover).toBe("Немає схвалювача");
+    expect(MESSAGES.noApprover).toBe("No approver");
   });
 });

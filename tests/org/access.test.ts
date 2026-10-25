@@ -34,7 +34,7 @@ describe("доступ до сторінок адміністратора", () =
   it("AC-ORG-09: користувач без ролі admin не відкриває список працівників і налаштування відділів, бачить «Недостатньо прав»", () => {
     expect(canOpenAdminPages({ role: "requester", isActive: true })).toBe(false);
     expect(canOpenAdminPages({ role: "approver", isActive: true })).toBe(false);
-    expect(MESSAGES.forbidden).toBe("Недостатньо прав");
+    expect(MESSAGES.forbidden).toBe("Not enough permissions");
   });
 
   it.each(adminPages)("AC-ORG-09: заявник на %s бачить відмову «Недостатньо прав»", async (_path, Page) => {

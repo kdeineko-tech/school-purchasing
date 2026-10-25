@@ -41,16 +41,16 @@ describe("відділи", () => {
     expect(isDuplicateName("початкова школа", ["Початкова школа"])).toBe(true);
     expect(validateNewDepartment("початкова школа", ["Початкова школа"])).toEqual({
       ok: false,
-      error: "Відділ з такою назвою вже є",
+      error: "A department with this name already exists",
     });
-    expect(MESSAGES.departmentExists).toBe("Відділ з такою назвою вже є");
+    expect(MESSAGES.departmentExists).toBe("A department with this name already exists");
   });
 
   it("AC-ORG-34: дія createDepartment не записує дубль і повертає адміністратора з повідомленням", async () => {
     const { insert } = fakeDepartmentsDb(["Початкова школа"]);
 
     await expect(createDepartment(form({ name: "початкова школа" }))).rejects.toThrow(
-      `REDIRECT /admin/departments?error=${encodeURIComponent("Відділ з такою назвою вже є")}`,
+      `REDIRECT /admin/departments?error=${encodeURIComponent("A department with this name already exists")}`,
     );
     expect(insert).not.toHaveBeenCalled();
   });

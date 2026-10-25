@@ -95,7 +95,7 @@ describe("автосхвалення", () => {
   it("AC-ORG-33: працівнику, який не є заявником «Вища школа», автосхвалення не ввімкнено — «Спершу додайте працівника до відділу як заявника»", () => {
     expect(setAutoApprove([], P1, HIGH, true)).toEqual({
       ok: false,
-      error: "Спершу додайте працівника до відділу як заявника",
+      error: "Add the employee to the department as a requester first",
     });
   });
 

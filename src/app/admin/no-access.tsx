@@ -11,7 +11,7 @@ export function NoAccess({ viewer = null }: { viewer?: ViewerProfile | null }) {
       <Card className="flex flex-col items-start gap-4">
         <Alert testId="no-access">{MESSAGES.forbidden}</Alert>
         <Link href="/" className="text-sm text-accent hover:underline">
-          На головну
+          Back to home
         </Link>
       </Card>
     </PageShell>
