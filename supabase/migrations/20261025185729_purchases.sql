@@ -98,7 +98,8 @@ create policy purchase_lines_select_visible
 -- ── Подання закупівлі (AC-FRM-02, AC-FRM-04, AC-FRM-06, AC-FRM-07, AC-FRM-12, AC-FRM-13, AC-ORG-22, AC-ORG-23,
 -- AC-ORG-29) ────────────────────────────────────────────────────────────────
 -- Заявка з рядками — одна транзакція: перевірки прав і запис разом. Коди винятків server action показує
--- повідомленнями PM: FORBIDDEN → «Not enough permissions», NO_LINES → «Add at least one line».
+-- повідомленнями: FORBIDDEN → «Not enough permissions», NO_LINES → «Add at least one line» (тексти PM),
+-- INVALID_LINE → загальне повідомлення про значення рядка.
 create or replace function private.submit_purchase(p_department_id uuid, p_purchase_type text, p_lines jsonb)
 returns uuid
 language plpgsql
@@ -158,15 +159,23 @@ begin
   values (v_uid, p_department_id, p_purchase_type)
   returning id into v_purchase_id;
 
-  insert into public.purchase_lines (purchase_id, position, name, purpose, quantity, unit_price)
-  select
-    v_purchase_id,
-    line.position,
-    nullif(btrim(line.value ->> 'name'), ''),
-    nullif(btrim(line.value ->> 'purpose'), ''),
-    nullif(btrim(line.value ->> 'quantity'), '')::integer,
-    nullif(btrim(line.value ->> 'unit_price'), '')::numeric(12, 2)
-  from jsonb_array_elements(p_lines) with ordinality as line(value, position);
+  -- Кількість чи ціну, які не приводяться до типу колонки (не ціле число, не число, задовге для numeric(12, 2)),
+  -- показуємо помилкою форми INVALID_LINE, а не помилкою бази. Межі значень (ціла кількість від 1, ціна від 0) —
+  -- наступний зріз. Виняток скасовує всю функцію, тож заявка без рядків не лишається.
+  begin
+    insert into public.purchase_lines (purchase_id, position, name, purpose, quantity, unit_price)
+    select
+      v_purchase_id,
+      line.position,
+      nullif(btrim(line.value ->> 'name'), ''),
+      nullif(btrim(line.value ->> 'purpose'), ''),
+      nullif(btrim(line.value ->> 'quantity'), '')::integer,
+      nullif(btrim(line.value ->> 'unit_price'), '')::numeric(12, 2)
+    from jsonb_array_elements(p_lines) with ordinality as line(value, position);
+  exception
+    when invalid_text_representation or numeric_value_out_of_range then
+      raise exception 'INVALID_LINE';
+  end;
 
   return v_purchase_id;
 end;

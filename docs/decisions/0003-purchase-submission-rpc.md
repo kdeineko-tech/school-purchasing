@@ -24,6 +24,10 @@ supabase-js немає транзакцій: кожен запит — окре�
 - Коди винятків (`FORBIDDEN`, `NO_LINES`, далі `NOT_PENDING`, `REASON_REQUIRED`) server action показує текстами PM
   з `MESSAGES`. Server action спершу перевіряє ті самі правила доменною функцією (`src/lib/purchases/`), щоб показати
   повідомлення без запиту до бази; функція бази — друга лінія захисту.
+- Кількість чи ціну рядка, які не приводяться до типу колонки, `submit_purchase` перехоплює
+  (`invalid_text_representation`, `numeric_value_out_of_range`) і повертає `INVALID_LINE` — загальне повідомлення
+  у формі замість помилки бази (зауваження CodeRabbit у kdeineko-tech/school-purchasing#20). Тексту PM для цього
+  випадку немає: межі значень — наступний зріз.
 
 ## Розглянуті варіанти
 

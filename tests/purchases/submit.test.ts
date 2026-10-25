@@ -131,6 +131,17 @@ describe("подання закупівлі (submitPurchase)", () => {
     expect(rpc).toHaveBeenCalledWith("submit_purchase", expect.objectContaining({ p_purchase_type: "self_purchase" }));
   });
 
+  it("кількість чи ціна, які база не приводить до числа (INVALID_LINE), — повідомлення у формі, без переходу", async () => {
+    useDb({ members: member1, rpcError: { message: "INVALID_LINE" } });
+
+    const state = await submitPurchase(
+      {},
+      form({ departmentId: PRIMARY.id, purchaseType: "purchasing_department", lines: ONE_LINE }),
+    );
+
+    expect(state).toEqual({ error: "Check the quantity and price in each line" });
+  });
+
   it("гість не подає закупівлю — сторінка входу", async () => {
     vi.mocked(getViewer).mockResolvedValue(null);
     const { rpc } = useDb({});
