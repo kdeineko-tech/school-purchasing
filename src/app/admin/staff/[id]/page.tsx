@@ -6,11 +6,12 @@ import { requesterDepartments } from "@/lib/org/membership";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
-import { addRequester, removeRequester, setActive, setApprover } from "../../actions";
+import { addRequester, removeRequester, setActive, setApprover, setAutoApprove } from "../../actions";
 import { NoAccess } from "../../no-access";
 
 // Профіль працівника для адміністратора (AC-ORG-09): відділи, де він подає заявки (AC-ORG-01),
-// схвалення відділів і роль за ними (AC-ORG-02 … AC-ORG-05, AC-ORG-19, AC-ORG-20, AC-ORG-24).
+// схвалення відділів і роль за ними (AC-ORG-02 … AC-ORG-05, AC-ORG-19, AC-ORG-20, AC-ORG-24),
+// автосхвалення (AC-ORG-06, AC-ORG-15, AC-ORG-33).
 export default async function StaffProfilePage({ params, searchParams }: PageProps<"/admin/staff/[id]">) {
   const viewer = await getViewer();
   if (!viewer) redirect("/login");
@@ -30,7 +31,7 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
   ] = await Promise.all([
     supabase.from("profiles").select("id, email, full_name, role, is_active").eq("id", id).maybeSingle(),
     supabase.from("departments").select("id, name").order("name"),
-    supabase.from("department_members").select("profile_id, department_id, approves").eq("profile_id", id),
+    supabase.from("department_members").select("profile_id, department_id, approves, auto_approve").eq("profile_id", id),
   ]);
   // Помилку бази не видаємо за «профілю немає» чи «відділів немає».
   const readError = profileError ?? departmentsError ?? membershipsError;
@@ -41,10 +42,13 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
     profileId: r.profile_id,
     departmentId: r.department_id,
     approves: r.approves,
+    autoApprove: r.auto_approve,
   }));
   const mine = requesterDepartments(memberships, departments ?? [], id);
   const others = (departments ?? []).filter((d) => !mine.some((m) => m.id === d.id));
   const approves = (departmentId: string) => memberships.some((m) => m.departmentId === departmentId && m.approves);
+  const autoApproves = (departmentId: string) =>
+    memberships.some((m) => m.departmentId === departmentId && m.autoApprove);
 
   return (
     <PageShell
@@ -77,6 +81,7 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
               <li key={d.id} className="flex flex-wrap items-center gap-3 py-3">
                 <span className="font-medium">{d.name}</span>
                 {approves(d.id) && <Badge tone="accent">Схвалює</Badge>}
+                {autoApproves(d.id) && <Badge>Автосхвалення</Badge>}
                 <div className="ml-auto flex gap-2">
                   <form action={setApprover}>
                     <input type="hidden" name="profileId" value={profile.id} />
@@ -84,6 +89,15 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
                     <input type="hidden" name="approves" value={approves(d.id) ? "false" : "true"} />
                     <Button type="submit" variant="secondary">
                       {approves(d.id) ? "Зняти зі схвалювачів" : "Призначити схвалювачем"}
+                    </Button>
+                  </form>
+                  {/* AC-ORG-06: автосхвалення діє лише для цього відділу. */}
+                  <form action={setAutoApprove}>
+                    <input type="hidden" name="profileId" value={profile.id} />
+                    <input type="hidden" name="departmentId" value={d.id} />
+                    <input type="hidden" name="autoApprove" value={autoApproves(d.id) ? "false" : "true"} />
+                    <Button type="submit" variant="secondary">
+                      {autoApproves(d.id) ? "Вимкнути автосхвалення" : "Увімкнути автосхвалення"}
                     </Button>
                   </form>
                   <form action={removeRequester}>
@@ -121,11 +135,13 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
       </Card>
 
       {others.length > 0 && (
-        <Card title="Призначити схвалювачем іншого відділу">
+        <Card title="Інший відділ">
+          {/* AC-ORG-02, AC-ORG-33: у відділі, де працівник не заявник, — відмова з повідомленням PM. */}
           <form action={setApprover} className="flex flex-col gap-2 sm:flex-row">
             <input type="hidden" name="profileId" value={profile.id} />
             <input type="hidden" name="approves" value="true" />
-            <Select name="departmentId" required aria-label="Відділ для схвалення">
+            <input type="hidden" name="autoApprove" value="true" />
+            <Select name="departmentId" required aria-label="Інший відділ">
               {others.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
@@ -134,6 +150,9 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
             </Select>
             <Button type="submit" variant="secondary" className="shrink-0">
               Призначити схвалювачем
+            </Button>
+            <Button type="submit" formAction={setAutoApprove} variant="secondary" className="shrink-0">
+              Увімкнути автосхвалення
             </Button>
           </form>
         </Card>
