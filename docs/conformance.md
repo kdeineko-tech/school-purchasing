@@ -77,6 +77,8 @@
 | AC-FRM-10 | Власна закупівля в «Мої заявки» | `src/app/purchases/page.tsx`, `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) (RLS purchases_select_visible) | `tests/purchases/pages.test.ts` | реалізовано |
 | AC-FRM-08 | Колега відкриває чужу закупівлю | — | — | відкладено (чекає реалізації) |
 | AC-FRM-09 | Гість відкриває форму | `src/app/purchases/new/page.tsx`, `src/app/purchases/page.tsx` | `tests/purchases/pages.test.ts` | реалізовано |
+| AC-FRM-14 | «Мої заявки» без заявок | — | — | відкладено (чекає реалізації) |
+| AC-FRM-15 | Рядок лише з назвою | — | — | відкладено (чекає реалізації) |
 | AC-APR-01 | Лише заявки свого відділу | — | — | відкладено (чекає реалізації) |
 | AC-APR-02 | Схвалювач схвалює заявку свого відділу | — | — | відкладено (чекає реалізації) |
 | AC-APR-03 | Схвалювач відкриває заявку чужого відділу | — | — | відкладено (чекає реалізації) |
@@ -90,5 +92,4 @@
 | AC-LANG-04 | Заявка без рядків англійською | `src/lib/org/messages.ts` (noLines), `src/app/purchases/actions.ts` (submitPurchase) | `tests/purchases/submit.test.ts` | реалізовано |
 | AC-LANG-05 | Рішення без причини англійською | — | — | відкладено (чекає реалізації) |
 | AC-LANG-06 | Підпис статусу | — | — | відкладено (чекає реалізації) |
-| AC-LANG-07 | Історія рішень англійською | — | — | відкладено (чекаю відповідь PM на Q5, ValiaBihun/2026-quitcode-dream-team#57) |
-| AC-LANG-08 | Ролі й номери | — | — | відкладено (чекаю відповідь PM на Q5, ValiaBihun/2026-quitcode-dream-team#57) |
+| AC-LANG-08 | Ролі й номери | — | — | відкладено (чекає реалізації) |
