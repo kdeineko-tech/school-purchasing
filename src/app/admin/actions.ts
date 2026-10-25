@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { canOpenAdminPages, type AppRole } from "@/lib/org/access";
 import { leavesNoActiveAdmin } from "@/lib/org/admins";
 import { validateNewDepartment } from "@/lib/org/departments";
-import { setApprover as setApproverRule } from "@/lib/org/membership";
+import { setApprover as setApproverRule, setAutoApprove as setAutoApproveRule } from "@/lib/org/membership";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
@@ -122,6 +122,43 @@ export async function setApprover(formData: FormData) {
 
 // AC-ORG-12, AC-ORG-18: адміністратор деактивує й знову активує працівника; останнього активного адміністратора
 // база не деактивує (тригер private.guard_last_admin, виняток LAST_ADMIN).
+// AC-ORG-06, AC-ORG-33: автосхвалення вмикають лише заявнику відділу й лише для цього відділу.
+export async function setAutoApprove(formData: FormData) {
+  await requireAdmin();
+  const { profileId, departmentId } = readMemberIds(formData);
+  const value = formData.get("autoApprove");
+  // Лише явне «так» чи «ні»: інше значення не має мовчки вимикати автосхвалення.
+  if (value !== "true" && value !== "false") backToStaff(profileId);
+  const autoApprove = value === "true";
+
+  const supabase = await createClient();
+  const { data: row, error: readError } = await supabase
+    .from("department_members")
+    .select("profile_id, department_id, auto_approve")
+    .eq("profile_id", profileId)
+    .eq("department_id", departmentId)
+    .maybeSingle();
+  if (readError) throw new Error(`Не вдалося прочитати заявника: ${readError.message}`);
+
+  const memberships = row
+    ? [{ profileId: row.profile_id, departmentId: row.department_id, autoApprove: row.auto_approve }]
+    : [];
+  const change = setAutoApproveRule(memberships, profileId, departmentId, autoApprove);
+  if (!change.ok) backToStaff(profileId, change.error);
+
+  const { data: updated, error } = await supabase
+    .from("department_members")
+    .update({ auto_approve: autoApprove })
+    .eq("profile_id", profileId)
+    .eq("department_id", departmentId)
+    .select("profile_id");
+  if (error) throw new Error(`Не вдалося змінити автосхвалення: ${error.message}`);
+  // Рядок заявника зник між читанням і записом — те саме правило AC-ORG-33.
+  if (!updated || updated.length === 0) backToStaff(profileId, MESSAGES.addAsRequesterFirst);
+
+  backToStaff(profileId);
+}
+
 export async function setActive(formData: FormData) {
   await requireAdmin();
   const profileId = String(formData.get("profileId") ?? "");

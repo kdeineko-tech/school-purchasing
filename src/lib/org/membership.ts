@@ -1,9 +1,9 @@
-// Заявники й схвалювачі відділів (AC-ORG-01, AC-ORG-02, AC-ORG-03). У базі — рядок department_members на пару
-// «працівник — відділ», схвалення — його колонка approves (ADR docs/decisions/0001-department-membership.md).
+// Заявники, схвалювачі й автосхвалення відділів (AC-ORG-01, AC-ORG-02, AC-ORG-03, AC-ORG-06, AC-ORG-15, AC-ORG-33).
+// У базі — рядок department_members на пару «працівник — відділ», схвалення й автосхвалення — його колонки approves і auto_approve (ADR docs/decisions/0001-department-membership.md).
 import { MESSAGES } from "./messages";
 
 export type Department = { id: string; name: string };
-export type Membership = { profileId: string; departmentId: string; approves?: boolean };
+export type Membership = { profileId: string; departmentId: string; approves?: boolean; autoApprove?: boolean };
 
 export type MembershipChange = { ok: true; memberships: Membership[] } | { ok: false; error: string };
 
@@ -17,10 +17,10 @@ export function addRequester(
   departmentId: string,
 ): Membership[] {
   const exists = memberships.some((m) => isRow(m, profileId, departmentId));
-  return exists ? [...memberships] : [...memberships, { profileId, departmentId, approves: false }];
+  return exists ? [...memberships] : [...memberships, { profileId, departmentId, approves: false, autoApprove: false }];
 }
 
-// Зняття заявника прибирає рядок разом зі схваленням цього відділу (AC-ORG-03).
+// Зняття заявника прибирає рядок разом зі схваленням і автосхваленням цього відділу (AC-ORG-03, AC-ORG-15).
 export function removeRequester(
   memberships: readonly Membership[],
   profileId: string,
@@ -42,6 +42,22 @@ export function setApprover(
   return {
     ok: true,
     memberships: memberships.map((m) => (isRow(m, profileId, departmentId) ? { ...m, approves } : m)),
+  };
+}
+
+// Автосхвалення вмикають лише заявнику відділу (AC-ORG-33) і лише для цього відділу (AC-ORG-06).
+export function setAutoApprove(
+  memberships: readonly Membership[],
+  profileId: string,
+  departmentId: string,
+  autoApprove: boolean,
+): MembershipChange {
+  if (!memberships.some((m) => isRow(m, profileId, departmentId))) {
+    return { ok: false, error: MESSAGES.addAsRequesterFirst };
+  }
+  return {
+    ok: true,
+    memberships: memberships.map((m) => (isRow(m, profileId, departmentId) ? { ...m, autoApprove } : m)),
   };
 }
 
@@ -72,4 +88,13 @@ export function approvedDepartments(
   profileId: string,
 ): Department[] {
   return departmentsWhere(memberships, departments, (m) => m.profileId === profileId && Boolean(m.approves));
+}
+
+// Відділи, де працівнику ввімкнено автосхвалення.
+export function autoApproveDepartments(
+  memberships: readonly Membership[],
+  departments: readonly Department[],
+  profileId: string,
+): Department[] {
+  return departmentsWhere(memberships, departments, (m) => m.profileId === profileId && Boolean(m.autoApprove));
 }
