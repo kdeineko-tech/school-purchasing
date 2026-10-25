@@ -1,11 +1,11 @@
-// Дозволені типи заявок і закупівлі (AC-ORG-17, AC-ORG-25, AC-ORG-26, AC-ORG-27). Назви — з глосарію
+// Allowed request types і закупівлі (AC-ORG-17, AC-ORG-25, AC-ORG-26, AC-ORG-27). Назви — з глосарію
 // requirements/product.md; той самий набір перевірятиме форма закупівлі другого зрізу (AC-FRM-03, AC-FRM-04).
 import type { AppRole } from "./access";
 
-export const PERMISSION_REQUEST_TYPES = ["Витрата карткою", "Запит на чек", "Рахунок постачальника"] as const;
+export const PERMISSION_REQUEST_TYPES = ["Card expense", "Check request", "Vendor invoice"] as const;
 export type PermissionRequestType = (typeof PERMISSION_REQUEST_TYPES)[number];
 
-export const PURCHASE_TYPES = ["Відділ закупівель", "Самостійна закупівля"] as const;
+export const PURCHASE_TYPES = ["Purchasing department", "Self-purchase"] as const;
 export type PurchaseType = (typeof PURCHASE_TYPES)[number];
 
 export type Permissions = {
@@ -21,17 +21,17 @@ export type PermissionHolder = Permissions & { role: AppRole };
 export function allowedRequestTypes(holder: PermissionHolder): PermissionRequestType[] {
   if (holder.role === "admin") return [...PERMISSION_REQUEST_TYPES];
   const granted: Record<PermissionRequestType, boolean> = {
-    "Витрата карткою": holder.canCardExpense,
-    "Запит на чек": holder.canCheckRequest,
-    "Рахунок постачальника": holder.canVendorInvoice,
+    "Card expense": holder.canCardExpense,
+    "Check request": holder.canCheckRequest,
+    "Vendor invoice": holder.canVendorInvoice,
   };
   return PERMISSION_REQUEST_TYPES.filter((type) => granted[type]);
 }
 
-// Типи закупівлі: «Самостійна закупівля» — адміністратору (AC-ORG-23) або з дозволом; інакше лише
-// «Відділ закупівель» (AC-ORG-27).
+// Типи закупівлі: «Self-purchase» — адміністратору (AC-ORG-23) або з дозволом; інакше лише
+// «Purchasing department» (AC-ORG-27).
 export function allowedPurchaseTypes(holder: PermissionHolder): PurchaseType[] {
-  return holder.role === "admin" || holder.canSelfPurchase ? [...PURCHASE_TYPES] : ["Відділ закупівель"];
+  return holder.role === "admin" || holder.canSelfPurchase ? [...PURCHASE_TYPES] : ["Purchasing department"];
 }
 
 export function permissionsFromRow(row: {

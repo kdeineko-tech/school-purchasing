@@ -170,13 +170,13 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
           </form>
         </Card>
       )}
-      <Card title="Дозволи">
+      <Card title="Permissions">
         <dl className="mb-4 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
-          <dt className="text-muted">Дозволені типи заявок</dt>
+          <dt className="text-muted">Allowed request types</dt>
           <dd data-testid="allowed-request-types" className="flex flex-wrap gap-2">
             {requestTypes.length > 0 ? requestTypes.map((t) => <Badge key={t}>{t}</Badge>) : "—"}
           </dd>
-          <dt className="text-muted">Дозволені типи закупівлі</dt>
+          <dt className="text-muted">Allowed purchase types</dt>
           <dd data-testid="allowed-purchase-types" className="flex flex-wrap gap-2">
             {purchaseTypes.map((t) => (
               <Badge key={t}>{t}</Badge>
@@ -188,22 +188,22 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
             <input type="hidden" name="profileId" value={profile.id} />
             <label className="flex items-center gap-2">
               <input type="checkbox" name="can_card_expense" defaultChecked={permissions.canCardExpense} />
-              Витрата карткою
+              Card expense
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" name="can_check_request" defaultChecked={permissions.canCheckRequest} />
-              Запит на чек
+              Check request
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" name="can_vendor_invoice" defaultChecked={permissions.canVendorInvoice} />
-              Рахунок постачальника
+              Vendor invoice
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" name="can_self_purchase" defaultChecked={permissions.canSelfPurchase} />
-              Самостійна закупівля
+              Self-purchase
             </label>
             <Button type="submit" variant="secondary" className="mt-2 self-start">
-              Зберегти дозволи
+              Save permissions
             </Button>
           </form>
         )}

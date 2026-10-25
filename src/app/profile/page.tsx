@@ -55,13 +55,13 @@ export default async function ProfilePage() {
           <EmptyState>None.</EmptyState>
         )}
       </Card>
-      <Card title="Мої дозволи">
+      <Card title="My permissions">
         <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
-          <dt className="text-muted">Дозволені типи заявок</dt>
+          <dt className="text-muted">Allowed request types</dt>
           <dd className="flex flex-wrap gap-2">
             {requestTypes.length > 0 ? requestTypes.map((t) => <Badge key={t}>{t}</Badge>) : "—"}
           </dd>
-          <dt className="text-muted">Дозволені типи закупівлі</dt>
+          <dt className="text-muted">Allowed purchase types</dt>
           <dd className="flex flex-wrap gap-2">
             {purchaseTypes.map((t) => (
               <Badge key={t}>{t}</Badge>
