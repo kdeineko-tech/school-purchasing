@@ -7,6 +7,9 @@ export const MESSAGES = {
   noApprover: "No approver", // AC-ORG-14
   deactivated: "Account deactivated. Contact your administrator", // AC-ORG-12
   lastAdmin: "At least one active administrator must remain", // AC-ORG-10, AC-ORG-18
+  noDepartments: "You have not been added to any department. Contact your administrator.", // AC-FRM-05
+  noLines: "Add at least one line", // AC-FRM-06, AC-LANG-04
+  purchaseSubmitted: "Purchase submitted", // AC-FRM-11
   // Не з тексту PM: порожня чи задовга назва (власне припущення, docs/spec-reading.md; межа 100 — «Припущення» PM);
   // англійською в термінах таблиці #49.
   departmentNameInvalid: "Enter a department name of up to 100 characters",

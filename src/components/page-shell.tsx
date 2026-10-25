@@ -30,6 +30,9 @@ export function PageShell({
           </Link>
           {viewer && (
             <nav className="flex items-center gap-4 text-sm text-muted">
+              <Link href="/purchases" className="hover:text-foreground">
+                My requests
+              </Link>
               <Link href="/profile" className="hover:text-foreground">
                 My profile
               </Link>

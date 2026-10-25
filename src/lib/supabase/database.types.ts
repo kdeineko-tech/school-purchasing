@@ -2,7 +2,8 @@
 // (supabase gen types typescript --local на одноразовій базі); або npm run db:types після npx supabase link на ваш проєкт. Ця стартова версія написана вручну
 // й описує таблиці з міграцій 20261012000000_profiles_and_roles.sql, 20261021233408_org_roles.sql і
 // 20261022000503_departments.sql, 20261022010957_approvers.sql, 20261025143511_auto_approve.sql і
-// 20261025160124_permissions.sql.
+// 20261025160124_permissions.sql, 20261025185729_purchases.sql (purchases, purchase_lines і submit_purchase — зі
+// схеми одноразової бази, supabase gen types typescript --local).
 
 export type Json =
   | string
@@ -111,12 +112,111 @@ export type Database = {
         };
         Relationships: [];
       };
+      purchases: {
+        Row: {
+          id: string;
+          author_id: string;
+          department_id: string;
+          purchase_type: string;
+          status: string;
+          rejection_reason: string | null;
+          decided_by: string | null;
+          decided_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          author_id: string;
+          department_id: string;
+          purchase_type: string;
+          status?: string;
+          rejection_reason?: string | null;
+          decided_by?: string | null;
+          decided_at?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          author_id?: string;
+          department_id?: string;
+          purchase_type?: string;
+          status?: string;
+          rejection_reason?: string | null;
+          decided_by?: string | null;
+          decided_at?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "purchases_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchases_decided_by_fkey";
+            columns: ["decided_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchases_department_id_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      purchase_lines: {
+        Row: {
+          id: string;
+          purchase_id: string;
+          position: number;
+          name: string | null;
+          purpose: string | null;
+          quantity: number | null;
+          unit_price: number | null;
+        };
+        Insert: {
+          id?: string;
+          purchase_id: string;
+          position: number;
+          name?: string | null;
+          purpose?: string | null;
+          quantity?: number | null;
+          unit_price?: number | null;
+        };
+        Update: {
+          id?: string;
+          purchase_id?: string;
+          position?: number;
+          name?: string | null;
+          purpose?: string | null;
+          quantity?: number | null;
+          unit_price?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "purchase_lines_purchase_id_fkey";
+            columns: ["purchase_id"];
+            isOneToOne: false;
+            referencedRelation: "purchases";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      submit_purchase: {
+        Args: { p_department_id: string; p_purchase_type: string; p_lines: Json };
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;
