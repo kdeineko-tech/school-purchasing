@@ -60,9 +60,12 @@
 2. відділ: `admin` — будь-який наявний (AC-ORG-22, AC-ORG-29); інші — лише де є рядок `department_members`
    (AC-FRM-02), інакше `FORBIDDEN`;
 3. тип: `self_purchase` — лише `admin` або `can_self_purchase` (AC-FRM-04, AC-ORG-23), інакше `FORBIDDEN`;
-4. `p_lines is not null and jsonb_typeof(p_lines) = 'array' and jsonb_array_length(p_lines) >= 1` і кожен елемент —
-   `jsonb_typeof(…) = 'object'`, інакше `NO_LINES` (AC-FRM-06) — до будь-якого `insert`. Умову перевіряємо як
-   `if not coalesce(…, false)`: `NULL` чи не-масив, переданий прямим `rpc`, не має пройти як «рядки є»;
+4. рядки (AC-FRM-06) — три окремі послідовні `if`, кожен з `NO_LINES`, до будь-якого `insert` (порядок частин `AND`
+   PostgreSQL не гарантує, тож `jsonb_array_length` не має виконатися раніше за перевірку типу):
+   1. `jsonb_typeof(p_lines) is distinct from 'array'` — SQL `NULL`, JSON `null`, не-масив;
+   2. `jsonb_array_length(p_lines) = 0` — порожній масив;
+   3. `exists (select 1 from jsonb_array_elements(p_lines) as line(value) where jsonb_typeof(line.value) is distinct
+      from 'object')` — елемент не об'єкт;
 5. `insert` заявки зі статусом `awaiting_approval` і рядків; наявність схвалювача не перевіряємо (AC-FRM-12, AC-FRM-13).
 
 **`decide_purchase(p_purchase_id uuid, p_decision text, p_reason text)`** — `p_decision in ('approve','reject')`:
