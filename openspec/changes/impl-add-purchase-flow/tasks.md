@@ -26,7 +26,7 @@
 
 - [ ] 3.1 Міграція `…_purchase_decisions.sql` — лише функції `decide_purchase` (`private` + обгортка `public`) для
   наявної таблиці `purchases` (колонки рішення вже є; нової таблиці немає): `for update`; `FORBIDDEN`, `NOT_PENDING`,
-  `REASON_REQUIRED`); `canDecide`, `decisionList`, `validateDecision`; сторінка `/approvals` (`requester` — відмова;
+  `REASON_REQUIRED`; `canDecide`, `decisionList`, `validateDecision`; сторінка `/approvals` (`requester` — відмова;
   порожньо — «No requests awaiting your decision»); кнопки «Approve» / «Reject» з причиною на `/purchases/[id]`;
   action `decidePurchase`; посилання «Approvals» для `approver` і `admin`; тести.
   Тести відмов і мутації: тести бази на PGlite для AC-APR-03, AC-APR-04, AC-APR-05, AC-APR-06 (відмова й незмінний
