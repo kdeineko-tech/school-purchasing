@@ -1,32 +1,32 @@
 [
   {
     "email": "admin@example.test",
-    "full_name": "Олена Демо-Адмін",
+    "full_name": "Olena Demo-Admin",
     "role": "admin"
   },
   {
     "email": "member1@example.test",
-    "full_name": "Андрій Демо-Перший",
+    "full_name": "Andrii Demo-First",
     "role": "requester"
   },
   {
     "email": "member2@example.test",
-    "full_name": "Марія Демо-Друга",
+    "full_name": "Mariia Demo-Second",
     "role": "requester"
   },
   {
     "email": "pm-requester@example.test",
-    "full_name": "PM Заявник",
+    "full_name": "PM Requester",
     "role": "requester"
   },
   {
     "email": "pm-approver@example.test",
-    "full_name": "PM Схвалювач",
+    "full_name": "PM Approver",
     "role": "requester"
   },
   {
     "email": "pm-admin@example.test",
-    "full_name": "PM Адміністратор",
+    "full_name": "PM Administrator",
     "role": "admin"
   }
 ]
