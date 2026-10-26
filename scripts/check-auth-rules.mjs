@@ -4,8 +4,10 @@
 // 2) Жодного src/middleware.ts: у Next.js 16 сесію оновлює src/proxy.ts, і він лише перенаправляє (UX), а не захищає.
 // 3) Роль і права — лише з public.profiles: user_metadata / app_metadata у коді src/ не читаємо (користувач може
 //    змінити user_metadata сам, а роль у токені застаріває до наступного входу).
-// 4) Кожна експортована функція файлу з "use server" (Server Action — публічний POST-ендпойнт) перевіряє вхід до
-//    першого звернення до бази: getViewer() / getClaims() / requireAdmin() раніше за createClient(). Виняток — дії, що
+// 4) Кожна експортована функція файлу з "use server" (Server Action — публічний POST-ендпойнт; і `export async
+//    function`, і `export const x = async …`) перевіряє вхід до першого звернення до бази: getViewer() / getClaims() /
+//    requireAdmin() раніше за createClient(). Результат getViewer() зберігають у змінну й перевіряють
+//    (`if (!viewer)`) теж раніше за createClient(): сам виклик без перевірки нікого не зупиняє. Виняток — дії, що
 //    створюють чи завершують сесію (вхід, вихід): над функцією коментар `// auth-ok: <причина>`.
 // Коментарі не перевіряються. Використання: node scripts/check-auth-rules.mjs [--root <dir>]
 // Код виходу: 0 — порушень немає, 1 — є порушення, 2 — немає теки src/.
@@ -43,6 +45,15 @@ function stripComments(text) {
     .replace(/(^|[^:"'`])\/\/.*$/gm, (m, p) => p + " ".repeat(m.length - p.length));
 }
 
+// Назва експортованої Server Action у рядку: `export async function x`, `export default async function x`,
+// `export const x = async …` (з типом чи без).
+function exportedActionName(line) {
+  const fn = line.match(/^export\s+(?:default\s+)?async\s+function\s*(\w*)/);
+  if (fn) return fn[1] || "default";
+  const arrow = line.match(/^export\s+(?:const|let)\s+(\w+)\s*(?::[^=]+)?=\s*async\b/);
+  return arrow ? arrow[1] : null;
+}
+
 const problems = [];
 const report = (file, line, message) =>
   problems.push(`${relative(root, file).split(sep).join("/")}:${line}  ${message}`);
@@ -64,15 +75,33 @@ for (const file of walk(src)) {
   });
 
   if (!/^\s*["']use server["']/m.test(raw)) continue;
-  const starts = code.flatMap((line, i) => (/^export\s+async\s+function\s+\w+/.test(line) ? [i] : []));
-  starts.forEach((start, k) => {
-    const name = code[start].match(/function\s+(\w+)/)[1];
+  const starts = code.flatMap((line, i) => {
+    const name = exportedActionName(line);
+    return name ? [{ i, name }] : [];
+  });
+  starts.forEach(({ i: start, name }, k) => {
     if (/^\s*\/\/\s*auth-ok:\s*\S/.test(rawLines[start - 1] ?? "")) return;
-    const body = code.slice(start, starts[k + 1] ?? code.length);
+    const body = code.slice(start, starts[k + 1]?.i ?? code.length);
     const auth = body.findIndex((l) => AUTH_CALL.test(l));
     const db = body.findIndex((l) => DB_CALL.test(l));
-    if (auth < 0) report(file, start + 1, `${name}: Server Action без getViewer() / getClaims() / requireAdmin()`);
-    else if (db >= 0 && db < auth) report(file, start + db + 1, `${name}: звернення до бази раніше за перевірку входу`);
+    if (auth < 0) {
+      report(file, start + 1, `${name}: Server Action без getViewer() / getClaims() / requireAdmin()`);
+      return;
+    }
+    if (db >= 0 && db < auth) {
+      report(file, start + db + 1, `${name}: звернення до бази раніше за перевірку входу`);
+      return;
+    }
+    // getViewer() повертає null для гостя: результат має бути збережено й перевірено раніше за createClient().
+    if (/\bgetViewer\s*\(/.test(body[auth])) {
+      const assigned = body[auth].match(/\b(?:const|let)\s+(\w+)\s*=\s*await\s+getViewer\s*\(/);
+      const checked = assigned
+        ? body.findIndex((l, j) => j > auth && new RegExp(`if\\s*\\(\\s*!\\s*${assigned[1]}\\b`).test(l))
+        : -1;
+      if (checked < 0 || (db >= 0 && db < checked)) {
+        report(file, start + auth + 1, `${name}: результат getViewer() не перевірено (if (!viewer)) до звернення до бази`);
+      }
+    }
   });
 }
 

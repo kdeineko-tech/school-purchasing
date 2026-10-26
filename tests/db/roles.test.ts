@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { createPurchasingDb, type PurchasingDb } from "./supabase-pglite";
 
 // Роль у public.profiles, яку база рахує за відділами (ADR docs/decisions/0004-role-in-profiles-table.md), на
@@ -24,11 +24,19 @@ beforeAll(async () => {
     PRIMARY,
     OFFICE,
   ]);
+}, 60_000);
+
+// Кожен тест починає з того самого стану й не залежить від порядку запуску: працівник 1 — заявник «Primary School» і
+// «Office», працівник 2 — заявник «Primary School»; ніхто не схвалює; усі активні. Ролі тригер перерахує сам.
+beforeEach(async () => {
+  await t.asService("delete from public.department_members");
   await t.asService(
     "insert into public.department_members (profile_id, department_id) values ($1, $3), ($1, $4), ($2, $3)",
     [member1, member2, PRIMARY, OFFICE],
   );
-}, 60_000);
+  await t.asService("update public.profiles set is_active = true where id in ($1, $2)", [member1, member2]);
+  await t.asService("update public.profiles set role = 'requester' where id in ($1, $2)", [member1, member2]);
+});
 
 const setApproves = (profileId: string, departmentId: string, approves: boolean) =>
   t.asUser(admin, "update public.department_members set approves = $3 where profile_id = $1 and department_id = $2", [
@@ -44,12 +52,16 @@ describe("роль за відділами в базі", () => {
   });
 
   it("AC-ORG-19: схвалювач двох відділів після зняття з одного лишається approver", async () => {
+    await setApproves(member1, PRIMARY, true);
     await setApproves(member1, OFFICE, true);
     await setApproves(member1, OFFICE, false);
     expect(await roleOf(member1)).toBe("approver");
   });
 
   it("AC-ORG-04: зняття зі схвалювачів єдиного відділу повертає роль requester", async () => {
+    await setApproves(member1, PRIMARY, true);
+    expect(await roleOf(member1)).toBe("approver");
+
     await setApproves(member1, PRIMARY, false);
     expect(await roleOf(member1)).toBe("requester");
   });
@@ -75,10 +87,6 @@ describe("роль не змінює сам працівник", () => {
   });
 
   it("AC-ORG-09: працівник без ролі admin не робить себе схвалювачем відділу — 0 рядків, роль та сама", async () => {
-    await t.asService("insert into public.department_members (profile_id, department_id) values ($1, $2)", [
-      member2,
-      PRIMARY,
-    ]);
     const updated = await t.asUser(
       member2,
       "update public.department_members set approves = true where profile_id = $1 and department_id = $2 returning profile_id",
@@ -90,12 +98,9 @@ describe("роль не змінює сам працівник", () => {
 
   it("AC-ORG-12: деактивований працівник з чинною сесією не бачить відділів і не має ролі в політиках", async () => {
     await t.asService("update public.profiles set is_active = false where id = $1", [member1]);
-    try {
-      expect(await t.asUser(member1, "select id from public.departments")).toHaveLength(0);
-      const [{ role }] = await t.asUser<{ role: string | null }>(member1, "select private.current_app_role() as role");
-      expect(role).toBeNull();
-    } finally {
-      await t.asService("update public.profiles set is_active = true where id = $1", [member1]);
-    }
+
+    expect(await t.asUser(member1, "select id from public.departments")).toHaveLength(0);
+    const [{ role }] = await t.asUser<{ role: string | null }>(member1, "select private.current_app_role() as role");
+    expect(role).toBeNull();
   });
 });

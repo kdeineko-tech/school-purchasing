@@ -2,7 +2,7 @@
 // Архітектурне правило «секретний ключ лише на сервері».
 // 1) SUPABASE_SECRET_KEY / SERVICE_ROLE читається лише в src/lib/supabase/admin.ts і в scripts/ (поза src/).
 // 2) src/lib/supabase/admin.ts починається з `import "server-only"`.
-// 3) admin-клієнт (@/lib/supabase/admin) імпортують лише серверні файли: actions.ts, route.ts або файли з "use server".
+// 3) admin-клієнт (@/lib/supabase/admin чи відносний шлях до нього) імпортують лише серверні файли: actions.ts, route.ts або файли з "use server".
 //    Файл з "use client" не може його імпортувати. Увага: кожен експорт файлу з "use server" — публічний POST-ендпойнт,
 //    його викликають напряму. Тому перевірка ролі (getClaims + роль з profiles) — ДО admin-клієнта. Скрипт її не бачить:
 //    це тест і рев'ю. Не додавайте "use server" у допоміжний модуль, щоб пройти перевірку.
@@ -12,7 +12,7 @@
 // Код виходу: 0 — порушень немає, 1 — є порушення, 2 — немає чого перевіряти (ні src/, ні app/, components/, lib/).
 
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
-import { basename, join, relative, sep } from "node:path";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 
 const args = process.argv.slice(2);
 const rootIdx = args.indexOf("--root");
@@ -54,6 +54,19 @@ function walk(dir, out = []) {
   return out;
 }
 
+// Чи імпортує рядок admin-клієнт: аліас @/lib/supabase/admin або будь-який відносний шлях, що з цього файлу веде
+// на lib/supabase/admin (зокрема ../supabase/admin з src/lib/org/). Доопрацьовано за рев'ю CodeRabbit
+// (kdeineko-tech/school-purchasing#27): вихідний вираз курсу не бачив ../supabase/admin.
+const ADMIN_NO_EXT = resolve(root, ADMIN_FILE).replace(/\.ts$/, "");
+function importsAdmin(line, file) {
+  const m = line.match(/(?:from\s+|import\s*\(\s*|import\s+)["']([^"']+)["']/);
+  if (!m) return false;
+  const spec = m[1];
+  if (spec === "@/lib/supabase/admin") return true;
+  if (!spec.startsWith(".")) return false;
+  return resolve(dirname(file), spec).replace(/\.(tsx?|jsx?|mjs|cjs)$/, "") === ADMIN_NO_EXT;
+}
+
 const problems = [];
 const report = (file, line, message) => problems.push(`${file.split(sep).join("/")}:${line}  ${message}`);
 
@@ -72,7 +85,7 @@ for (const file of BASES.flatMap((b) => walk(join(root, b)))) {
     if (/SUPABASE_SECRET_KEY|SERVICE_ROLE_KEY/.test(line) && rel !== ADMIN_FILE) {
       report(rel, i + 1, `секретний ключ читається поза ${ADMIN_SHOWN}`);
     }
-    if (/from\s+["'](@\/lib\/supabase\/admin|(\.\.\/)+lib\/supabase\/admin|\.\/admin)["']/.test(line) && rel !== ADMIN_FILE) {
+    if (importsAdmin(line, file) && rel !== ADMIN_FILE) {
       if (isClient) report(rel, i + 1, 'admin-клієнт імпортовано у файлі з "use client"');
       else if (!isServerFile) {
         report(
