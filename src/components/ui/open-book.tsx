@@ -70,26 +70,47 @@ function pageShape(p: number, dir: number, right: number, left: number, w: numbe
 const shade = new Array<number>(STRIPS).fill(0);
 const gloss = new Array<number>(STRIPS).fill(0);
 
-// Кут аркуша над столом (0 — лежить праворуч, 180 — ліворуч) — за смужкою на третині від корінця.
-function liftOf(rel: number[]) {
-  let cum = 0;
-  for (let i = 0; i < 6; i++) cum += rel[i];
-  return cum;
-}
+// Профіль аркуша в площині, перпендикулярній корінцю: x від корінця (праворуч > 0), z — висота над столом.
+const polyX = new Array<number>(STRIPS + 1).fill(0);
+const polyZ = new Array<number>(STRIPS + 1).fill(0);
 
-// Тінь, яку кидає аркуш (чи палітурка), піднятий на кут angle, на сторінку під собою; out — на межах смужок, від
-// корінця до краю. Світло зверху: тінь лягає на ту частину сторінки, над якою аркуш нависає, і що вище аркуш, то
-// тінь світліша й розмитіша.
-function castShadow(angle: number, out: number[]) {
-  const a = Math.min(90, Math.max(0, angle));
-  const reach = Math.cos(a * RAD);
-  // Біля самого паперу тінь гасне: аркуш, що ось-ось ляже, вже закриває її собою — інакше вона зникала б ривком.
-  const strength = 0.38 * (1 - a / 90) ** 0.7 * Math.min(1, a / 10);
-  const blur = 0.05 + 0.35 * (a / 90);
-  for (let b = 0; b <= STRIPS; b++) {
-    const x = b / STRIPS;
-    const t = Math.min(1, Math.max(0, (reach + blur - x) / (2 * blur)));
-    out[b] = Math.max(out[b], strength * t * t * (3 - 2 * t));
+// Тінь, яку кидає аркуш (чи палітурка) на сторінки під собою; right / left — на межах смужок, від корінця до краю.
+// Світло зверху: тінь лягає лише туди, над чим аркуш справді нависає (за його вигином), і має м'який край за кінчиком
+// аркуша; що вище аркуш над сторінкою, то тінь світліша. Над самою сторінкою (висота rest) тінь гасне: аркуш, що
+// лягає, закриває її собою — інакше вона пробігала б по сторінці й зникала ривком.
+function castShadow(rel: number[], w: number, rest: number, right: number[], left: number[]) {
+  let cum = 0;
+  for (let i = 0; i < STRIPS; i++) {
+    cum += rel[i];
+    polyX[i + 1] = polyX[i] + w * Math.cos(cum * RAD);
+    polyZ[i + 1] = polyZ[i] + w * Math.sin(cum * RAD);
+  }
+  const strength = (z: number) =>
+    0.38 * Math.exp(-z / (w * STRIPS * 1.6)) * Math.min(1, Math.max(0, (z - rest) / 8));
+  for (const [out, side] of [[right, 1], [left, -1]] as const) {
+    let reach = 0;
+    let tip = 0;
+    for (let k = 0; k <= STRIPS; k++) {
+      if (side * polyX[k] > reach) [reach, tip] = [side * polyX[k], polyZ[k]];
+    }
+    if (reach <= 0) continue;
+    for (let b = 0; b <= STRIPS; b++) {
+      const x = b * w;
+      let z = Infinity;
+      for (let k = 0; k < STRIPS; k++) {
+        const [x0, x1] = [side * polyX[k], side * polyX[k + 1]];
+        if (x0 !== x1 && (x0 - x) * (x1 - x) <= 0) {
+          z = Math.min(z, polyZ[k] + ((x - x0) / (x1 - x0)) * (polyZ[k + 1] - polyZ[k]));
+        }
+      }
+      let value = 0;
+      if (z < Infinity) value = strength(z);
+      else if (x > reach) {
+        const t = Math.max(0, 1 - (x - reach) / (4 + 0.35 * tip));
+        value = strength(tip) * t * t * (3 - 2 * t);
+      }
+      out[b] = Math.max(out[b], value);
+    }
   }
 }
 
@@ -341,9 +362,6 @@ export function OpenBook({ className }: { className?: string }) {
       return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
     };
 
-    // Тінь від піднятого аркуша чи палітурки — на сторінку того боку, над яким він нависає.
-    const shadowFrom = (angle: number) =>
-      angle <= 90 ? castShadow(angle, castRight) : castShadow(180 - angle, castLeft);
 
     const draw = () => {
       const half = book.offsetWidth / 2;
@@ -374,13 +392,18 @@ export function OpenBook({ className }: { className?: string }) {
 
       castRight.fill(0);
       castLeft.fill(0);
-      if (open < 1) shadowFrom(180 * open);
+      if (open < 1) {
+        // Палітурка — пласка: увесь кут на завісі біля корінця.
+        rel.fill(0);
+        rel[0] = 180 * open;
+        castShadow(rel, (half + 13) / STRIPS, LID_CLOSED_Z, castRight, castLeft);
+      }
       for (const chain of pool) chain.root.style.visibility = "hidden";
       for (const f of flights) {
         f.chain.root.style.visibility = "visible";
         pageShape(f.p, f.dir, DEPTH, leftDepth, w, rel);
         applyShape(f.chain, rel);
-        shadowFrom(liftOf(rel));
+        castShadow(rel, w, DEPTH, castRight, castLeft);
       }
       pageShape(1, 0, DEPTH, leftDepth, w, rel);
       applyShape(leftTop, rel, castLeft);
