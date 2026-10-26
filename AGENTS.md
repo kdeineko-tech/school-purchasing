@@ -145,6 +145,23 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
 - Supabase MCP (`.mcp.json`, лише Claude Code; Cursor бере MCP з `.cursor/mcp.json`) — лише читання, один проєкт: перед запуском задай `SUPABASE_PROJECT_REF`.
 - `product/denylist.local*` — справжні назви клієнта (список PM надсилає особистим повідомленням; git файл не відстежує): не відкривай і не цитуй (найкраще зусилля, не гарантія: у Claude Code — deny `Read(product/denylist.local*)` у `.claude/settings.json`, у Cursor — `.cursorignore`, який за документацією Cursor не закриває термінал і MCP; чи deny діє на пошук і `cat`, звіряємо на репетиції).
 
+## Архітектурні правила
+
+Окремий workflow `.github/workflows/architecture.yml` (не `ci.yml`: на назвах його jobs тримається ruleset). Перед PR:
+`npm run check:boundary` і `npm run check:auth`.
+
+- **Секретний ключ лише на сервері** (`scripts/check-server-boundary.mjs`): зараз admin-клієнта в застосунку немає, і
+  `SUPABASE_SECRET_KEY` у Vercel немає (розділ «Секрети»): ключ читають лише локальні скрипти (`npm run users:demo`).
+  Якщо зріз колись справді потребуватиме Admin API — лише разом з ADR і правкою розділу «Секрети»: ключ у Vercel
+  тільки для Production, у `src/` його читає лише `src/lib/supabase/admin.ts` з `import "server-only"`, а admin-клієнт
+  викликають лише Server Action чи Route Handler після перевірки ролі. Жодного `NEXT_PUBLIC_*SECRET*`.
+- **Вхід і роль перевіряє сервер** (`scripts/check-auth-rules.mjs`, ADR `docs/decisions/0004-role-in-profiles-table.md`):
+  жодного `getSession()` і `middleware.ts` у `src/`; роль і права — лише з `public.profiles`, не з `user_metadata` /
+  `app_metadata`; кожна експортована функція файлу з `"use server"` викликає `getViewer()` / `getClaims()` /
+  `requireAdmin()` раніше за `createClient()`, а гілка `if (!viewer)` завершує дію. Виняток — лише дії, що створюють чи
+  завершують сесію (у тілі — `auth.signInWithPassword` / `verifyOtp` / `signOut` тощо): над функцією
+  `// auth-ok: <причина>`.
+
 ## Межі
 
 **Завжди:** запускай `npm run lint`, `npm run typecheck`, `npm test` перед комітом; AC ID у назвах тестів;

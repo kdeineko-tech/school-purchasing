@@ -33,7 +33,7 @@
 
 | AC | Що перевіряє | Код | Тест | Статус |
 |---|---|---|---|---|
-| AC-ORG-09 | Користувач без ролі admin на сторінці адміністратора | `src/lib/org/access.ts` (canOpenAdminPages), `src/app/admin/staff/page.tsx`, `src/app/admin/departments/page.tsx` | `tests/org/access.test.ts` | реалізовано |
+| AC-ORG-09 | Користувач без ролі admin на сторінці адміністратора | `src/lib/org/access.ts` (canOpenAdminPages), `src/app/admin/staff/page.tsx`, `src/app/admin/departments/page.tsx` | `tests/org/access.test.ts`, `tests/db/roles.test.ts` | реалізовано |
 | AC-ORG-17 | Працівник із дозволом на «Витрату карткою» | `src/lib/org/permissions.ts` (allowedRequestTypes), `src/app/admin/actions.ts` (setPermissions), `src/app/admin/staff/[id]/page.tsx`, `supabase/migrations/20261025160124_permissions.sql` | `tests/org/permissions.test.ts` | реалізовано |
 | AC-ORG-26 | Працівник без дозволу на «Витрату карткою» | `src/lib/org/permissions.ts` (allowedRequestTypes), `src/app/admin/staff/[id]/page.tsx` | `tests/org/permissions.test.ts` | реалізовано |
 | AC-ORG-25 | Адміністратор без дозволу на «Витрату карткою» | `src/lib/org/permissions.ts` (allowedRequestTypes), `src/app/admin/staff/[id]/page.tsx` | `tests/org/permissions.test.ts` | реалізовано |
@@ -46,10 +46,10 @@
 | AC-ORG-02 | Призначення схвалювачем не заявника | `src/lib/org/membership.ts` (setApprover), `src/app/admin/actions.ts` (setApprover) | `tests/org/approvers.test.ts` | реалізовано |
 | AC-ORG-03 | Заявник-схвалювач перестає бути схвалювачем | `src/lib/org/membership.ts` (removeRequester), `src/app/admin/actions.ts` (removeRequester) | `tests/org/approvers.test.ts` | реалізовано |
 | AC-ORG-15 | Заявник втрачає автосхвалення відділу | `src/lib/org/membership.ts` (removeRequester), `src/app/admin/actions.ts` (removeRequester), `supabase/migrations/20261025143511_auto_approve.sql` | `tests/org/auto-approve.test.ts` | реалізовано |
-| AC-ORG-05 | Призначення схвалювачем дає роль approver | `src/lib/org/roles.ts` (roleFor), `src/app/admin/actions.ts` (setApprover), `supabase/migrations/20261022010957_approvers.sql` | `tests/org/approvers.test.ts` | реалізовано |
-| AC-ORG-04 | Зняття з єдиного відділу повертає роль requester | `src/lib/org/roles.ts` (roleFor), `supabase/migrations/20261022010957_approvers.sql` | `tests/org/approvers.test.ts` | реалізовано |
-| AC-ORG-19 | Схвалювач кількох відділів лишається approver | `src/lib/org/roles.ts` (roleFor), `src/lib/org/membership.ts` (setApprover) | `tests/org/approvers.test.ts` | реалізовано |
-| AC-ORG-24 | Зняття заявника єдиного відділу повертає роль requester | `src/lib/org/roles.ts` (roleFor), `src/lib/org/membership.ts` (removeRequester), `supabase/migrations/20261022010957_approvers.sql` | `tests/org/approvers.test.ts` | реалізовано |
+| AC-ORG-05 | Призначення схвалювачем дає роль approver | `src/lib/org/roles.ts` (roleFor), `src/app/admin/actions.ts` (setApprover), `supabase/migrations/20261022010957_approvers.sql` | `tests/org/approvers.test.ts`, `tests/db/roles.test.ts` | реалізовано |
+| AC-ORG-04 | Зняття з єдиного відділу повертає роль requester | `src/lib/org/roles.ts` (roleFor), `supabase/migrations/20261022010957_approvers.sql` | `tests/org/approvers.test.ts`, `tests/db/roles.test.ts` | реалізовано |
+| AC-ORG-19 | Схвалювач кількох відділів лишається approver | `src/lib/org/roles.ts` (roleFor), `src/lib/org/membership.ts` (setApprover) | `tests/org/approvers.test.ts`, `tests/db/roles.test.ts` | реалізовано |
+| AC-ORG-24 | Зняття заявника єдиного відділу повертає роль requester | `src/lib/org/roles.ts` (roleFor), `src/lib/org/membership.ts` (removeRequester), `supabase/migrations/20261022010957_approvers.sql` | `tests/org/approvers.test.ts`, `tests/db/roles.test.ts` | реалізовано |
 | AC-ORG-20 | Адміністратор-схвалювач лишається admin | `src/lib/org/roles.ts` (roleFor), `supabase/migrations/20261022010957_approvers.sql` | `tests/org/approvers.test.ts` | реалізовано |
 | AC-ORG-06 | Автосхвалення лише в одному з відділів | `src/lib/org/membership.ts` (setAutoApprove), `src/app/admin/actions.ts` (setAutoApprove), `supabase/migrations/20261025143511_auto_approve.sql` | `tests/org/auto-approve.test.ts` | реалізовано |
 | AC-ORG-33 | Автосхвалення не заявнику | `src/lib/org/membership.ts` (setAutoApprove), `src/app/admin/actions.ts` (setAutoApprove) | `tests/org/auto-approve.test.ts` | реалізовано |
@@ -60,7 +60,7 @@
 | AC-ORG-31 | Зняття ролі з адміністратора без відділів схвалення | — | — | відкладено (чекає реалізації) |
 | AC-ORG-32 | Зняття ролі з адміністратора-схвалювача | — | — | відкладено (чекає реалізації) |
 | AC-ORG-11 | Адміністратор без відділів | — | — | відкладено (чекає реалізації) |
-| AC-ORG-12 | Деактивований працівник не входить у систему й бачить повідомлення | `src/app/login/actions.ts` (login), `src/lib/supabase/proxy.ts`, `src/app/admin/actions.ts` (setActive) | `tests/org/deactivation.test.ts`, `tests/org/proxy.test.ts` | реалізовано |
+| AC-ORG-12 | Деактивований працівник не входить у систему й бачить повідомлення | `src/app/login/actions.ts` (login), `src/lib/supabase/proxy.ts`, `src/app/admin/actions.ts` (setActive) | `tests/org/deactivation.test.ts`, `tests/org/proxy.test.ts`, `tests/db/roles.test.ts` | реалізовано |
 | AC-ORG-16 | Вибір схвалювача відділу | — | — | відкладено (чекає реалізації) |
 | AC-ORG-28 | Вибір особи «від імені» | — | — | відкладено (чекає реалізації) |
 | AC-ORG-30 | Повторна активація схвалювача | — | — | відкладено (чекає реалізації) |
