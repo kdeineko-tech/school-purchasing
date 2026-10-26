@@ -9,7 +9,8 @@
 //    requireAdmin() раніше за createClient(). Результат getViewer() зберігають у змінну й перевіряють
 //    (`if (!viewer)`) теж раніше за createClient(), і гілка завершує дію (return / throw / redirect / notFound): сам
 //    виклик без перевірки нікого не зупиняє. Виняток — дії, що створюють чи завершують сесію (вхід, вихід): над
-//    функцією коментар `// auth-ok: <причина>`.
+//    функцією коментар `// auth-ok: <причина>`, і в тілі є виклик auth.signInWithPassword / signInWithOtp / verifyOtp /
+//    signUp / exchangeCodeForSession / signOut.
 // Коментарі не перевіряються. Використання: node scripts/check-auth-rules.mjs [--root <dir>]
 // Код виходу: 0 — порушень немає, 1 — є порушення, 2 — немає теки src/.
 
@@ -28,6 +29,7 @@ if (!existsSync(src)) {
 const EXT = /\.(tsx?|jsx?|mjs|cjs)$/;
 const AUTH_CALL = /\b(getViewer|getClaims|requireAdmin)\s*\(/;
 const DB_CALL = /\bcreateClient\s*\(/;
+const SESSION_CALL = /\bauth\.(signInWithPassword|signInWithOtp|verifyOtp|signUp|exchangeCodeForSession|signOut)\s*\(/;
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {
@@ -53,15 +55,20 @@ const EXIT = /\b(return|throw)\b|\bredirect\s*\(|\bnotFound\s*\(/;
 function guardExits(body, at) {
   const line = body[at];
   const condEnd = closingParen(line, line.search(/if\s*\(/) + line.slice(line.search(/if\s*\(/)).indexOf("("));
-  const rest = condEnd >= 0 ? line.slice(condEnd + 1) : "";
-  if (!rest.trim().startsWith("{")) {
-    const statement = rest.trim() || (body.slice(at + 1).find((l) => l.trim()) ?? "");
-    return EXIT.test(statement);
+  let rest = condEnd >= 0 ? line.slice(condEnd + 1) : "";
+  let from = at;
+  // Після умови в тому самому рядку порожньо — гілка починається з наступного непорожнього рядка (`{` чи інструкція).
+  if (!rest.trim()) {
+    const next = body.findIndex((l, j) => j > at && l.trim());
+    if (next < 0) return false;
+    rest = body[next];
+    from = next;
   }
+  if (!rest.trim().startsWith("{")) return EXIT.test(rest);
   let depth = 0;
   let text = "";
-  for (let j = at; j < body.length; j++) {
-    const chunk = j === at ? rest : body[j];
+  for (let j = from; j < body.length; j++) {
+    const chunk = j === from ? rest : body[j];
     for (const ch of chunk) {
       text += ch;
       if (ch === "{") depth++;
@@ -117,8 +124,14 @@ for (const file of walk(src)) {
     return name ? [{ i, name }] : [];
   });
   starts.forEach(({ i: start, name }, k) => {
-    if (/^\s*\/\/\s*auth-ok:\s*\S/.test(rawLines[start - 1] ?? "")) return;
     const body = code.slice(start, starts[k + 1]?.i ?? code.length);
+    // Виняток лише для дій, що справді створюють чи завершують сесію: сам коментар без сесійного виклику не рахується.
+    if (/^\s*\/\/\s*auth-ok:\s*\S/.test(rawLines[start - 1] ?? "")) {
+      if (!body.some((l) => SESSION_CALL.test(l))) {
+        report(file, start + 1, `${name}: auth-ok дозволено лише для дій, що створюють або завершують сесію`);
+      }
+      return;
+    }
     const auth = body.findIndex((l) => AUTH_CALL.test(l));
     const db = body.findIndex((l) => DB_CALL.test(l));
     if (auth < 0) {

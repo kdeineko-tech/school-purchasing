@@ -158,8 +158,9 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
 - **Вхід і роль перевіряє сервер** (`scripts/check-auth-rules.mjs`, ADR `docs/decisions/0004-role-in-profiles-table.md`):
   жодного `getSession()` і `middleware.ts` у `src/`; роль і права — лише з `public.profiles`, не з `user_metadata` /
   `app_metadata`; кожна експортована функція файлу з `"use server"` викликає `getViewer()` / `getClaims()` /
-  `requireAdmin()` раніше за `createClient()`. Виняток — дії, що створюють чи завершують сесію: над функцією
-  `// auth-ok: <причина>`. Не обходь правило винятком без такої причини.
+  `requireAdmin()` раніше за `createClient()`, а гілка `if (!viewer)` завершує дію. Виняток — лише дії, що створюють чи
+  завершують сесію (у тілі — `auth.signInWithPassword` / `verifyOtp` / `signOut` тощо): над функцією
+  `// auth-ok: <причина>`.
 
 ## Межі
 

@@ -110,10 +110,63 @@ describe("scripts/check-auth-rules.mjs", () => {
     expect(out).toContain("save: звернення до бази раніше за перевірку входу");
   });
 
-  it("allows an action marked auth-ok with a reason", () => {
+  it("allows an action marked auth-ok that really creates a session", () => {
     const { code } = run(
       action(`// auth-ok: дія створює сесію.
 export async function login(formData: FormData) {
+  const supabase = await createClient();
+  await supabase.auth.signInWithPassword({ email: "a@example.test", password: "x" });
+}`),
+    );
+    expect(code).toBe(0);
+  });
+
+  it("fails on auth-ok over an action without a session call", () => {
+    const { code, out } = run(
+      action(`// auth-ok: просто так.
+export async function wipe() {
+  const supabase = await createClient();
+  await supabase.from("purchases").delete();
+}`),
+    );
+    expect(code).toBe(1);
+    expect(out).toContain("wipe: auth-ok дозволено лише для дій, що створюють або завершують сесію");
+  });
+
+  it("passes a guard whose block opens on the next line and returns", () => {
+    const { code } = run(
+      action(`export async function save() {
+  const viewer = await getViewer();
+  if (!viewer)
+  {
+    return { error: "Not enough permissions" };
+  }
+  const supabase = await createClient();
+}`),
+    );
+    expect(code).toBe(0);
+  });
+
+  it("fails on a guard whose next-line block does not leave", () => {
+    const { code, out } = run(
+      action(`export async function save() {
+  const viewer = await getViewer();
+  if (!viewer)
+  {
+  }
+  const supabase = await createClient();
+}`),
+    );
+    expect(code).toBe(1);
+    expect(out).toContain("save: гілка if (!viewer) не завершує дію");
+  });
+
+  it("passes a guard whose statement is on the next line", () => {
+    const { code } = run(
+      action(`export async function save() {
+  const viewer = await getViewer();
+  if (!viewer)
+    redirect("/login");
   const supabase = await createClient();
 }`),
     );
