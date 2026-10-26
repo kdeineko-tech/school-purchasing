@@ -208,14 +208,24 @@ describe("автор заявки на головній", () => {
     const client = setDb({
       forDecision: [row(1), row(2)],
       approves: [PRIMARY.id],
-      authors: { [row(1).id]: "Andrii Demo-First", [row(2).id]: "petro@example.test" },
+      authors: { [row(1).id]: "Andrii Demo-First", [row(2).id]: "Mariia Demo-Second" },
     });
 
     const html = renderToStaticMarkup(await Home());
 
     expect(html).toContain("Author:</span> Andrii Demo-First");
-    expect(html).toContain("Author:</span> petro@example.test");
+    expect(html).toContain("Author:</span> Mariia Demo-Second");
     expect(client.rpc).toHaveBeenCalledWith("purchase_author_names", { p_purchase_ids: [row(1).id, row(2).id] });
+  });
+
+  it("AC-APR-09: у картці для рішення автор без імені показаний своїм email", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    setDb({ forDecision: [row(1)], approves: [PRIMARY.id], authors: { [row(1).id]: "petro@example.test" } });
+
+    const html = renderToStaticMarkup(await Home());
+    const card = html.slice(html.indexOf('data-testid="dashboard-decisions"'), html.indexOf('data-testid="dashboard-mine"'));
+
+    expect(card).toContain("Author:</span> petro@example.test");
   });
 
   it("AC-APR-08: у власних заявках рядка «Author» немає — автор там сам переглядач", async () => {
