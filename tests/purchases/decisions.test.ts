@@ -276,3 +276,44 @@ describe("сторінки рішення", () => {
     expect(html).not.toContain("Click here to win");
   });
 });
+
+describe("підтвердження після рішення", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
+  });
+
+  it("після схвалення — повернення на сторінку заявки з ?decided=approve", async () => {
+    setDb({});
+
+    await expect(decidePurchase(form({ purchaseId: ID, decision: "approve" }))).rejects.toThrow(
+      `REDIRECT /purchases/${ID}?decided=approve`,
+    );
+  });
+
+  it("після відхилення з причиною — ?decided=reject", async () => {
+    setDb({});
+
+    await expect(
+      decidePurchase(form({ purchaseId: ID, decision: "reject", reason: "Немає бюджету" })),
+    ).rejects.toThrow(`REDIRECT /purchases/${ID}?decided=reject`);
+  });
+
+  it("сторінка схваленої заявки з ?decided=approve показує «Request approved»", async () => {
+    setDb({ purchases: [row({ status: "approved" })], approves: [PRIMARY.id] });
+
+    const html = renderToStaticMarkup(await PurchasePage(pageProps({ decided: "approve" })));
+
+    expect(html).toContain('data-testid="decision-done"');
+    expect(html).toContain("Request approved");
+  });
+
+  it("підтвердження не показуємо, якщо статус заявки з ним не збігається (адресі не довіряємо)", async () => {
+    setDb({ purchases: [row()], approves: [PRIMARY.id] });
+
+    const html = renderToStaticMarkup(await PurchasePage(pageProps({ decided: "approve" })));
+
+    expect(html).not.toContain("Request approved");
+  });
+});
+

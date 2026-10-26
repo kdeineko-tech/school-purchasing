@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { NoAccess } from "@/app/admin/no-access";
 import { PageShell } from "@/components/page-shell";
@@ -7,6 +8,8 @@ import { getViewer } from "@/lib/org/viewer";
 import { loadDecisionRequests } from "@/lib/purchases/lists";
 import { createClient } from "@/lib/supabase/server";
 import { PurchaseList } from "../purchases/purchase-list";
+
+export const metadata: Metadata = { title: "Approvals" };
 
 // Список для рішення: заявки «Очікує схвалення» відділів, які переглядач схвалює, крім власних (AC-APR-01), з іменем
 // автора кожної (AC-APR-08, AC-APR-09).

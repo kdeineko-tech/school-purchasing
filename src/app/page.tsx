@@ -6,7 +6,7 @@ import { PageShell } from "@/components/page-shell";
 import { Badge, Card, EmptyState, roleLabel } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
-import { loadDecisionRequests, loadMyRequests } from "@/lib/purchases/lists";
+import { countMyAwaiting, loadDecisionRequests, loadMyRequests } from "@/lib/purchases/lists";
 import { createClient } from "@/lib/supabase/server";
 import { PurchaseList } from "./purchases/purchase-list";
 
@@ -22,8 +22,9 @@ export default async function Home() {
 
   const supabase = await createClient();
   const decides = viewer.role !== "requester";
-  const [mine, decision] = await Promise.all([
+  const [mine, myAwaiting, decision] = await Promise.all([
     loadMyRequests(supabase, viewer.id, DASHBOARD_ROWS),
+    countMyAwaiting(supabase, viewer.id),
     decides ? loadDecisionRequests(supabase, viewer.id, DASHBOARD_ROWS) : null,
   ]);
 
@@ -66,6 +67,8 @@ export default async function Home() {
         )}
         <DashboardCard
           title="My recent requests"
+          count={myAwaiting}
+          countLabel="awaiting approval"
           href="/purchases"
           linkText="All requests"
           testId="dashboard-mine"
@@ -89,6 +92,7 @@ export default async function Home() {
 function DashboardCard({
   title,
   count,
+  countLabel,
   href,
   linkText,
   testId,
@@ -97,6 +101,7 @@ function DashboardCard({
 }: {
   title: string;
   count?: number;
+  countLabel?: string;
   href: string;
   linkText: string;
   testId: string;
@@ -108,7 +113,12 @@ function DashboardCard({
       <div data-testid={testId} className="flex flex-col gap-2">
         <div className="flex items-center justify-between gap-2">
           <h2 className="font-semibold">{title}</h2>
-          {count !== undefined && count > 0 && <Badge tone="pending">{count}</Badge>}
+          {count !== undefined && count > 0 && (
+            <span data-testid="dashboard-count" title={countLabel ? `${count} ${countLabel}` : undefined}>
+              <Badge tone="pending">{count}</Badge>
+              {countLabel && <span className="sr-only"> {countLabel}</span>}
+            </span>
+          )}
         </div>
         {children}
         <Link href={href} className="self-start text-sm font-medium text-primary hover:underline">

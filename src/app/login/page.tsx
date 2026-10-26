@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { Alert, Button, Input, Logo, OpenBook, SchoolBackdrop, ThemeToggle } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { login } from "./actions";
+
+export const metadata: Metadata = { title: "Sign in" };
 
 const ERRORS: Record<string, string> = {
   missing: "Enter your email and password.",
