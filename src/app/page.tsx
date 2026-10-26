@@ -14,9 +14,9 @@ export default async function Home() {
     <PageShell viewer={viewer} title={`Welcome, ${viewer.fullName ?? viewer.email ?? ""}`}>
       <Card>
         <dl className="grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-3 text-sm">
-          <dt className="text-muted">Email</dt>
+          <dt className="text-muted-foreground">Email</dt>
           <dd data-testid="user-email">{viewer.email ?? "—"}</dd>
-          <dt className="text-muted">Role</dt>
+          <dt className="text-muted-foreground">Role</dt>
           <dd data-testid="user-role">
             <RoleBadge role={viewer.role} />
           </dd>
@@ -42,10 +42,10 @@ function NavCard({ href, title, text }: { href: string; title: string; text: str
   return (
     <Link
       href={href}
-      className="group rounded-xl border border-border bg-surface p-5 shadow-sm transition hover:border-accent"
+      className="group rounded-xl border border-border bg-card p-5 shadow-sm transition hover:border-primary"
     >
-      <p className="font-medium group-hover:text-accent">{title} →</p>
-      <p className="mt-1 text-sm text-muted">{text}</p>
+      <p className="font-medium group-hover:text-primary">{title} →</p>
+      <p className="mt-1 text-sm text-muted-foreground">{text}</p>
     </Link>
   );
 }

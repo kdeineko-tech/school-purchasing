@@ -9,8 +9,8 @@ export function NoAccess({ viewer = null }: { viewer?: ViewerProfile | null }) {
   return (
     <PageShell viewer={viewer}>
       <Card className="flex flex-col items-start gap-4">
-        <Alert testId="no-access">{MESSAGES.forbidden}</Alert>
-        <Link href="/" className="text-sm text-accent hover:underline">
+        <Alert testId="no-access" tone="neutral">{MESSAGES.forbidden}</Alert>
+        <Link href="/" className="text-sm text-primary hover:underline">
           Back to home
         </Link>
       </Card>

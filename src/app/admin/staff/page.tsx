@@ -30,7 +30,7 @@ export default async function StaffPage() {
     >
       <Card className="overflow-x-auto p-0">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-border text-xs tracking-wide text-muted uppercase">
+          <thead className="border-b border-border text-xs tracking-wide text-muted-foreground uppercase">
             <tr>
               <th className="px-5 py-3 font-medium">Employee</th>
               <th className="px-5 py-3 font-medium">Role</th>
@@ -41,10 +41,10 @@ export default async function StaffPage() {
             {(staff ?? []).map((p) => (
               <tr key={p.id} className="border-b border-border last:border-0 hover:bg-background">
                 <td className="px-5 py-3">
-                  <Link href={`/admin/staff/${p.id}`} className="font-medium hover:text-accent">
+                  <Link href={`/admin/staff/${p.id}`} className="font-medium hover:text-primary">
                     {p.full_name ?? p.email ?? "—"}
                   </Link>
-                  <p className="text-xs text-muted">{p.email ?? "—"}</p>
+                  <p className="text-xs text-muted-foreground">{p.email ?? "—"}</p>
                 </td>
                 <td className="px-5 py-3">
                   <RoleBadge role={p.role} />

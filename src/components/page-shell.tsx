@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { signOut } from "@/app/login/actions";
 import { canOpenAdminPages } from "@/lib/org/access";
 import type { ViewerProfile } from "@/lib/org/viewer";
-import { RoleBadge } from "./ui";
+import { Button, RoleBadge } from "./ui";
 
 export function PageShell({
   viewer,
@@ -22,14 +22,14 @@ export function PageShell({
 }) {
   return (
     <div className="flex min-h-full flex-1 flex-col">
-      <header className="border-b border-border bg-surface">
+      <header className="border-b border-border bg-card">
         <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span className="grid size-7 place-items-center rounded-lg bg-accent text-sm text-accent-foreground">S</span>
+            <span className="grid size-7 place-items-center rounded-lg bg-primary text-sm text-primary-foreground">S</span>
             School Purchasing
           </Link>
           {viewer && (
-            <nav className="flex items-center gap-4 text-sm text-muted">
+            <nav className="flex items-center gap-4 text-sm text-muted-foreground">
               <Link href="/purchases" className="hover:text-foreground">
                 My requests
               </Link>
@@ -50,12 +50,12 @@ export function PageShell({
           )}
           {viewer && (
             <div className="ml-auto flex items-center gap-3 text-sm">
-              <span className="hidden text-muted sm:inline">{viewer.fullName ?? viewer.email}</span>
+              <span className="hidden text-muted-foreground sm:inline">{viewer.fullName ?? viewer.email}</span>
               <RoleBadge role={viewer.role} />
               <form action={signOut}>
-                <button type="submit" className="text-muted hover:text-foreground">
+                <Button type="submit" variant="ghost" className="h-8 px-2 text-muted-foreground">
                   Sign out
-                </button>
+                </Button>
               </form>
             </div>
           )}
@@ -64,14 +64,14 @@ export function PageShell({
 
       <main className="mx-auto flex w-full max-w-4xl flex-1 flex-col gap-6 px-4 py-8 sm:px-6">
         {back && (
-          <Link href={back.href} className="text-sm text-muted hover:text-foreground">
+          <Link href={back.href} className="text-sm text-muted-foreground hover:text-foreground">
             ← {back.label}
           </Link>
         )}
         {(title || description) && (
           <div className="flex flex-col gap-1">
             {title && <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>}
-            {description && <p className="text-sm text-muted">{description}</p>}
+            {description && <p className="text-sm text-muted-foreground">{description}</p>}
           </div>
         )}
         {children}

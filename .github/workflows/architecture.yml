@@ -1,7 +1,7 @@
 # Архітектурні правила — окремий workflow, щоб не чіпати назви jobs у ci.yml (на них спирається ruleset).
 # Кожне правило — швидкий скрипт без залежностей; пояснення — в ADR у docs/decisions/.
 # Взято з https://github.com/koldovsky/2026-quitcode-07-fullstack-hw/blob/main/materials/workflows/architecture.yml і
-# доповнено власним правилом auth-rules; job design-tokens додасть PR дизайн-системи.
+# доповнено власним правилом auth-rules.
 name: architecture
 
 on:
@@ -13,6 +13,17 @@ permissions:
   contents: read
 
 jobs:
+  design-tokens:
+    name: "Дизайн-система: лише токени"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+      - run: node scripts/check-design-tokens.mjs
+
   server-boundary:
     name: "Секретний ключ лише на сервері"
     runs-on: ubuntu-latest

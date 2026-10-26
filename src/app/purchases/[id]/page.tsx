@@ -81,27 +81,27 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
       {errorMessage && <Alert testId="decision-error">{errorMessage}</Alert>}
       <Card>
         <dl className="grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-3 text-sm">
-          <dt className="text-muted">Status</dt>
+          <dt className="text-muted-foreground">Status</dt>
           <dd>
             <StatusBadge status={purchase.status} />
           </dd>
           {purchase.status === "rejected" && purchase.rejection_reason && (
             <>
-              <dt className="text-muted">Reason</dt>
+              <dt className="text-muted-foreground">Reason</dt>
               <dd data-testid="rejection-reason">{purchase.rejection_reason}</dd>
             </>
           )}
-          <dt className="text-muted">Department</dt>
+          <dt className="text-muted-foreground">Department</dt>
           <dd data-testid="purchase-department">{department?.name ?? "—"}</dd>
-          <dt className="text-muted">Purchase type</dt>
+          <dt className="text-muted-foreground">Purchase type</dt>
           <dd>{PURCHASE_TYPE_LABELS[purchase.purchase_type as PurchaseTypeId] ?? purchase.purchase_type}</dd>
-          <dt className="text-muted">Submitted</dt>
+          <dt className="text-muted-foreground">Submitted</dt>
           <dd>{formatSubmittedAt(purchase.created_at)}</dd>
         </dl>
       </Card>
       <Card title="Lines">
         <table aria-label="Lines" className="w-full text-left text-sm" data-testid="purchase-lines">
-          <thead className="text-muted">
+          <thead className="text-muted-foreground">
             <tr>
               <th className="py-2 font-medium">Item</th>
               <th className="py-2 font-medium">Purpose</th>
@@ -133,7 +133,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
               <Button type="submit" name="decision" value="approve">
                 Approve
               </Button>
-              <Button type="submit" name="decision" value="reject" variant="secondary">
+              <Button type="submit" name="decision" value="reject" variant="destructive">
                 Reject
               </Button>
             </div>

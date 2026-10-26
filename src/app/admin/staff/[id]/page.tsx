@@ -149,11 +149,11 @@ export default async function StaffProfilePage({ params, searchParams }: PagePro
 
       <Card title="Permissions">
         <dl className="mb-4 grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
-          <dt className="text-muted">Allowed request types</dt>
+          <dt className="text-muted-foreground">Allowed request types</dt>
           <dd data-testid="allowed-request-types" className="flex flex-wrap gap-2">
             {requestTypes.length > 0 ? requestTypes.map((t) => <Badge key={t}>{t}</Badge>) : "—"}
           </dd>
-          <dt className="text-muted">Allowed purchase types</dt>
+          <dt className="text-muted-foreground">Allowed purchase types</dt>
           <dd data-testid="allowed-purchase-types" className="flex flex-wrap gap-2">
             {purchaseTypes.map((t) => (
               <Badge key={t}>{t}</Badge>

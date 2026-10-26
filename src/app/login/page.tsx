@@ -14,14 +14,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
   return (
     <main className="flex flex-1 items-center justify-center px-4 py-16">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-sm">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <span className="grid size-10 place-items-center rounded-xl bg-accent text-lg font-semibold text-accent-foreground">
+          <span className="grid size-10 place-items-center rounded-xl bg-primary text-lg font-semibold text-primary-foreground">
             S
           </span>
           <div>
             <h1 className="text-xl font-semibold">Sign in</h1>
-            <p className="text-sm text-muted">School Purchasing</p>
+            <p className="text-sm text-muted-foreground">School Purchasing</p>
           </div>
         </div>
         <form action={login} className="flex flex-col gap-4">
