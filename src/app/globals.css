@@ -2,8 +2,20 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
+/* Варіант dark: для класів shadcn — та сама умова, що й для токенів темної теми нижче. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"], [data-theme="light"] *)) {
+      @slot;
+    }
+  }
+}
+
 /* Токени дизайн-системи School Purchasing, палітра Calm School (DESIGN.md, розділ 2; джерело — артефакт Claude Design).
-   Значення — OKLCH; темна тема — за системою (prefers-color-scheme), ті самі назви. Новий токен — DESIGN.md, розділ 9. */
+   Значення — OKLCH; темна тема — за вибором у перемикачі (data-theme) або за системою, ті самі назви. Новий токен — DESIGN.md, розділ 9. */
 :root {
   --background: oklch(0.97 0.008 91.5);
   --foreground: oklch(0.312 0.019 157.2);
@@ -31,10 +43,42 @@
   --status-rejected: oklch(0.927 0.026 29.4);
   --status-rejected-foreground: oklch(0.465 0.144 29.5);
   --radius: 0.75rem;
+  color-scheme: light;
+}
+
+/* Темна тема: вибір користувача (data-theme на <html>, перемикач у шапці) або, якщо вибору немає, система. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: oklch(0.244 0.018 158.4);
+  --foreground: oklch(0.957 0.012 116.8);
+  --card: oklch(0.298 0.023 157.7);
+  --card-foreground: oklch(0.957 0.012 116.8);
+  --popover: oklch(0.336 0.025 153.8);
+  --popover-foreground: oklch(0.957 0.012 116.8);
+  --primary: oklch(0.787 0.057 138.6);
+  --primary-foreground: oklch(0.244 0.018 158.4);
+  --secondary: oklch(0.336 0.025 153.8);
+  --secondary-foreground: oklch(0.957 0.012 116.8);
+  --muted: oklch(0.336 0.025 153.8);
+  --muted-foreground: oklch(0.788 0.018 140);
+  --accent: oklch(0.364 0.036 155.1);
+  --accent-foreground: oklch(0.873 0.041 137.2);
+  --destructive: oklch(0.796 0.092 27.6);
+  --destructive-foreground: oklch(0.244 0.018 158.4);
+  --border: oklch(0.392 0.028 150.9);
+  --input: oklch(0.602 0.023 151.9);
+  --ring: oklch(0.787 0.057 138.6);
+  --status-pending: oklch(0.329 0.035 86.3);
+  --status-pending-foreground: oklch(0.88 0.099 89.8);
+  --status-approved: oklch(0.343 0.049 152.2);
+  --status-approved-foreground: oklch(0.858 0.074 141.4);
+  --status-rejected: oklch(0.317 0.054 29);
+  --status-rejected-foreground: oklch(0.841 0.068 28.8);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
     --background: oklch(0.244 0.018 158.4);
     --foreground: oklch(0.957 0.012 116.8);
     --card: oklch(0.298 0.023 157.7);

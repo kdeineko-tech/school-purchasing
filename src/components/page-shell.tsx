@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { signOut } from "@/app/login/actions";
 import { canOpenAdminPages } from "@/lib/org/access";
 import type { ViewerProfile } from "@/lib/org/viewer";
-import { Button, Logo, RoleBadge } from "./ui";
+import { Button, Logo, RoleBadge, ThemeToggle } from "./ui";
 
 export function PageShell({
   viewer,
@@ -48,17 +48,22 @@ export function PageShell({
               )}
             </nav>
           )}
-          {viewer && (
-            <div className="ml-auto flex items-center gap-3 text-sm">
-              <span className="hidden text-muted-foreground sm:inline">{viewer.fullName ?? viewer.email}</span>
-              <RoleBadge role={viewer.role} />
+          <div className="ml-auto flex items-center gap-3 text-sm">
+            {viewer && (
+              <>
+                <span className="hidden text-muted-foreground sm:inline">{viewer.fullName ?? viewer.email}</span>
+                <RoleBadge role={viewer.role} />
+              </>
+            )}
+            <ThemeToggle />
+            {viewer && (
               <form action={signOut}>
                 <Button type="submit" variant="ghost" className="h-8 px-2 text-muted-foreground">
                   Sign out
                 </Button>
               </form>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </header>
 

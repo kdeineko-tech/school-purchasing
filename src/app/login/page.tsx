@@ -1,4 +1,4 @@
-import { Alert, Button, Input, Logo } from "@/components/ui";
+import { Alert, Button, Input, Logo, ThemeToggle } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { login } from "./actions";
 
@@ -13,7 +13,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const message = typeof error === "string" ? ERRORS[error] : undefined;
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-16">
+    <main className="relative flex flex-1 items-center justify-center px-4 py-16">
+      <ThemeToggle className="absolute top-4 right-4" />
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <Logo size={88} className="rounded-2xl" />

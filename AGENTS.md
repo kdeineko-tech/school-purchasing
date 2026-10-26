@@ -152,7 +152,7 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
   inline style.
 - Компоненти — лише з `@/components/ui` (shadcn/ui і обгортки застосунку в `src/components/ui/index.tsx`, змінюються в
   цій теці). Нових кольорів у компонентах не вигадуй.
-- Новий токен: `DESIGN.md` → `:root` і темна тема в `src/app/globals.css` → `--color-<назва>` у `@theme inline`.
+- Новий токен: `DESIGN.md` → `:root` і обидва блоки темної теми в `src/app/globals.css` (`[data-theme="dark"]` і `prefers-color-scheme`) → `--color-<назва>` у `@theme inline`.
 - Перевірка: `npm run check:design` (CI: `.github/workflows/architecture.yml`).
 
 ## Архітектурні правила
