@@ -117,22 +117,54 @@ function applyShape(chain: Chain, rel: number[], cast?: number[]) {
   }
 }
 
-// «Друкований текст» сторінки, намальований кодом: рядки зі «слів» різної довжини, абзаци з відступом і коротким
-// останнім рядком. Рядки товсті, а проміжки між ними вузькі: під кутом книги тонкі смуги стискаються до часток
-// пікселя й мерехтять, а такий текст читається як рівний сірий тон з нерівними краями — як справжня сторінка здалеку.
-function textTexture(width: number, height: number, ink: string, seed: number) {
+type Paper = { ink: string; edge: string; font: string };
+
+// Колір токена з прозорістю — для градієнтів canvas (значення токенів — oklch(...) без альфи).
+const withAlpha = (color: string, alpha: number) => color.replace(/\)\s*$/, ` / ${alpha})`);
+
+// Аркуш, намальований кодом: ледь помітне зерно паперу й пожовклі краї (зовнішній, верхній і нижній; біля корінця
+// — ні, там тінь западини). mirror — для сторінки, яку видно зі звороту (ліворуч): її текстуру дзеркалимо заздалегідь.
+function paperCanvas(width: number, height: number, paper: Paper, seed: number, mirror: boolean) {
   const scale = 2;
   const canvas = document.createElement("canvas");
   canvas.width = Math.round(width * scale);
   canvas.height = Math.round(height * scale);
   const ctx = canvas.getContext("2d");
-  if (!ctx) return "none";
+  if (!ctx) return null;
   ctx.scale(scale, scale);
-  ctx.fillStyle = ink;
-  ctx.globalAlpha = 0.26;
+  if (mirror) {
+    ctx.translate(width, 0);
+    ctx.scale(-1, 1);
+  }
   let state = seed;
   const rand = () => (state = (state * 16807) % 2147483647) / 2147483647;
-  const [left, right, top, bottom] = [width * 0.11, width * 0.89, height * 0.1, height * 0.88];
+  ctx.fillStyle = paper.ink;
+  ctx.globalAlpha = 0.07;
+  for (let n = 0; n < (width * height) / 9; n++) ctx.fillRect(rand() * width, rand() * height, 0.7, 0.7);
+  ctx.globalAlpha = 1;
+  const edge = (x0: number, y0: number, x1: number, y1: number, alpha: number) => {
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, withAlpha(paper.edge, alpha));
+    g.addColorStop(1, withAlpha(paper.edge, 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, width, height);
+  };
+  edge(width, 0, width * 0.86, 0, 0.6);
+  edge(0, 0, 0, height * 0.06, 0.4);
+  edge(0, height, 0, height * 0.94, 0.4);
+  return { canvas, ctx, rand };
+}
+
+// «Друкований текст» сторінки: рядки зі «слів» різної довжини, абзаци з відступом і коротким останнім рядком.
+// Рядки товсті, а проміжки між ними вузькі: під кутом книги тонкі смуги стискаються до часток пікселя й мерехтять,
+// а такий текст читається як рівний сірий тон з нерівними краями — як справжня сторінка здалеку.
+function textTexture(width: number, height: number, paper: Paper, seed: number, mirror = false) {
+  const sheet = paperCanvas(width, height, paper, seed, mirror);
+  if (!sheet) return "none";
+  const { canvas, ctx, rand } = sheet;
+  ctx.fillStyle = paper.ink;
+  ctx.globalAlpha = 0.26;
+  const [left, right, top, bottom] = [width * 0.11, width * 0.89, height * 0.1, height * 0.86];
   const row = 4.4;
   let line = 0;
   let paragraph = 3 + Math.floor(rand() * 6);
@@ -153,10 +185,31 @@ function textTexture(width: number, height: number, ink: string, seed: number) {
   return `url(${canvas.toDataURL()})`;
 }
 
+// Титульна сторінка — її видно праворуч, коли відкривається палітурка.
+function titleTexture(width: number, height: number, paper: Paper) {
+  const sheet = paperCanvas(width, height, paper, 4242, false);
+  if (!sheet) return "none";
+  const { canvas, ctx } = sheet;
+  const cx = width * 0.53;
+  ctx.fillStyle = paper.ink;
+  ctx.textAlign = "center";
+  ctx.globalAlpha = 0.75;
+  ctx.font = `600 ${width * 0.085}px ${paper.font}`;
+  ctx.fillText("SCHOOL", cx, height * 0.34);
+  ctx.fillText("PURCHASING", cx, height * 0.34 + width * 0.11);
+  ctx.globalAlpha = 0.45;
+  ctx.fillRect(cx - width * 0.12, height * 0.34 + width * 0.16, width * 0.24, 1.2);
+  ctx.font = `${width * 0.042}px ${paper.font}`;
+  ctx.fillText("Purchase requests and approvals", cx, height * 0.34 + width * 0.24);
+  return `url(${canvas.toDataURL()})`;
+}
+
 function Strip({ i }: { i: number }) {
   return (
     <div className="book-strip" data-strip>
-      <div className="book-face" data-face style={{ "--i": i } as CSSProperties} />
+      <div className="book-face" data-face style={{ "--i": i } as CSSProperties}>
+        {i === STRIPS - 1 ? <span className="book-page-number" data-number /> : null}
+      </div>
       {i + 1 < STRIPS ? <Strip i={i + 1} /> : null}
     </div>
   );
@@ -203,19 +256,36 @@ export function OpenBook({ className }: { className?: string }) {
       faces: [...root.querySelectorAll<HTMLElement>("[data-face]")],
     }));
     const [leftTop, rightTop, ...pool] = chains;
+    // Номери сторінок — лише на двох сторінках, що лежать; ліва видна зі звороту, тож її номер віддзеркалюємо назад.
+    leftTop.root.dataset.numbered = "mirrored";
+    rightTop.root.dataset.numbered = "";
+    const numberOf = (chain: Chain) => chain.root.querySelector<HTMLElement>("[data-number]")!;
     const leftStack = book.querySelector<HTMLElement>('[data-stack="left"]')!;
     const rightStack = book.querySelector<HTMLElement>('[data-stack="right"]')!;
     const rel = new Array<number>(STRIPS).fill(0);
 
-    // Колір «тексту» — токен book-ink; перемалювати, коли змінюється тема.
+    // Текстури сторінок: колір «тексту» й пожовклих країв — токени book-ink і book-edge; перемалювати, коли
+    // змінюється тема. Титульна сторінка лежить праворуч, доки її не перегорне перший аркуш відкриття.
+    let textures = { pages: ["none"], mirrored: "none", title: "none" };
+    let titleOn: Chain | null = null;
+    const texture = (chain: Chain, value: string) => chain.root.style.setProperty("--book-text", value);
     const paintText = () => {
-      const ink = getComputedStyle(book).getPropertyValue("--book-ink").trim();
-      const textures = [1, 2, 3].map((seed) =>
-        textTexture(book.offsetWidth / 2, book.offsetHeight, ink, seed * 7919),
-      );
-      chains.forEach((chain, n) => chain.root.style.setProperty("--book-text", textures[n % textures.length]));
+      const style = getComputedStyle(book);
+      const paper: Paper = {
+        ink: style.getPropertyValue("--book-ink").trim(),
+        edge: style.getPropertyValue("--book-edge").trim(),
+        font: style.fontFamily,
+      };
+      const [width, height] = [book.offsetWidth / 2, book.offsetHeight];
+      textures = {
+        pages: [1, 2, 3].map((seed) => textTexture(width, height, paper, seed * 7919)),
+        mirrored: textTexture(width, height, paper, 5 * 7919, true),
+        title: titleTexture(width, height, paper),
+      };
+      chains.forEach((chain, n) => texture(chain, textures.pages[n % textures.pages.length]));
+      texture(leftTop, textures.mirrored);
+      if (titleOn) texture(titleOn, textures.title);
     };
-    paintText();
     const themeWatch = new MutationObserver(paintText);
     themeWatch.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
     const scheme = window.matchMedia("(prefers-color-scheme: dark)");
@@ -228,6 +298,11 @@ export function OpenBook({ className }: { className?: string }) {
     let introTime = 0;
     let landed = 0;
     let s = intro ? 0.5 - INTRO_PAGES * STEP : 0.5; // умовна частка книги ліворуч: межа гортання й повернення до середини
+    if (intro) titleOn = rightTop;
+    paintText();
+    // Нахил книги до миші (у градусах): ціль і поточне значення — книга доганяє ціль плавно, з інерцією.
+    const tilt = { x: 0, y: 0, toX: 0, toY: 0 };
+    let shownNumbers = "";
     let flights: Flight[] = [];
     const castRight = new Array<number>(STRIPS + 1).fill(0);
     const castLeft = new Array<number>(STRIPS + 1).fill(0);
@@ -278,6 +353,17 @@ export function OpenBook({ className }: { className?: string }) {
       book.style.setProperty("--shift", `${(-half / 2) * (1 - open)}px`);
       lid.style.setProperty("--lid-a", `${-180 * open}deg`);
       lid.style.setProperty("--lid-z", `${LID_CLOSED_Z + (LID_OPEN_Z - LID_CLOSED_Z) * open}px`);
+
+      book.style.setProperty("--tilt-x", `${tilt.x.toFixed(3)}deg`);
+      book.style.setProperty("--tilt-y", `${tilt.y.toFixed(3)}deg`);
+
+      // Номери розвороту: ліворуч парна, праворуч непарна; змінюються, щойно аркуш злетів. На титулі — без номера.
+      const spread = Math.round(s / STEP);
+      const numbers = `${spread * 2}|${titleOn === rightTop ? "" : spread * 2 + 1}`;
+      if (numbers !== shownNumbers) {
+        shownNumbers = numbers;
+        [numberOf(leftTop).textContent, numberOf(rightTop).textContent] = numbers.split("|");
+      }
 
       const leftDepth = intro ? DEPTH * Math.min(1, landed / INTRO_PAGES) : DEPTH;
       const leftShown = !intro || landed > 0 ? "visible" : "hidden";
@@ -367,19 +453,39 @@ export function OpenBook({ className }: { className?: string }) {
       const spaced = flights.every((f) => f.dir === want && (want === 1 ? f.p > 0.14 : f.p < 0.86));
       if (want && cooldown <= 0 && free && spaced && next >= lo && next <= hi) {
         flights.push({ chain: free, p: want === 1 ? 0 : 1, dir: want, dur });
+        // Перший аркуш відкриття — титульна сторінка: вона злітає, а праворуч лишається звичайна.
+        if (titleOn === rightTop) {
+          titleOn = free;
+          texture(free, textures.title);
+          texture(rightTop, textures.pages[1]);
+        }
         s = next;
         cooldown = 1 / rate;
       }
 
       for (const f of flights) f.p += (f.dir * dt) / f.dur;
       if (intro) landed += flights.filter((f) => f.p >= 1).length;
+      if (titleOn && titleOn !== rightTop && !flights.some((f) => f.chain === titleOn && f.p < 1)) {
+        texture(titleOn, textures.pages[0]);
+        titleOn = null;
+      }
       flights = flights.filter((f) => f.p > 0 && f.p < 1);
       if (intro && lidOpen() >= 1 && flights.length === 0 && s >= 0.5 - STEP / 2) intro = false;
 
       draw();
       // Нічого не летить і нового аркуша не буде — книга в спокої: лишаємо останній кадр і не крутимо цикл
       // марно. Його знову запускає рух миші, вихід миші за сторінку чи зміна розміру.
-      const resting = !intro && flights.length === 0 && !(want && next >= lo && next <= hi);
+      // Нахил: ціль — куди показує миша відносно книги (до 3° вбік і 2° вгору-вниз); під час відкриття — рівно.
+      const view = book.parentElement!.getBoundingClientRect();
+      const aim = !intro && pointer ? pointer : null;
+      tilt.toY = aim ? 3 * Math.max(-1, Math.min(1, (aim.x - (view.left + view.width / 2)) / (window.innerWidth / 2))) : 0;
+      tilt.toX = aim ? -2 * Math.max(-1, Math.min(1, (aim.y - (view.top + view.height / 2)) / (window.innerHeight / 2))) : 0;
+      const ease = Math.min(1, elapsed * 5);
+      tilt.x += (tilt.toX - tilt.x) * ease;
+      tilt.y += (tilt.toY - tilt.y) * ease;
+      const settled = Math.abs(tilt.toX - tilt.x) < 0.01 && Math.abs(tilt.toY - tilt.y) < 0.01;
+
+      const resting = !intro && settled && flights.length === 0 && !(want && next >= lo && next <= hi);
       raf = resting ? 0 : requestAnimationFrame(tick);
     };
 
@@ -401,6 +507,9 @@ export function OpenBook({ className }: { className?: string }) {
         flights = [];
         s = 0.5;
         intro = false;
+        titleOn = null;
+        Object.assign(tilt, { x: 0, y: 0, toX: 0, toY: 0 });
+        paintText();
       }
       start();
     };

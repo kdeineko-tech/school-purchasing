@@ -15,8 +15,10 @@
   width: calc(var(--book-w) * 2);
   height: var(--book-h);
   margin-top: calc(var(--book-h) * -0.16);
-  /* --shift: закрита книга на старті стоїть посередині сцени (JS зсуває її, доки відкривається палітурка). */
-  transform: translateX(var(--shift, calc(var(--book-w) * -0.5))) rotateX(74deg);
+  /* --shift: закрита книга на старті стоїть посередині сцени (JS зсуває її, доки відкривається палітурка).
+     --tilt-x / --tilt-y: легкий нахил до миші. */
+  transform: translateX(var(--shift, calc(var(--book-w) * -0.5))) rotateY(var(--tilt-y, 0deg))
+    rotateX(calc(74deg + var(--tilt-x, 0deg)));
   transform-style: preserve-3d;
 }
 
@@ -194,4 +196,24 @@
     linear-gradient(to right, oklch(0 0 0 / var(--s0, 0)), oklch(0 0 0 / var(--s1, 0))),
     var(--book-text, none) calc(var(--i, 0) * var(--book-w) / -16) 0 / var(--book-w) 100% no-repeat,
     var(--book-paper);
+}
+
+.book-page-number {
+  /* Номер сторінки в нижньому зовнішньому куті; лише на сторінках, що лежать. */
+  display: none;
+  position: absolute;
+  left: -100%;
+  right: 0;
+  bottom: 5%;
+  font-size: calc(var(--book-w) * 0.05);
+  text-align: center;
+  color: color-mix(in oklch, var(--book-ink) 80%, transparent);
+}
+
+[data-numbered] .book-page-number {
+  display: block;
+}
+
+[data-numbered="mirrored"] .book-page-number {
+  transform: scaleX(-1);
 }
