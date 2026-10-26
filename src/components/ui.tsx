@@ -55,8 +55,14 @@ export function Badge({ children, tone = "neutral" }: { children: ReactNode; ton
   return <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${look}`}>{children}</span>;
 }
 
+// Підпис ролі — англійська назва з таблиці ValiaBihun/2026-quitcode-dream-team#49; ідентифікатор ролі (requester,
+// approver, admin) лишається без змін — у data-role і в підказці (AC-LANG-08).
 export function RoleBadge({ role }: { role: string }) {
-  return <Badge tone={role === "admin" ? "accent" : "neutral"}>{roleLabel(role)}</Badge>;
+  return (
+    <span data-role={role} title={role} className="inline-flex">
+      <Badge tone={role === "admin" ? "accent" : "neutral"}>{roleLabel(role)}</Badge>
+    </span>
+  );
 }
 
 export function Alert({ children, testId }: { children: ReactNode; testId?: string }) {

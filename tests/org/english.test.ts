@@ -5,6 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { NoAccess } from "@/app/admin/no-access";
 import LoginPage from "@/app/login/page";
+import { RoleBadge, roleLabel } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -54,6 +55,24 @@ describe("інтерфейс англійською", () => {
 
     expect(html).toContain("Invalid email or password.");
     expect(html).not.toMatch(CYRILLIC);
+  });
+
+  it.each([
+    ["requester", "Requester"],
+    ["approver", "Approver"],
+    ["admin", "Administrator"],
+  ])("AC-LANG-08: роль %s — ідентифікатор без змін, поруч англійська назва «%s» за таблицею", (role, label) => {
+    const html = renderToStaticMarkup(createElement(RoleBadge, { role }));
+
+    expect(roleLabel(role)).toBe(label);
+    expect(html).toContain(`data-role="${role}"`);
+    expect(html).toContain(`title="${role}"`);
+    expect(html).toContain(`>${label}<`);
+    expect(html).not.toMatch(CYRILLIC);
+  });
+
+  it("невідомий ідентифікатор ролі показуємо як є, без вигаданої назви", () => {
+    expect(roleLabel("auditor")).toBe("auditor");
   });
 
   it("AC-LANG-03: працівник без права бачить «Not enough permissions» замість «Недостатньо прав»", () => {

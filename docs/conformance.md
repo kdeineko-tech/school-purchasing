@@ -92,4 +92,4 @@
 | AC-LANG-04 | Заявка без рядків англійською | `src/lib/org/messages.ts` (noLines), `src/app/purchases/actions.ts` (submitPurchase) | `tests/purchases/submit.test.ts` | реалізовано |
 | AC-LANG-05 | Рішення без причини англійською | `src/lib/org/messages.ts` (provideReason), `src/app/purchases/actions.ts` (decidePurchase) | `tests/purchases/decisions.test.ts` | реалізовано |
 | AC-LANG-06 | Підпис статусу | `src/app/purchases/status-badge.tsx`, `src/lib/purchases/form.ts` (STATUS_LABELS) | `tests/purchases/purchase-page.test.ts` | реалізовано |
-| AC-LANG-08 | Ролі | — | — | відкладено (чекає реалізації) |
+| AC-LANG-08 | Ролі | `src/components/ui.tsx` (RoleBadge, roleLabel), `supabase/migrations/20261022010957_approvers.sql` (роль — ідентифікатор) | `tests/org/english.test.ts`, `tests/db/roles.test.ts` | реалізовано |

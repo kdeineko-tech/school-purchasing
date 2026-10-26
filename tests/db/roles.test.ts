@@ -78,6 +78,19 @@ describe("роль за відділами в базі", () => {
   });
 });
 
+describe("ідентифікатори ролей у базі", () => {
+  it("AC-LANG-08: у базі ролі — незмінні ідентифікатори requester / approver / admin, без перекладу", async () => {
+    await setApproves(member1, PRIMARY, true);
+
+    const roles = await t.asService<{ role: string }>("select distinct role from public.profiles order by role");
+    expect(roles.map((r) => r.role)).toEqual(["admin", "approver", "requester"]);
+
+    // Англійську назву замість ідентифікатора база не зберігає: роль не-адміністратора перераховує тригер.
+    await t.asService("update public.profiles set role = 'Approver' where id = $1", [member2]);
+    expect(await roleOf(member2)).toBe("requester");
+  });
+});
+
 describe("роль не змінює сам працівник", () => {
   it("AC-ORG-09: працівник без ролі admin не робить себе адміністратором оновленням профілю — FORBIDDEN, роль та сама", async () => {
     await expect(
