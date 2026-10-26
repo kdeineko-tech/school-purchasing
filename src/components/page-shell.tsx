@@ -33,6 +33,11 @@ export function PageShell({
               <Link href="/purchases" className="hover:text-foreground">
                 My requests
               </Link>
+              {viewer.role !== "requester" && (
+                <Link href="/approvals" className="hover:text-foreground">
+                  Approvals
+                </Link>
+              )}
               <Link href="/profile" className="hover:text-foreground">
                 My profile
               </Link>

@@ -72,24 +72,24 @@
 | AC-FRM-06 | Подання без рядків | `src/lib/purchases/form.ts` (validateSubmission), `src/app/purchases/new/purchase-form.tsx`, `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
 | AC-FRM-07 | Подання закупівлі з одним рядком | `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/form.test.ts`, `tests/purchases/submit.test.ts`, `tests/purchases/pages.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
 | AC-FRM-12 | Відділ без активного схвалювача | `src/app/purchases/actions.ts` (submitPurchase), `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) | `tests/purchases/submit.test.ts` | реалізовано |
-| AC-FRM-13 | Єдиний схвалювач — автор | — | — | відкладено (чекає реалізації) |
+| AC-FRM-13 | Єдиний схвалювач — автор | `supabase/migrations/20261025223225_purchase_decisions.sql` (decide_purchase), `src/lib/purchases/decisions.ts` (canDecide) | `tests/db/decisions.test.ts` | реалізовано |
 | AC-FRM-11 | Перехід на «Мої заявки» | `src/app/purchases/actions.ts` (submitPurchase), `src/app/purchases/page.tsx` | `tests/purchases/submit.test.ts`, `tests/purchases/pages.test.ts` | реалізовано |
 | AC-FRM-10 | Власна закупівля в «Мої заявки» | `src/app/purchases/page.tsx`, `supabase/migrations/20261025185729_purchases.sql` (submit_purchase) (RLS purchases_select_visible) | `tests/purchases/pages.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
 | AC-FRM-08 | Колега відкриває чужу закупівлю | `src/app/purchases/[id]/page.tsx`, `src/lib/purchases/form.ts` (canSeePurchase), `supabase/migrations/20261025185729_purchases.sql` (RLS purchases_select_visible) | `tests/purchases/purchase-page.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
 | AC-FRM-09 | Гість відкриває форму | `src/app/purchases/new/page.tsx`, `src/app/purchases/page.tsx` | `tests/purchases/pages.test.ts`, `tests/db/purchases.test.ts` | реалізовано |
 | AC-FRM-14 | «Мої заявки» без заявок | — | — | відкладено (чекає реалізації) |
 | AC-FRM-15 | Рядок лише з назвою | — | — | відкладено (чекає реалізації) |
-| AC-APR-01 | Лише заявки свого відділу | — | — | відкладено (чекає реалізації) |
-| AC-APR-02 | Схвалювач схвалює заявку свого відділу | — | — | відкладено (чекає реалізації) |
-| AC-APR-03 | Схвалювач відкриває заявку чужого відділу | — | — | відкладено (чекає реалізації) |
-| AC-APR-04 | Заявник відкриває список для рішення | — | — | відкладено (чекає реалізації) |
-| AC-APR-05 | Схвалювач схвалює власну заявку напряму | — | — | відкладено (чекає реалізації) |
-| AC-APR-06 | Відхилення без причини | — | — | відкладено (чекає реалізації) |
-| AC-APR-07 | Відхилення з причиною | — | — | відкладено (чекає реалізації) |
+| AC-APR-01 | Лише заявки свого відділу | `src/lib/purchases/decisions.ts` (decisionList), `src/app/approvals/page.tsx` | `tests/purchases/decisions.test.ts` | реалізовано |
+| AC-APR-02 | Схвалювач схвалює заявку свого відділу | `src/lib/purchases/decisions.ts` (canDecide), `src/app/purchases/actions.ts` (decidePurchase), `src/app/purchases/[id]/page.tsx`, `supabase/migrations/20261025223225_purchase_decisions.sql` (decide_purchase) | `tests/purchases/decisions.test.ts`, `tests/db/decisions.test.ts` | реалізовано |
+| AC-APR-03 | Схвалювач відкриває заявку чужого відділу | `supabase/migrations/20261025223225_purchase_decisions.sql` (decide_purchase), `src/lib/purchases/decisions.ts` (canDecide), `supabase/migrations/20261025185729_purchases.sql` (RLS) | `tests/purchases/decisions.test.ts`, `tests/db/decisions.test.ts` | реалізовано |
+| AC-APR-04 | Заявник відкриває список для рішення | `src/app/approvals/page.tsx`, `supabase/migrations/20261025223225_purchase_decisions.sql` (decide_purchase) | `tests/purchases/decisions.test.ts`, `tests/db/decisions.test.ts` | реалізовано |
+| AC-APR-05 | Схвалювач схвалює власну заявку напряму | `supabase/migrations/20261025223225_purchase_decisions.sql` (decide_purchase), `src/lib/purchases/decisions.ts` (canDecide), `src/app/purchases/[id]/page.tsx` | `tests/purchases/decisions.test.ts`, `tests/db/decisions.test.ts` | реалізовано |
+| AC-APR-06 | Відхилення без причини | `src/lib/purchases/decisions.ts` (validateDecision), `src/app/purchases/actions.ts` (decidePurchase), `supabase/migrations/20261025223225_purchase_decisions.sql` (decide_purchase) | `tests/purchases/decisions.test.ts`, `tests/db/decisions.test.ts` | реалізовано |
+| AC-APR-07 | Відхилення з причиною | `src/app/purchases/actions.ts` (decidePurchase), `src/app/purchases/[id]/page.tsx` (причина поруч зі статусом), `supabase/migrations/20261025223225_purchase_decisions.sql` (decide_purchase) | `tests/purchases/decisions.test.ts`, `tests/db/decisions.test.ts` | реалізовано |
 | AC-LANG-01 | Будь-яка сторінка англійською | `src/lib/org/messages.ts`, `src/components/ui.tsx` (roleLabel), `src/components/page-shell.tsx`, `src/app/layout.tsx` (lang="en") | `tests/org/english.test.ts` | реалізовано |
 | AC-LANG-02 | Вхід англійською | `src/app/login/page.tsx` | `tests/org/english.test.ts` | реалізовано |
 | AC-LANG-03 | Відмова без права англійською | `src/lib/org/messages.ts` (forbidden), `src/app/admin/no-access.tsx` | `tests/org/english.test.ts` | реалізовано |
 | AC-LANG-04 | Заявка без рядків англійською | `src/lib/org/messages.ts` (noLines), `src/app/purchases/actions.ts` (submitPurchase) | `tests/purchases/submit.test.ts` | реалізовано |
-| AC-LANG-05 | Рішення без причини англійською | — | — | відкладено (чекає реалізації) |
+| AC-LANG-05 | Рішення без причини англійською | `src/lib/org/messages.ts` (provideReason), `src/app/purchases/actions.ts` (decidePurchase) | `tests/purchases/decisions.test.ts` | реалізовано |
 | AC-LANG-06 | Підпис статусу | `src/app/purchases/status-badge.tsx`, `src/lib/purchases/form.ts` (STATUS_LABELS) | `tests/purchases/purchase-page.test.ts` | реалізовано |
 | AC-LANG-08 | Ролі | — | — | відкладено (чекає реалізації) |

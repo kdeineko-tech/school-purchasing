@@ -24,7 +24,7 @@
 
 ## 3. Рішення схвалювача
 
-- [ ] 3.1 Міграція `…_purchase_decisions.sql` — лише функції `decide_purchase` (`private` + обгортка `public`) для
+- [x] 3.1 Міграція `…_purchase_decisions.sql` — лише функції `decide_purchase` (`private` + обгортка `public`) для
   наявної таблиці `purchases` (колонки рішення вже є; нової таблиці немає): `for update`; `FORBIDDEN`, `NOT_PENDING`,
   `REASON_REQUIRED`; `canDecide`, `decisionList`, `validateDecision`; сторінка `/approvals` (`requester` — відмова;
   порожньо — «No requests awaiting your decision»); кнопки «Approve» / «Reject» з причиною на `/purchases/[id]`;
