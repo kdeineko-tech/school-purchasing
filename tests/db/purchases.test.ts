@@ -119,6 +119,50 @@ describe("подання закупівлі в базі", () => {
     expect(await countPurchases(member1)).toBe(before);
   });
 
+  it.each([
+    ["назва — табуляція", { name: "\t", purpose: "Printing", quantity: "3", unit_price: "20.00" }],
+    ["мета — перенос рядка", { name: "Paper A4", purpose: "\n", quantity: "3", unit_price: "20.00" }],
+    ["кількість — \\r\\n", { name: "Paper A4", purpose: "Printing", quantity: "\r\n", unit_price: "20.00" }],
+    ["ціна — нерозривний пробіл", { name: "Paper A4", purpose: "Printing", quantity: "3", unit_price: "\u00a0" }],
+  ])("AC-FRM-15: поле лише з «порожніх» символів (%s) — LINE_FIELDS, нової заявки немає", async (_case, line) => {
+    const before = await countPurchases(member1);
+
+    await expect(
+      t.asUser(member1, "select public.submit_purchase($1, 'purchasing_department', $2::jsonb)", [
+        PRIMARY,
+        JSON.stringify([line]),
+      ]),
+    ).rejects.toThrow(/LINE_FIELDS/);
+    expect(await countPurchases(member1)).toBe(before);
+  });
+
+  it("AC-FRM-15: перший рядок заповнений, другий без мети — LINE_FIELDS, нової заявки немає", async () => {
+    const before = await countPurchases(member1);
+    const lines = [
+      { name: "Paper A4", purpose: "Printing", quantity: "3", unit_price: "20.00" },
+      { name: "Pens", purpose: "", quantity: "10", unit_price: "1.50" },
+    ];
+
+    await expect(
+      t.asUser(member1, "select public.submit_purchase($1, 'purchasing_department', $2::jsonb)", [
+        PRIMARY,
+        JSON.stringify(lines),
+      ]),
+    ).rejects.toThrow(/LINE_FIELDS/);
+    expect(await countPurchases(member1)).toBe(before);
+  });
+
+  it("AC-FRM-07: значення рядка зберігаються обрізаними тим самим набором символів, що й перевіряються", async () => {
+    const [{ id }] = await t.asUser<{ id: string }>(
+      member1,
+      "select public.submit_purchase($1, 'purchasing_department', $2::jsonb) as id",
+      [PRIMARY, JSON.stringify([{ name: "\tPaper A4\n", purpose: "\u00a0Printing ", quantity: " 3\r\n", unit_price: "\t20.00" }])],
+    );
+
+    const [saved] = await t.asService("select name, purpose, quantity, unit_price from public.purchase_lines where purchase_id = $1", [id]);
+    expect(saved).toEqual({ name: "Paper A4", purpose: "Printing", quantity: 3, unit_price: "20.00" });
+  });
+
   it("AC-ORG-23: адміністратор без дозволу подає «Самостійну закупівлю» у відділ, де він не заявник (AC-ORG-22)", async () => {
     const [{ id }] = await t.asUser<{ id: string }>(
       admin,

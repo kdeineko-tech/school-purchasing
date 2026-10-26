@@ -1,6 +1,7 @@
 -- Обов'язкові поля рядка закупівлі (impl-add-purchase-flow, задача 4.1; AC-FRM-15). Застосовану міграцію
 -- 20261025185729_purchases.sql не змінюємо: функцію private.submit_purchase замінюємо цілком (create or replace) — та
--- сама сигнатура, ті самі перевірки й запис, плюс перевірка LINE_FIELDS після перевірок масиву рядків і до insert.
+-- сама сигнатура, ті самі перевірки й запис, плюс перевірка LINE_FIELDS після перевірок масиву рядків і до insert;
+-- поля рядка обрізаються одним набором «порожніх» символів (v_blank) і в перевірці, і під час запису.
 -- Обгортка public.submit_purchase і grants лишаються з попередньої міграції.
 
 create or replace function private.submit_purchase(p_department_id uuid, p_purchase_type text, p_lines jsonb)
@@ -13,6 +14,9 @@ declare
   v_uid uuid := (select auth.uid());
   v_role text;
   v_purchase_id uuid;
+  -- «Порожні» символи для полів рядка — ті самі, що прибирає trim() у формі: пробіл, \t, \n, вертикальна табуляція,
+  -- form feed, \r, нерозривний пробіл. Один набір і в перевірці LINE_FIELDS, і під час запису.
+  v_blank constant text := ' ' || chr(9) || chr(10) || chr(11) || chr(12) || chr(13) || chr(160);
 begin
   -- Працівник, який увійшов і активний (AC-ORG-12).
   if v_uid is null or not private.is_active_user() then
@@ -60,10 +64,10 @@ begin
   -- лише заповненість: межі значень (ціла кількість від 1, ціна від 0) — наступний зріз.
   if exists (
     select 1 from jsonb_array_elements(p_lines) as line(value)
-    where nullif(btrim(line.value ->> 'name'), '') is null
-       or nullif(btrim(line.value ->> 'purpose'), '') is null
-       or nullif(btrim(line.value ->> 'quantity'), '') is null
-       or nullif(btrim(line.value ->> 'unit_price'), '') is null
+    where nullif(btrim(line.value ->> 'name', v_blank), '') is null
+       or nullif(btrim(line.value ->> 'purpose', v_blank), '') is null
+       or nullif(btrim(line.value ->> 'quantity', v_blank), '') is null
+       or nullif(btrim(line.value ->> 'unit_price', v_blank), '') is null
   ) then
     raise exception 'LINE_FIELDS';
   end if;
@@ -82,10 +86,10 @@ begin
     select
       v_purchase_id,
       line.position,
-      nullif(btrim(line.value ->> 'name'), ''),
-      nullif(btrim(line.value ->> 'purpose'), ''),
-      nullif(btrim(line.value ->> 'quantity'), '')::integer,
-      nullif(btrim(line.value ->> 'unit_price'), '')::numeric(12, 2)
+      nullif(btrim(line.value ->> 'name', v_blank), ''),
+      nullif(btrim(line.value ->> 'purpose', v_blank), ''),
+      nullif(btrim(line.value ->> 'quantity', v_blank), '')::integer,
+      nullif(btrim(line.value ->> 'unit_price', v_blank), '')::numeric(12, 2)
     from jsonb_array_elements(p_lines) with ordinality as line(value, position);
   exception
     when invalid_text_representation or numeric_value_out_of_range then
