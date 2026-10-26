@@ -58,6 +58,7 @@ export default async function Home() {
               <PurchaseList
                 rows={decision.rows}
                 departmentName={decision.departmentName}
+                authorName={decision.authorName}
                 testId="decision-list"
               />
             )}

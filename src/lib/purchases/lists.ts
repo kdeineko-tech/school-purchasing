@@ -14,7 +14,28 @@ export type PurchaseRow = {
 };
 
 // total — скільки всього заявок у списку (рядків у rows може бути менше, якщо задано limit).
-export type PurchaseListData = { rows: PurchaseRow[]; total: number; departmentName: Map<string, string> };
+// authorName — лише у списку для рішення: ім'я автора кожної заявки, без імені — email (AC-APR-08, AC-APR-09).
+export type PurchaseListData = {
+  rows: PurchaseRow[];
+  total: number;
+  departmentName: Map<string, string>;
+  authorName?: Map<string, string>;
+};
+
+// Ім'я автора для заявок, які переглядач і так бачить: функція бази public.purchase_author_names віддає лише ім'я
+// (без імені — email), без інших даних профілю (AC-APR-10; міграція 20261026155141_purchase_author_names.sql).
+// Vercel викладає код одразу після merge, а міграцію застосовує db-deploy у CI трохи пізніше; прев'ю PR працює з
+// тією самою базою ще до merge. Поки функції в базі немає (PostgREST — PGRST202, Postgres — 42883), сторінки
+// показують «Author: —» замість помилки. Будь-яку іншу помилку бази не ховаємо.
+const MISSING_FUNCTION = new Set(["PGRST202", "42883"]);
+
+export async function loadAuthorNames(supabase: Supabase, purchaseIds: string[]): Promise<Map<string, string>> {
+  if (purchaseIds.length === 0) return new Map();
+  const { data, error } = await supabase.rpc("purchase_author_names", { p_purchase_ids: purchaseIds });
+  if (error && MISSING_FUNCTION.has(error.code)) return new Map();
+  if (error) throw new Error(`Failed to read request authors: ${error.message}`);
+  return new Map((data ?? []).map((r) => [r.purchase_id, r.author_name]));
+}
 
 // limit — лише для головної (кілька перших рядків); повні списки читаються без нього. Кількість рахує база
 // (count: "exact"), тож вона правильна й тоді, коли заявок більше, ніж Supabase віддає за раз.
@@ -74,5 +95,13 @@ export async function loadDecisionRequests(
     viewerId,
     approvedDepartmentIds,
   );
-  return { rows, total: count ?? rows.length, departmentName: new Map((departments ?? []).map((d) => [d.id, d.name])) };
+  return {
+    rows,
+    total: count ?? rows.length,
+    departmentName: new Map((departments ?? []).map((d) => [d.id, d.name])),
+    authorName: await loadAuthorNames(
+      supabase,
+      rows.map((r) => r.id),
+    ),
+  };
 }

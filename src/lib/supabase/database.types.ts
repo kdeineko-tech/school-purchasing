@@ -2,8 +2,9 @@
 // (supabase gen types typescript --local на одноразовій базі); або npm run db:types після npx supabase link на ваш проєкт. Ця стартова версія написана вручну
 // й описує таблиці з міграцій 20261012000000_profiles_and_roles.sql, 20261021233408_org_roles.sql і
 // 20261022000503_departments.sql, 20261022010957_approvers.sql, 20261025143511_auto_approve.sql і
-// 20261025160124_permissions.sql, 20261025185729_purchases.sql, 20261025223225_purchase_decisions.sql (purchases,
-// purchase_lines, submit_purchase і decide_purchase — зі
+// 20261025160124_permissions.sql, 20261025185729_purchases.sql, 20261025223225_purchase_decisions.sql,
+// 20261026155141_purchase_author_names.sql (purchases, purchase_lines, submit_purchase, decide_purchase і
+// purchase_author_names — зі
 // схеми одноразової бази, supabase gen types typescript --local).
 
 export type Json =
@@ -221,6 +222,10 @@ export type Database = {
       decide_purchase: {
         Args: { p_purchase_id: string; p_decision: string; p_reason: string | null };
         Returns: undefined;
+      };
+      purchase_author_names: {
+        Args: { p_purchase_ids: string[] };
+        Returns: { purchase_id: string; author_name: string }[];
       };
     };
     Enums: {

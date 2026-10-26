@@ -206,6 +206,17 @@ describe("сторінки рішення", () => {
     expect(html).toContain("Awaiting approval");
   });
 
+  it("AC-APR-08: у списку для рішення Марія бачить автора заявки", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
+    const { rpc } = setDb({ purchases: [row()], approves: [PRIMARY.id] });
+    rpc.mockResolvedValue({ data: [{ purchase_id: ID, author_name: "Andrii Demo-First" }], error: null });
+
+    const html = renderToStaticMarkup(await ApprovalsPage());
+
+    expect(html).toContain("Author:</span> Andrii Demo-First");
+    expect(rpc).toHaveBeenCalledWith("purchase_author_names", { p_purchase_ids: [ID] });
+  });
+
   it("порожній список для рішення — «No requests awaiting your decision»", async () => {
     vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
     setDb({ purchases: [], approves: [PRIMARY.id] });
