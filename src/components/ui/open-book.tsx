@@ -73,11 +73,13 @@ const gloss = new Array<number>(STRIPS).fill(0);
 // Профіль аркуша в площині, перпендикулярній корінцю: x від корінця (праворуч > 0), z — висота над столом.
 const polyX = new Array<number>(STRIPS + 1).fill(0);
 const polyZ = new Array<number>(STRIPS + 1).fill(0);
+const rawShadow = new Array<number>(STRIPS + 1).fill(0);
 
 // Тінь, яку кидає аркуш (чи палітурка) на сторінки під собою; right / left — на межах смужок, від корінця до краю.
-// Світло зверху: тінь лягає лише туди, над чим аркуш справді нависає (за його вигином), і має м'який край за кінчиком
-// аркуша; що вище аркуш над сторінкою, то тінь світліша. Над самою сторінкою (висота rest) тінь гасне: аркуш, що
-// лягає, закриває її собою — інакше вона пробігала б по сторінці й зникала ривком.
+// Світло зверху: тінь лягає лише туди, над чим аркуш справді нависає (за його вигином); що вище аркуш над сторінкою,
+// то тінь світліша. Над самою сторінкою (висота rest) тінь гасне: аркуш, що лягає, закриває її собою — інакше вона
+// пробігала б по сторінці й зникала ривком. Край тіні завжди розмитий (і тим ширше, чим вище кінчик аркуша): книгу видно
+// знизу під кутом, тож різкий край з-під аркуша читався б як пряма лінія, що «висить» на сторінці.
 function castShadow(rel: number[], w: number, rest: number, right: number[], left: number[]) {
   let cum = 0;
   for (let i = 0; i < STRIPS; i++) {
@@ -86,7 +88,7 @@ function castShadow(rel: number[], w: number, rest: number, right: number[], lef
     polyZ[i + 1] = polyZ[i] + w * Math.sin(cum * RAD);
   }
   const strength = (z: number) =>
-    0.38 * Math.exp(-z / (w * STRIPS * 1.6)) * Math.min(1, Math.max(0, (z - rest) / 8));
+    0.3 * Math.exp(-z / (w * STRIPS * 1.6)) * Math.min(1, Math.max(0, (z - rest) / 12));
   for (const [out, side] of [[right, 1], [left, -1]] as const) {
     let reach = 0;
     let tip = 0;
@@ -103,13 +105,19 @@ function castShadow(rel: number[], w: number, rest: number, right: number[], lef
           z = Math.min(z, polyZ[k] + ((x - x0) / (x1 - x0)) * (polyZ[k + 1] - polyZ[k]));
         }
       }
-      let value = 0;
-      if (z < Infinity) value = strength(z);
-      else if (x > reach) {
-        const t = Math.max(0, 1 - (x - reach) / (4 + 0.35 * tip));
-        value = strength(tip) * t * t * (3 - 2 * t);
+      rawShadow[b] = z < Infinity ? strength(z) : 0;
+    }
+    // Розмиття: гаусове ядро шириною від півтори смужки (кінчик біля паперу) до кількох (кінчик високо).
+    const sigma = 1.5 + tip / (w * 3);
+    for (let b = 0; b <= STRIPS; b++) {
+      let sum = 0;
+      let weight = 0;
+      for (let k = 0; k <= STRIPS; k++) {
+        const g = Math.exp(-(((k - b) / sigma) ** 2) / 2);
+        sum += rawShadow[k] * g;
+        weight += g;
       }
-      out[b] = Math.max(out[b], value);
+      out[b] = Math.max(out[b], sum / weight);
     }
   }
 }
@@ -488,7 +496,8 @@ export function OpenBook({ className }: { className?: string }) {
 
       for (const f of flights) f.p += (f.dir * dt) / f.dur;
       if (intro) landed += flights.filter((f) => f.p >= 1).length;
-      if (titleOn && titleOn !== rightTop && !flights.some((f) => f.chain === titleOn && f.p < 1)) {
+      // Титульний аркуш минув вертикаль — далі видно його зворот, а там звичайний текст, не дзеркальний титул.
+      if (titleOn && titleOn !== rightTop && !flights.some((f) => f.chain === titleOn && f.p < 0.5)) {
         texture(titleOn, textures.pages[0]);
         titleOn = null;
       }
