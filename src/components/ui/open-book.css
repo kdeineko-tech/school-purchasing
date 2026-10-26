@@ -15,7 +15,8 @@
   width: calc(var(--book-w) * 2);
   height: var(--book-h);
   margin-top: calc(var(--book-h) * -0.16);
-  transform: rotateX(74deg);
+  /* --shift: закрита книга на старті стоїть посередині сцени (JS зсуває її, доки відкривається палітурка). */
+  transform: translateX(var(--shift, calc(var(--book-w) * -0.5))) rotateX(74deg);
   transform-style: preserve-3d;
 }
 
@@ -24,9 +25,10 @@
 }
 
 .book-cover {
+  /* Задня палітурка й корінець; передня — .book-lid. */
   position: absolute;
-  inset: -6px -10px;
-  border-radius: 4px 4px 6px 6px;
+  inset: -6px -10px -6px calc(50% - 3px);
+  border-radius: 0 4px 6px 0;
   background: var(--book-cover);
   transform: translateZ(-4px);
   box-shadow: 0 24px 36px -12px oklch(0 0 0 / 0.45);
@@ -44,6 +46,67 @@
   filter: brightness(0.7);
   transform-origin: top;
   transform: rotateX(90deg);
+}
+
+.book-lid {
+  /* Передня палітурка на завісі біля корінця: 0deg — закрита (лежить на сторінках праворуч), -180deg — розкрита. */
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: calc(50% - 3px);
+  width: calc(var(--book-w) + 13px);
+  transform-origin: left center;
+  transform: translateZ(var(--lid-z, 11.5px)) rotateY(var(--lid-a, 0deg));
+}
+
+.book-lid-outside,
+.book-lid-inside {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+}
+
+.book-lid-outside {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 4px 6px 0;
+  background:
+    linear-gradient(to right, oklch(0 0 0 / 0.25), transparent 12%),
+    var(--book-cover);
+}
+
+.book-lid-outside::before {
+  /* Тиснена рамка на палітурці. */
+  content: "";
+  position: absolute;
+  inset: 9% 10%;
+  border: 1px solid color-mix(in oklch, var(--book-edge) 45%, transparent);
+  border-radius: 2px;
+}
+
+.book-lid-title {
+  font-size: calc(var(--book-w) * 0.1);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  line-height: 1.3;
+  max-width: 70%;
+  color: color-mix(in oklch, var(--book-edge) 70%, transparent);
+}
+
+.book-lid-inside {
+  /* Форзац — внутрішній бік палітурки, видно ліворуч, коли книга розкрита. */
+  border-radius: 4px 0 0 6px;
+  transform: rotateY(180deg);
+  background: var(--book-cover);
+  box-shadow: 0 24px 36px -12px oklch(0 0 0 / 0.45);
+}
+
+/* До відкриття ліворуч ще немає сторінок. */
+.book-stack-left {
+  visibility: hidden;
 }
 
 .book-stack {
@@ -120,12 +183,14 @@
 }
 
 .book-face {
-  /* Тінь — градієнт від лівого до правого краю смужки (--s0 → --s1), тож між смужками немає сходинок.
+  /* Тінь — градієнт від лівого до правого краю смужки (--s0 → --s1), тож між смужками немає сходинок; так само
+     відблиск на вигині (--h0 → --h1) і тінь від аркуша, що нависає згори (додана до --s0/--s1).
      «Текст» (--book-text) — одна текстура на весь аркуш; кожна смужка показує свій шматок (--i). */
   position: absolute;
   inset: 0 -1px 0 0;
   outline: 1px solid transparent;
   background:
+    linear-gradient(to right, oklch(1 0 0 / var(--h0, 0)), oklch(1 0 0 / var(--h1, 0))),
     linear-gradient(to right, oklch(0 0 0 / var(--s0, 0)), oklch(0 0 0 / var(--s1, 0))),
     var(--book-text, none) calc(var(--i, 0) * var(--book-w) / -16) 0 / var(--book-w) 100% no-repeat,
     var(--book-paper);
