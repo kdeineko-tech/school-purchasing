@@ -26,16 +26,25 @@ const row = (n: number, over: Partial<Row> = {}): Row => ({
   ...over,
 });
 
-// Підставний Supabase для головної: «мої» — purchases.eq(author_id).order(), «для рішення» —
-// department_members.eq().eq() і purchases.in().eq().neq().order() (src/lib/purchases/lists.ts).
+// Підставний Supabase для головної: «мої» — purchases.eq(author_id).order().limit(), «для рішення» —
+// department_members.eq().eq() і purchases.in().eq().neq().order().limit() (src/lib/purchases/lists.ts).
+// Як і база, сортує за аргументами order (за замовчуванням — за зростанням), обрізає за limit і рахує count.
 function setDb({ mine = [], forDecision = [], approves = [] }: { mine?: Row[]; forDecision?: Row[]; approves?: string[] }) {
   const ok = <T>(data: T) => Promise.resolve({ data, error: null });
-  const listQuery = { in: () => listQuery, eq: () => listQuery, neq: () => listQuery, order: () => ok(forDecision) };
+  const result = (rows: Row[], ascending: boolean, limit?: number) => {
+    const sorted = [...rows].sort((x, y) => x.created_at.localeCompare(y.created_at) * (ascending ? 1 : -1));
+    return Promise.resolve({ data: sorted.slice(0, limit ?? sorted.length), count: rows.length, error: null });
+  };
+  const ordered = (rows: Row[]) => (_column: string, options?: { ascending?: boolean }) => {
+    const ascending = options?.ascending ?? true;
+    return Object.assign(result(rows, ascending), { limit: (n: number) => result(rows, ascending, n) });
+  };
+  const listQuery = { in: () => listQuery, eq: () => listQuery, neq: () => listQuery, order: ordered(forDecision) };
   const client = {
     from: vi.fn((table: string) => {
       switch (table) {
         case "purchases":
-          return { select: () => ({ eq: () => ({ order: () => ok(mine) }), in: () => listQuery }) };
+          return { select: () => ({ eq: () => ({ order: ordered(mine) }), in: () => listQuery }) };
         case "department_members":
           return { select: () => ({ eq: () => ({ eq: () => ok(approves.map((d) => ({ department_id: d }))) }) }) };
         case "departments":
@@ -79,7 +88,7 @@ describe("головна — робоча панель", () => {
     expect(client.from).not.toHaveBeenCalledWith("department_members");
   });
 
-  it("AC-APR-01: схвалювач бачить на головній заявки свого відділу для рішення, не більше п'яти, і їх кількість", async () => {
+  it("AC-APR-01: схвалювач бачить на головній заявки свого відділу для рішення — п'ять найстаріших — і кількість усіх", async () => {
     vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
     setDb({ forDecision: [1, 2, 3, 4, 5, 6, 7].map((n) => row(n)), approves: [PRIMARY.id] });
 
@@ -87,6 +96,8 @@ describe("головна — робоча панель", () => {
 
     expect(html).toContain("Awaiting your decision");
     expect(links(html, "decision-list")).toBe(5);
+    expect(html.indexOf(row(1).id)).toBeLessThan(html.indexOf(row(2).id));
+    expect(html).not.toContain(row(6).id);
     expect(html).toMatch(/data-slot="badge"[^>]*>7</);
     expect(html).toContain('href="/approvals"');
   });
@@ -102,7 +113,7 @@ describe("головна — робоча панель", () => {
 
   it("AC-FRM-10: на головній — не більше п'яти власних заявок, новіші першими, і посилання на всі", async () => {
     vi.mocked(getViewer).mockResolvedValue(viewer(P1, "requester"));
-    setDb({ mine: [7, 6, 5, 4, 3, 2, 1].map((n) => row(n)) });
+    setDb({ mine: [1, 2, 3, 4, 5, 6, 7].map((n) => row(n)) });
 
     const html = renderToStaticMarkup(await Home());
 

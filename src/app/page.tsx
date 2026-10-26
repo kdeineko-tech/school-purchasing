@@ -23,8 +23,8 @@ export default async function Home() {
   const supabase = await createClient();
   const decides = viewer.role !== "requester";
   const [mine, decision] = await Promise.all([
-    loadMyRequests(supabase, viewer.id),
-    decides ? loadDecisionRequests(supabase, viewer.id) : null,
+    loadMyRequests(supabase, viewer.id, DASHBOARD_ROWS),
+    decides ? loadDecisionRequests(supabase, viewer.id, DASHBOARD_ROWS) : null,
   ]);
 
   return (
@@ -47,7 +47,7 @@ export default async function Home() {
         {decision && (
           <DashboardCard
             title="Awaiting your decision"
-            count={decision.rows.length}
+            count={decision.total}
             href="/approvals"
             linkText="All approvals"
             testId="dashboard-decisions"
@@ -56,7 +56,7 @@ export default async function Home() {
               <EmptyState>{MESSAGES.noDecisionRequests}</EmptyState>
             ) : (
               <PurchaseList
-                rows={decision.rows.slice(0, DASHBOARD_ROWS)}
+                rows={decision.rows}
                 departmentName={decision.departmentName}
                 testId="decision-list"
               />
@@ -74,7 +74,7 @@ export default async function Home() {
             <EmptyState>{MESSAGES.noRequests}</EmptyState>
           ) : (
             <PurchaseList
-              rows={mine.rows.slice(0, DASHBOARD_ROWS)}
+              rows={mine.rows}
               departmentName={mine.departmentName}
               testId="my-requests"
             />

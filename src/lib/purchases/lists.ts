@@ -13,26 +13,37 @@ export type PurchaseRow = {
   created_at: string;
 };
 
-export type PurchaseListData = { rows: PurchaseRow[]; departmentName: Map<string, string> };
+// total — скільки всього заявок у списку (рядків у rows може бути менше, якщо задано limit).
+export type PurchaseListData = { rows: PurchaseRow[]; total: number; departmentName: Map<string, string> };
+
+// limit — лише для головної (кілька перших рядків); повні списки читаються без нього. Кількість рахує база
+// (count: "exact"), тож вона правильна й тоді, коли заявок більше, ніж Supabase віддає за раз.
 
 // Власні заявки, новіші першими (AC-FRM-10). RLS пропустила б і заявки відділів, які працівник схвалює,
 // тож власні відбираємо явно.
-export async function loadMyRequests(supabase: Supabase, viewerId: string): Promise<PurchaseListData> {
-  const [{ data: purchases, error: purchasesError }, { data: departments, error: departmentsError }] = await Promise.all([
-    supabase
-      .from("purchases")
-      .select("id, department_id, purchase_type, status, created_at")
-      .eq("author_id", viewerId)
-      .order("created_at", { ascending: false }),
-    supabase.from("departments").select("id, name"),
-  ]);
+export async function loadMyRequests(supabase: Supabase, viewerId: string, limit?: number): Promise<PurchaseListData> {
+  const purchasesQuery = supabase
+    .from("purchases")
+    .select("id, department_id, purchase_type, status, created_at", { count: "exact" })
+    .eq("author_id", viewerId)
+    .order("created_at", { ascending: false });
+  const [{ data: purchases, count, error: purchasesError }, { data: departments, error: departmentsError }] =
+    await Promise.all([
+      limit === undefined ? purchasesQuery : purchasesQuery.limit(limit),
+      supabase.from("departments").select("id, name"),
+    ]);
   const readError = purchasesError ?? departmentsError;
   if (readError) throw new Error(`Failed to read requests: ${readError.message}`);
-  return { rows: purchases ?? [], departmentName: new Map((departments ?? []).map((d) => [d.id, d.name])) };
+  const rows = purchases ?? [];
+  return { rows, total: count ?? rows.length, departmentName: new Map((departments ?? []).map((d) => [d.id, d.name])) };
 }
 
 // Список для рішення: «Очікує схвалення» відділів, які переглядач схвалює, крім власних, старіші першими (AC-APR-01).
-export async function loadDecisionRequests(supabase: Supabase, viewerId: string): Promise<PurchaseListData> {
+export async function loadDecisionRequests(
+  supabase: Supabase,
+  viewerId: string,
+  limit?: number,
+): Promise<PurchaseListData> {
   const { data: approved, error: approvedError } = await supabase
     .from("department_members")
     .select("department_id")
@@ -40,18 +51,21 @@ export async function loadDecisionRequests(supabase: Supabase, viewerId: string)
     .eq("approves", true);
   if (approvedError) throw new Error(`Failed to read approved departments: ${approvedError.message}`);
   const approvedDepartmentIds = (approved ?? []).map((r) => r.department_id);
-  if (approvedDepartmentIds.length === 0) return { rows: [], departmentName: new Map() };
+  if (approvedDepartmentIds.length === 0) return { rows: [], total: 0, departmentName: new Map() };
 
-  const [{ data: purchases, error: purchasesError }, { data: departments, error: departmentsError }] = await Promise.all([
-    supabase
-      .from("purchases")
-      .select("id, author_id, department_id, purchase_type, status, created_at")
-      .in("department_id", approvedDepartmentIds)
-      .eq("status", "awaiting_approval")
-      .neq("author_id", viewerId)
-      .order("created_at"),
-    supabase.from("departments").select("id, name"),
-  ]);
+  // Фільтри запиту — ті самі умови, що й decisionList, тож count бази дорівнює довжині повного списку.
+  const purchasesQuery = supabase
+    .from("purchases")
+    .select("id, author_id, department_id, purchase_type, status, created_at", { count: "exact" })
+    .in("department_id", approvedDepartmentIds)
+    .eq("status", "awaiting_approval")
+    .neq("author_id", viewerId)
+    .order("created_at", { ascending: true });
+  const [{ data: purchases, count, error: purchasesError }, { data: departments, error: departmentsError }] =
+    await Promise.all([
+      limit === undefined ? purchasesQuery : purchasesQuery.limit(limit),
+      supabase.from("departments").select("id, name"),
+    ]);
   const readError = purchasesError ?? departmentsError;
   if (readError) throw new Error(`Failed to read requests for decision: ${readError.message}`);
 
@@ -60,5 +74,5 @@ export async function loadDecisionRequests(supabase: Supabase, viewerId: string)
     viewerId,
     approvedDepartmentIds,
   );
-  return { rows, departmentName: new Map((departments ?? []).map((d) => [d.id, d.name])) };
+  return { rows, total: count ?? rows.length, departmentName: new Map((departments ?? []).map((d) => [d.id, d.name])) };
 }

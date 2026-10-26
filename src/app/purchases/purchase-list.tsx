@@ -5,7 +5,11 @@ import type { PurchaseListData } from "@/lib/purchases/lists";
 import { formatSubmittedAt, PURCHASE_TYPE_LABELS, type PurchaseTypeId } from "@/lib/purchases/form";
 import { StatusBadge } from "./status-badge";
 
-export function PurchaseList({ rows, departmentName, testId }: PurchaseListData & { testId: string }) {
+export function PurchaseList({
+  rows,
+  departmentName,
+  testId,
+}: Pick<PurchaseListData, "rows" | "departmentName"> & { testId: string }) {
   return (
     <ul className="flex flex-col divide-y divide-border" data-testid={testId}>
       {rows.map((p) => (
