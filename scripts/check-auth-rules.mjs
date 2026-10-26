@@ -7,8 +7,9 @@
 // 4) Кожна експортована функція файлу з "use server" (Server Action — публічний POST-ендпойнт; і `export async
 //    function`, і `export const x = async …`) перевіряє вхід до першого звернення до бази: getViewer() / getClaims() /
 //    requireAdmin() раніше за createClient(). Результат getViewer() зберігають у змінну й перевіряють
-//    (`if (!viewer)`) теж раніше за createClient(): сам виклик без перевірки нікого не зупиняє. Виняток — дії, що
-//    створюють чи завершують сесію (вхід, вихід): над функцією коментар `// auth-ok: <причина>`.
+//    (`if (!viewer)`) теж раніше за createClient(), і гілка завершує дію (return / throw / redirect / notFound): сам
+//    виклик без перевірки нікого не зупиняє. Виняток — дії, що створюють чи завершують сесію (вхід, вихід): над
+//    функцією коментар `// auth-ok: <причина>`.
 // Коментарі не перевіряються. Використання: node scripts/check-auth-rules.mjs [--root <dir>]
 // Код виходу: 0 — порушень немає, 1 — є порушення, 2 — немає теки src/.
 
@@ -43,6 +44,42 @@ function stripComments(text) {
   return text
     .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "))
     .replace(/(^|[^:"'`])\/\/.*$/gm, (m, p) => p + " ".repeat(m.length - p.length));
+}
+
+// Чи завершує дію гілка `if (!viewer)`: return, throw, redirect(…) чи notFound() — в однорядковій формі в тому самому
+// рядку (або в наступному, якщо дужок немає), у формі з блоком — до закривної дужки. Евристика: знаходить вихід, але
+// не доводить, що він виконається завжди (умову в гілці правило не аналізує).
+const EXIT = /\b(return|throw)\b|\bredirect\s*\(|\bnotFound\s*\(/;
+function guardExits(body, at) {
+  const line = body[at];
+  const condEnd = closingParen(line, line.search(/if\s*\(/) + line.slice(line.search(/if\s*\(/)).indexOf("("));
+  const rest = condEnd >= 0 ? line.slice(condEnd + 1) : "";
+  if (!rest.trim().startsWith("{")) {
+    const statement = rest.trim() || (body.slice(at + 1).find((l) => l.trim()) ?? "");
+    return EXIT.test(statement);
+  }
+  let depth = 0;
+  let text = "";
+  for (let j = at; j < body.length; j++) {
+    const chunk = j === at ? rest : body[j];
+    for (const ch of chunk) {
+      text += ch;
+      if (ch === "{") depth++;
+      if (ch === "}" && --depth === 0) return EXIT.test(text);
+    }
+    text += "\n";
+  }
+  return EXIT.test(text);
+}
+
+// Позиція дужки, що закриває «(» на позиції open.
+function closingParen(line, open) {
+  let depth = 0;
+  for (let i = open; i < line.length; i++) {
+    if (line[i] === "(") depth++;
+    if (line[i] === ")" && --depth === 0) return i;
+  }
+  return -1;
 }
 
 // Назва експортованої Server Action у рядку: `export async function x`, `export default async function x`,
@@ -100,6 +137,12 @@ for (const file of walk(src)) {
         : -1;
       if (checked < 0 || (db >= 0 && db < checked)) {
         report(file, start + auth + 1, `${name}: результат getViewer() не перевірено (if (!viewer)) до звернення до бази`);
+      } else if (!guardExits(body, checked)) {
+        report(
+          file,
+          start + checked + 1,
+          `${name}: гілка if (!viewer) не завершує дію — потрібні return, throw, redirect(…) чи notFound()`,
+        );
       }
     }
   });
