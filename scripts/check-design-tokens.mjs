@@ -5,11 +5,13 @@
 //   1) hex-кольори (#fff, #0f6b6e); якір у посиланні (href="#add") — не колір;
 //   2) довільні кольори в класах Tailwind (bg-[#…], text-[oklch(…)]);
 //   3) сирі палітри Tailwind (bg-zinc-900, text-rose-700, bg-white, text-black);
-//   4) кольори в inline style — лише всередині style={{ … }} (style={{ color: "…" }}). Мапа класів поза style,
+//   4) кольори в inline style — лише всередині style={{ … }}: рядок (style={{ color: "…" }}) або вираз
+//      (style={{ color: statusColor }}); дозволено лише var(--…). Мапа класів поза style,
 //      наприклад { label: "На розгляді", color: "bg-status-pending text-status-pending-foreground" }, — не порушення.
 // Виняток — коментар `design-ok: <причина>` у тому самому рядку.
 // Використання: node scripts/check-design-tokens.mjs [--root <dir>] [--json]
-// Код виходу: 0 — порушень немає, 1 — є порушення, 2 — немає чого перевіряти (ні src/, ні app/, components/, lib/).
+// Код виходу: 0 — порушень немає, 1 — є порушення, 2 — немає чого перевіряти (ні src/, ні app/, components/, lib/)
+// або теку чи файл не вдалося прочитати.
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
@@ -69,7 +71,8 @@ const RULES = [
 const INLINE_STYLE = {
   id: "inline-style-color",
   message: "колір в inline style — використайте клас із токеном",
-  re: /(?:\bcolor|backgroundColor|borderColor|background)\s*:\s*["'`](?!var\(--)[^"'`]+["'`]/g,
+  // Значення — рядок у лапках або вираз до коми чи «}»; рядок, що починається з var(--…), — токен.
+  re: /(?:\bcolor|backgroundColor|borderColor|background)\s*:\s*(?!["'`]var\(--)(?:["'`][^"'`]+["'`]|[^,}\s](?:[^,}\n]*[^,}\s])?)/g,
 };
 
 // Діапазони тексту всередині style={{ … }}: від другої «{» до парної «}», з урахуванням вкладених дужок і рядків.
@@ -108,17 +111,28 @@ function inlineStyleFindings(text) {
   return byLine;
 }
 
+// Теку чи файл, які не вдалося прочитати, не пропускаємо мовчки: інакше «OK» без перевірки частини коду.
+function unreadable(path, error) {
+  console.error(`check-design-tokens: не вдалося прочитати ${relative(root, path) || path} (${error.code ?? error.message}) — перевірку зупинено.`);
+  process.exit(2);
+}
+
 function walk(dir, out = []) {
   let entries;
   try {
     entries = readdirSync(dir);
-  } catch {
-    return out;
+  } catch (error) {
+    unreadable(dir, error);
   }
   for (const name of entries) {
     if (SKIP_DIRS.has(name)) continue;
     const full = join(dir, name);
-    const st = statSync(full);
+    let st;
+    try {
+      st = statSync(full);
+    } catch (error) {
+      unreadable(full, error);
+    }
     if (st.isDirectory()) walk(full, out);
     else if (EXT.test(name)) out.push(full);
   }
@@ -129,7 +143,12 @@ const findings = [];
 for (const file of BASES.flatMap((b) => walk(join(root, b)))) {
   const rel = relative(root, file);
   if (SKIP_FILES.some((s) => rel === s || rel.startsWith(s))) continue;
-  const text = readFileSync(file, "utf8");
+  let text;
+  try {
+    text = readFileSync(file, "utf8");
+  } catch (error) {
+    unreadable(file, error);
+  }
   const lines = text.split(/\r?\n/);
   const inline = /\.(tsx|jsx)$/.test(file) ? inlineStyleFindings(text) : new Map();
   const add = (i, rule, match) =>
