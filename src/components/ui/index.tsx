@@ -24,7 +24,7 @@ export function roleLabel(role: string): string {
 }
 
 // Фокус — суцільне кільце `ring` 2px з відступом (DESIGN.md, розділ 7), а не напівпрозоре.
-const FOCUS = "focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring";
+const FOCUS = "focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid";
 
 // Зона натискання ≥ 40px (DESIGN.md, розділ 4). Варіанти shadcn: default — одна основна дія на екран.
 export function Button({ className, ...props }: ComponentProps<typeof ButtonBase>) {

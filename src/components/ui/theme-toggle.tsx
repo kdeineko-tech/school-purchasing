@@ -3,11 +3,15 @@
 // Перемикач світлої й темної теми (DESIGN.md, розділ 2). Вибір — атрибут data-theme на <html> і cookie `theme`,
 // щоб сервер одразу віддав сторінку в обраній темі (src/app/layout.tsx). Без вибору тема — за системою.
 import { Moon, Sun } from "lucide-react";
+import type { MouseEvent } from "react";
 import { THEME_COOKIE } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 
-function toggleTheme() {
+function toggleTheme(event: MouseEvent<HTMLButtonElement>) {
+  // Після кліку мишею знімаємо фокус: інакше будь-яка наступна клавіша (зокрема знімок екрана) вмикає :focus-visible,
+  // і навколо кнопки лишається кільце. Натискання з клавіатури (detail === 0) фокус і кільце зберігає.
+  if (event.detail > 0) event.currentTarget.blur();
   const root = document.documentElement;
   const current = root.dataset.theme ?? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
   const next = current === "dark" ? "light" : "dark";
@@ -27,7 +31,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       title="Switch light or dark theme"
       // Зона натискання 40px і суцільне кільце фокусу — як у Button застосунку (DESIGN.md, розділи 4 і 7).
       className={cn(
-        "size-10 text-muted-foreground focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
+        "size-10 text-muted-foreground focus-visible:ring-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring focus-visible:outline-solid",
         className,
       )}
     >
