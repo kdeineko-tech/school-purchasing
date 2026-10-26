@@ -35,7 +35,7 @@
 
 ## 4. Після відповідей PM (зміна специфікації `update-purchase-flow`)
 
-- [ ] 4.1 Обов'язкові поля рядка й порожні «Мої заявки» (відповіді PM на Q8 — ValiaBihun/2026-quitcode-dream-team#60,
+- [x] 4.1 Обов'язкові поля рядка й порожні «Мої заявки» (відповіді PM на Q8 — ValiaBihun/2026-quitcode-dream-team#60,
   Q6 — ValiaBihun/2026-quitcode-dream-team#58): нова міграція — `submit_purchase` відхиляє рядок без назви, мети,
   кількості чи ціни кодом `LINE_FIELDS` (`create or replace function`); `validateSubmission` з тим самим правилом;
   «Fill in all line fields» і «You have not submitted any requests yet» у `MESSAGES`; порожній стан на `/purchases`;

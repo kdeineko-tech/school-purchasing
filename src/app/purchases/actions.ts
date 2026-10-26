@@ -15,10 +15,11 @@ export type SubmitState = { error?: string };
 const DATABASE_ERRORS: Record<string, string> = {
   FORBIDDEN: MESSAGES.forbidden,
   NO_LINES: MESSAGES.noLines,
+  LINE_FIELDS: MESSAGES.lineFields,
   INVALID_LINE: MESSAGES.invalidLine,
 };
 
-// AC-FRM-02, AC-FRM-04, AC-FRM-06, AC-FRM-07, AC-FRM-11, AC-FRM-12: подання закупівлі. Перше правило — доменна
+// AC-FRM-02, AC-FRM-04, AC-FRM-06, AC-FRM-07, AC-FRM-11, AC-FRM-12, AC-FRM-15: подання закупівлі. Перше правило — доменна
 // функція з повідомленням PM; функція бази — друга лінія захисту, і на її відмову показуємо те саме повідомлення.
 export async function submitPurchase(_prev: SubmitState, formData: FormData): Promise<SubmitState> {
   const viewer = await getViewer();

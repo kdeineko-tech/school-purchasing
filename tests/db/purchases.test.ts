@@ -90,6 +90,35 @@ describe("подання закупівлі в базі", () => {
     expect(await countPurchases(member1)).toBe(before);
   });
 
+  it.each([
+    ["без назви", { purpose: "Printing", quantity: "3", unit_price: "20.00" }],
+    ["без мети", { name: "Paper A4", quantity: "3", unit_price: "20.00" }],
+    ["без кількості", { name: "Paper A4", purpose: "Printing", unit_price: "20.00" }],
+    ["без ціни", { name: "Paper A4", purpose: "Printing", quantity: "3" }],
+  ])("AC-FRM-15: рядок %s напряму через rpc — LINE_FIELDS, нової заявки немає", async (_case, line) => {
+    const before = await countPurchases(member1);
+
+    await expect(
+      t.asUser(member1, "select public.submit_purchase($1, 'purchasing_department', $2::jsonb)", [
+        PRIMARY,
+        JSON.stringify([line]),
+      ]),
+    ).rejects.toThrow(/LINE_FIELDS/);
+    expect(await countPurchases(member1)).toBe(before);
+  });
+
+  it("AC-FRM-15: рядок лише з назвою «Paper A4» і порожніми полями — LINE_FIELDS, нової заявки немає", async () => {
+    const before = await countPurchases(member1);
+
+    await expect(
+      t.asUser(member1, "select public.submit_purchase($1, 'purchasing_department', $2::jsonb)", [
+        PRIMARY,
+        JSON.stringify([{ name: "Paper A4", purpose: " ", quantity: "", unit_price: "" }]),
+      ]),
+    ).rejects.toThrow(/LINE_FIELDS/);
+    expect(await countPurchases(member1)).toBe(before);
+  });
+
   it("AC-ORG-23: адміністратор без дозволу подає «Самостійну закупівлю» у відділ, де він не заявник (AC-ORG-22)", async () => {
     const [{ id }] = await t.asUser<{ id: string }>(
       admin,

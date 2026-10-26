@@ -64,8 +64,9 @@ export function formPurchaseTypes(holder: PermissionHolder): PurchaseTypeId[] {
 
 export type SubmissionCheck = { ok: true } | { ok: false; error: string };
 
-// Подати можна лише у відділ і тип зі списків форми (AC-FRM-02, AC-FRM-04) і з хоча б одним рядком (AC-FRM-06).
-// Наявність схвалювача не перевіряємо: заявка чекає (AC-FRM-12).
+// Подати можна лише у відділ і тип зі списків форми (AC-FRM-02, AC-FRM-04), з хоча б одним рядком (AC-FRM-06), у
+// якому заповнено всі чотири поля (AC-FRM-15; межі значень — наступний зріз). Наявність схвалювача не перевіряємо:
+// заявка чекає (AC-FRM-12).
 export function validateSubmission(
   input: { departmentId: string; purchaseType: string; lines: readonly PurchaseLineInput[] },
   options: FormOptions,
@@ -73,11 +74,15 @@ export function validateSubmission(
   if (!options.departments.some((d) => d.id === input.departmentId)) return { ok: false, error: MESSAGES.forbidden };
   if (!options.purchaseTypes.some((t) => t === input.purchaseType)) return { ok: false, error: MESSAGES.forbidden };
   if (input.lines.length === 0) return { ok: false, error: MESSAGES.noLines };
+  const filled = (value: string) => value.trim() !== "";
+  if (!input.lines.every((l) => filled(l.name) && filled(l.purpose) && filled(l.quantity) && filled(l.unitPrice))) {
+    return { ok: false, error: MESSAGES.lineFields };
+  }
   return { ok: true };
 }
 
-// Рядки з прихованого поля форми (JSON). Поля рядка не перевіряємо: обов'язковість — питання PM Q8
-// (ValiaBihun/2026-quitcode-dream-team#60); те, що не є масивом об'єктів, — «рядків немає».
+// Рядки з прихованого поля форми (JSON); те, що не є масивом об'єктів, — «рядків немає». Заповненість полів перевіряє
+// validateSubmission (AC-FRM-15).
 export function parseLines(raw: unknown): PurchaseLineInput[] {
   if (typeof raw !== "string") return [];
   let parsed: unknown;
