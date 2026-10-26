@@ -1,4 +1,4 @@
-import { Alert, Button, Input, Logo, ThemeToggle } from "@/components/ui";
+import { Alert, Button, Input, Logo, SchoolBackdrop, ThemeToggle } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { login } from "./actions";
 
@@ -13,9 +13,10 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const message = typeof error === "string" ? ERRORS[error] : undefined;
 
   return (
-    <main className="relative flex flex-1 items-center justify-center px-4 py-16">
+    <main className="relative isolate flex flex-1 items-center justify-center px-4 py-16">
+      <SchoolBackdrop />
       <ThemeToggle className="absolute top-4 right-4" />
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <Logo size={88} className="rounded-2xl" />
           <div>

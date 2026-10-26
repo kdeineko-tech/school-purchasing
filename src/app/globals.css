@@ -143,6 +143,21 @@
   --radius-2xl: calc(var(--radius) * 1.8);
 }
 
+/* Повільне погойдування шкільного приладдя на тлі сторінки входу (SchoolBackdrop). */
+@utility animate-drift {
+  animation: drift 9s ease-in-out infinite;
+}
+
+@keyframes drift {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--drift-tilt, 0deg));
+  }
+  50% {
+    transform: translateY(-14px) rotate(calc(var(--drift-tilt, 0deg) * -1));
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
