@@ -217,3 +217,16 @@
 [data-numbered="mirrored"] .book-page-number {
   transform: scaleX(-1);
 }
+
+/* За prefers-reduced-motion книга з першого кадру лежить розкритою посередині — ще до запуску JS, щоб не стрибала. */
+@media (prefers-reduced-motion: reduce) {
+  .book-scene {
+    --shift: 0px;
+    --lid-a: -180deg;
+    --lid-z: -4px;
+  }
+
+  .book-stack-left {
+    visibility: visible;
+  }
+}
