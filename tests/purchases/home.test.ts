@@ -29,7 +29,17 @@ const row = (n: number, over: Partial<Row> = {}): Row => ({
 // Підставний Supabase для головної: «мої» — purchases.eq(author_id).order().limit(), «для рішення» —
 // department_members.eq().eq() і purchases.in().eq().neq().order().limit() (src/lib/purchases/lists.ts).
 // Як і база, сортує за аргументами order (за замовчуванням — за зростанням), обрізає за limit і рахує count.
-function setDb({ mine = [], forDecision = [], approves = [] }: { mine?: Row[]; forDecision?: Row[]; approves?: string[] }) {
+function setDb({
+  mine = [],
+  forDecision = [],
+  approves = [],
+  authors = {},
+}: {
+  mine?: Row[];
+  forDecision?: Row[];
+  approves?: string[];
+  authors?: Record<string, string>;
+}) {
   const ok = <T>(data: T) => Promise.resolve({ data, error: null });
   const result = (rows: Row[], ascending: boolean, limit?: number) => {
     const sorted = [...rows].sort((x, y) => x.created_at.localeCompare(y.created_at) * (ascending ? 1 : -1));
@@ -41,6 +51,10 @@ function setDb({ mine = [], forDecision = [], approves = [] }: { mine?: Row[]; f
   };
   const listQuery = { in: () => listQuery, eq: () => listQuery, neq: () => listQuery, order: ordered(forDecision) };
   const client = {
+    // purchase_author_names: ім'я автора за id заявки (без імені — email, як віддає база).
+    rpc: vi.fn((_fn: string, args: { p_purchase_ids: string[] }) =>
+      ok(args.p_purchase_ids.filter((id) => authors[id]).map((id) => ({ purchase_id: id, author_name: authors[id] }))),
+    ),
     from: vi.fn((table: string) => {
       switch (table) {
         case "purchases":
@@ -183,3 +197,34 @@ describe("шапка", () => {
     expect(initials("  ", null)).toBe("?");
   });
 });
+
+describe("автор заявки на головній", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("AC-APR-08: схвалювач бачить у картці для рішення автора кожної заявки", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    const client = setDb({
+      forDecision: [row(1), row(2)],
+      approves: [PRIMARY.id],
+      authors: { [row(1).id]: "Andrii Demo-First", [row(2).id]: "petro@example.test" },
+    });
+
+    const html = renderToStaticMarkup(await Home());
+
+    expect(html).toContain("Author:</span> Andrii Demo-First");
+    expect(html).toContain("Author:</span> petro@example.test");
+    expect(client.rpc).toHaveBeenCalledWith("purchase_author_names", { p_purchase_ids: [row(1).id, row(2).id] });
+  });
+
+  it("AC-APR-08: у власних заявках рядка «Author» немає — автор там сам переглядач", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(P1, "requester"));
+    setDb({ mine: [row(1)] });
+
+    const html = renderToStaticMarkup(await Home());
+
+    expect(html).not.toContain("purchase-author");
+  });
+});
+

@@ -32,13 +32,19 @@ function setPurchaseDb({
   visible,
   approves = [],
   departmentError = null,
+  authorName = "Andrii Demo-First",
 }: {
   visible: ReturnType<typeof purchase> | null;
   approves?: string[];
   departmentError?: { message: string } | null;
+  authorName?: string;
 }) {
   const ok = <T>(data: T) => Promise.resolve({ data, error: null });
   const client = {
+    // purchase_author_names віддає ім'я лише для видимої заявки (міграція 20261026155141_purchase_author_names.sql).
+    rpc: vi.fn((_fn: string, args: { p_purchase_ids: string[] }) =>
+      ok(visible && args.p_purchase_ids.includes(visible.id) ? [{ purchase_id: visible.id, author_name: authorName }] : []),
+    ),
     from: vi.fn((table: string) => {
       switch (table) {
         case "purchases":
@@ -62,6 +68,7 @@ function setPurchaseDb({
     }),
   };
   vi.mocked(createClient).mockResolvedValue(client as never);
+  return client;
 }
 
 const props = (id: string) => ({ params: Promise.resolve({ id }), searchParams: Promise.resolve({}) }) as never;
@@ -154,5 +161,35 @@ describe("сторінка закупівлі", () => {
     vi.mocked(getViewer).mockResolvedValue(null);
 
     await expect(PurchasePage(props(PURCHASE_ID))).rejects.toThrow("REDIRECT /login");
+  });
+
+  it("AC-APR-08: схвалювач відділу бачить на сторінці заявки автора «Andrii Demo-First»", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    const client = setPurchaseDb({ visible: purchase(), approves: [PRIMARY.id] });
+
+    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+    expect(html).toMatch(/>Author<\/dt><dd data-testid="purchase-author">Andrii Demo-First<\/dd>/);
+    expect(client.rpc).toHaveBeenCalledWith("purchase_author_names", { p_purchase_ids: [PURCHASE_ID] });
+  });
+
+  it("AC-APR-09: автор без імені — на сторінці заявки його email", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    setPurchaseDb({ visible: purchase(), approves: [PRIMARY.id], authorName: "petro@example.test" });
+
+    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+    expect(html).toContain('data-testid="purchase-author">petro@example.test<');
+  });
+
+  it("AC-APR-10: сторінка заявки не читає профіль автора — ролі, відділів і дозволів автора немає", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    const client = setPurchaseDb({ visible: purchase(), approves: [PRIMARY.id] });
+
+    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+    expect(client.from).not.toHaveBeenCalledWith("profiles");
+    expect(client.from).not.toHaveBeenCalledWith("purchase_permissions");
+    expect(html).not.toContain("data-role");
   });
 });

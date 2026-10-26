@@ -5,6 +5,7 @@ import { Alert, Button, Card, Input } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { canDecide } from "@/lib/purchases/decisions";
+import { loadAuthorNames } from "@/lib/purchases/lists";
 import {
   canSeePurchase,
   formatSubmittedAt,
@@ -22,7 +23,8 @@ const price = (value: number | null) => (value === null ? "—" : Number(value).
 // Сторінка закупівлі: її бачать автор, схвалювач її відділу й адміністратор; іншим — «Not enough permissions» без
 // даних закупівлі (AC-FRM-08). RLS не повертає чужу закупівлю, тож «немає» й «чужа» виглядають однаково й нічого не
 // розкривають. Статус — текстом (AC-LANG-06). Схвалювач відділу, не автор, вирішує заявку «Очікує схвалення»
-// (AC-APR-02, AC-APR-05, AC-APR-06); причину відхилення видно поруч зі статусом «Rejected» (AC-APR-07).
+// (AC-APR-02, AC-APR-05, AC-APR-06); причину відхилення видно поруч зі статусом «Rejected» (AC-APR-07). Автор — ім'я,
+// без імені — email, без інших даних профілю (AC-APR-08, AC-APR-09, AC-APR-10).
 export default async function PurchasePage({ params, searchParams }: PageProps<"/purchases/[id]">) {
   const viewer = await getViewer();
   if (!viewer) redirect("/login");
@@ -62,11 +64,10 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
     return <NoAccess viewer={viewer} />;
   }
 
-  const { data: department, error: departmentError } = await supabase
-    .from("departments")
-    .select("name")
-    .eq("id", purchase.department_id)
-    .maybeSingle();
+  const [{ data: department, error: departmentError }, authorName] = await Promise.all([
+    supabase.from("departments").select("name").eq("id", purchase.department_id).maybeSingle(),
+    loadAuthorNames(supabase, [purchase.id]),
+  ]);
   // Помилку бази не видаємо за «немає відділу».
   if (departmentError) throw new Error(`Failed to read department: ${departmentError.message}`);
 
@@ -91,6 +92,8 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
               <dd data-testid="rejection-reason">{purchase.rejection_reason}</dd>
             </>
           )}
+          <dt className="text-muted-foreground">Author</dt>
+          <dd data-testid="purchase-author">{authorName.get(purchase.id) ?? "—"}</dd>
           <dt className="text-muted-foreground">Department</dt>
           <dd data-testid="purchase-department">{department?.name ?? "—"}</dd>
           <dt className="text-muted-foreground">Purchase type</dt>
