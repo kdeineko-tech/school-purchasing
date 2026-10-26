@@ -1,10 +1,11 @@
 import { Badge } from "@/components/ui";
 import { STATUS_LABELS, type PurchaseStatus } from "@/lib/purchases/form";
 
-const STATUS_TONE: Record<PurchaseStatus, "neutral" | "accent" | "danger"> = {
-  awaiting_approval: "neutral",
-  approved: "accent",
-  rejected: "danger",
+// Кольори статусів з «Вигляду й тону» PM: очікує — теплий жовтий, схвалено — зелений, відхилено — червоний.
+const STATUS_TONE: Record<PurchaseStatus, "pending" | "approved" | "rejected"> = {
+  awaiting_approval: "pending",
+  approved: "approved",
+  rejected: "rejected",
 };
 
 // Статус підписано текстом, а не лише кольором (AC-LANG-06).

@@ -145,10 +145,20 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
 - Supabase MCP (`.mcp.json`, лише Claude Code; Cursor бере MCP з `.cursor/mcp.json`) — лише читання, один проєкт: перед запуском задай `SUPABASE_PROJECT_REF`.
 - `product/denylist.local*` — справжні назви клієнта (список PM надсилає особистим повідомленням; git файл не відстежує): не відкривай і не цитуй (найкраще зусилля, не гарантія: у Claude Code — deny `Read(product/denylist.local*)` у `.claude/settings.json`, у Cursor — `.cursorignore`, який за документацією Cursor не закриває термінал і MCP; чи deny діє на пошук і `cat`, звіряємо на репетиції).
 
+## Дизайн-система
+
+- Правила вигляду — `DESIGN.md`. Кольори — лише семантичні утиліти з токенів (`bg-primary`, `text-muted-foreground`,
+  `border-input`, `bg-status-pending`…); жодних hex, `bg-[#…]`, сирих палітр (`zinc-500`, `bg-white`) і кольорів в
+  inline style.
+- Компоненти — лише з `@/components/ui` (shadcn/ui і обгортки застосунку в `src/components/ui/index.tsx`, змінюються в
+  цій теці). Нових кольорів у компонентах не вигадуй.
+- Новий токен: `DESIGN.md` → `:root` і обидва блоки темної теми в `src/app/globals.css` (`[data-theme="dark"]` і `prefers-color-scheme`) → `--color-<назва>` у `@theme inline`.
+- Перевірка: `npm run check:design` (CI: `.github/workflows/architecture.yml`).
+
 ## Архітектурні правила
 
 Окремий workflow `.github/workflows/architecture.yml` (не `ci.yml`: на назвах його jobs тримається ruleset). Перед PR:
-`npm run check:boundary` і `npm run check:auth`.
+`npm run check:design`, `npm run check:boundary` і `npm run check:auth`.
 
 - **Секретний ключ лише на сервері** (`scripts/check-server-boundary.mjs`): зараз admin-клієнта в застосунку немає, і
   `SUPABASE_SECRET_KEY` у Vercel немає (розділ «Секрети»): ключ читають лише локальні скрипти (`npm run users:demo`).

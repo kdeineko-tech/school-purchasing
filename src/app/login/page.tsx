@@ -1,4 +1,4 @@
-import { Alert, Button, Input } from "@/components/ui";
+import { Alert, Button, Input, Logo, ThemeToggle } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { login } from "./actions";
 
@@ -13,15 +13,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const message = typeof error === "string" ? ERRORS[error] : undefined;
 
   return (
-    <main className="flex flex-1 items-center justify-center px-4 py-16">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-surface p-8 shadow-sm">
+    <main className="relative flex flex-1 items-center justify-center px-4 py-16">
+      <ThemeToggle className="absolute top-4 right-4" />
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <span className="grid size-10 place-items-center rounded-xl bg-accent text-lg font-semibold text-accent-foreground">
-            S
-          </span>
+          <Logo size={88} className="rounded-2xl" />
           <div>
             <h1 className="text-xl font-semibold">Sign in</h1>
-            <p className="text-sm text-muted">School Purchasing</p>
+            <p className="text-sm text-muted-foreground">School Purchasing</p>
           </div>
         </div>
         <form action={login} className="flex flex-col gap-4">

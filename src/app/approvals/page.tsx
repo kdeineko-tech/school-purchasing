@@ -63,11 +63,11 @@ export default async function ApprovalsPage() {
               <li key={p.id}>
                 <Link
                   href={`/purchases/${p.id}`}
-                  className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm hover:text-accent"
+                  className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm hover:text-primary"
                 >
                   <div className="flex flex-col">
                     <span className="font-medium">{departmentName.get(p.department_id) ?? "—"}</span>
-                    <span className="text-muted">
+                    <span className="text-muted-foreground">
                       {PURCHASE_TYPE_LABELS[p.purchase_type as PurchaseTypeId] ?? p.purchase_type} ·{" "}
                       {formatSubmittedAt(p.created_at)}
                     </span>

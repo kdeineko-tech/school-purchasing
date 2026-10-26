@@ -74,14 +74,14 @@ export default async function ProfilePage() {
       </Card>
       <Card title="My work">
         <nav className="flex flex-wrap gap-4 text-sm" data-testid="profile-links">
-          <Link href="/purchases/new" className="text-accent hover:underline">
+          <Link href="/purchases/new" className="text-primary hover:underline">
             New purchase
           </Link>
-          <Link href="/purchases" className="text-accent hover:underline">
+          <Link href="/purchases" className="text-primary hover:underline">
             My requests
           </Link>
           {viewer.role !== "requester" && (
-            <Link href="/approvals" className="text-accent hover:underline">
+            <Link href="/approvals" className="text-primary hover:underline">
               Approvals
             </Link>
           )}
@@ -89,11 +89,11 @@ export default async function ProfilePage() {
       </Card>
       <Card title="My permissions">
         <dl className="grid grid-cols-[max-content_1fr] gap-x-6 gap-y-2 text-sm">
-          <dt className="text-muted">Allowed request types</dt>
+          <dt className="text-muted-foreground">Allowed request types</dt>
           <dd className="flex flex-wrap gap-2">
             {requestTypes.length > 0 ? requestTypes.map((t) => <Badge key={t}>{t}</Badge>) : "—"}
           </dd>
-          <dt className="text-muted">Allowed purchase types</dt>
+          <dt className="text-muted-foreground">Allowed purchase types</dt>
           <dd className="flex flex-wrap gap-2">
             {purchaseTypes.map((t) => (
               <Badge key={t}>{t}</Badge>
