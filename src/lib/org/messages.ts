@@ -9,6 +9,8 @@ export const MESSAGES = {
   lastAdmin: "At least one active administrator must remain", // AC-ORG-10, AC-ORG-18
   noDepartments: "You have not been added to any department. Contact your administrator.", // AC-FRM-05
   noLines: "Add at least one line", // AC-FRM-06, AC-LANG-04
+  lineFields: "Fill in all line fields", // AC-FRM-15
+  noRequests: "You have not submitted any requests yet", // AC-FRM-14
   purchaseSubmitted: "Purchase submitted", // AC-FRM-11
   provideReason: "Provide a reason", // AC-APR-06, AC-LANG-05
   noDecisionRequests: "No requests awaiting your decision", // список для рішення без заявок

@@ -100,6 +100,30 @@ describe("подання закупівлі (submitPurchase)", () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  it("AC-FRM-15: рядок лише з назвою «Paper A4», без мети, кількості й ціни — «Fill in all line fields», не подано", async () => {
+    const { rpc } = useDb({ members: member1 });
+    const onlyName = JSON.stringify([{ name: "Paper A4", purpose: "", quantity: "", unitPrice: "" }]);
+
+    const state = await submitPurchase(
+      {},
+      form({ departmentId: PRIMARY.id, purchaseType: "purchasing_department", lines: onlyName }),
+    );
+
+    expect(state).toEqual({ error: "Fill in all line fields" });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it("AC-FRM-15: відмова бази LINE_FIELDS (обхід перевірки сторінки) дає те саме повідомлення", async () => {
+    useDb({ members: member1, rpcError: { message: "LINE_FIELDS" } });
+
+    const state = await submitPurchase(
+      {},
+      form({ departmentId: PRIMARY.id, purchaseType: "purchasing_department", lines: ONE_LINE }),
+    );
+
+    expect(state).toEqual({ error: "Fill in all line fields" });
+  });
+
   it("AC-LANG-04: відмова бази NO_LINES показана англійською «Add at least one line»", async () => {
     useDb({ members: member1, rpcError: { message: "NO_LINES" } });
 

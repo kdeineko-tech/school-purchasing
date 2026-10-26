@@ -118,6 +118,15 @@ describe("«Мої заявки»", () => {
     expect(html).toContain("Purchase submitted");
   });
 
+  it("AC-FRM-14: працівник без жодної поданої заявки бачить «You have not submitted any requests yet», списку немає", async () => {
+    useDb({ purchases: [purchaseOf(P2)] });
+
+    const html = renderToStaticMarkup(await MyRequestsPage(props()));
+
+    expect(html).toContain("You have not submitted any requests yet");
+    expect(html).not.toContain("my-requests");
+  });
+
   it("без ознаки подання повідомлення немає", async () => {
     useDb({ purchases: [] });
 

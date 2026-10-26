@@ -76,6 +76,18 @@ describe("перевірка подання", () => {
     });
   });
 
+  it.each([
+    ["назви", { ...line, name: "" }],
+    ["мети", { ...line, purpose: " " }],
+    ["кількості", { ...line, quantity: "" }],
+    ["ціни", { ...line, unitPrice: "" }],
+  ])("AC-FRM-15: рядок без %s — «Fill in all line fields»", (_field, bad) => {
+    expect(validateSubmission({ departmentId: PRIMARY.id, purchaseType: "purchasing_department", lines: [bad] }, options)).toEqual({
+      ok: false,
+      error: "Fill in all line fields",
+    });
+  });
+
   it("AC-FRM-07: один рядок у своєму відділі дозволеного типу можна подати", () => {
     expect(
       validateSubmission({ departmentId: PRIMARY.id, purchaseType: "purchasing_department", lines: [line] }, options),

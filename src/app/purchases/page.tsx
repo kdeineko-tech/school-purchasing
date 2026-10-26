@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
-import { Card, Notice } from "@/components/ui";
+import { Card, EmptyState, Notice } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { formatSubmittedAt, PURCHASE_TYPE_LABELS, type PurchaseTypeId } from "@/lib/purchases/form";
@@ -9,8 +9,8 @@ import { createClient } from "@/lib/supabase/server";
 import { StatusBadge } from "./status-badge";
 
 // «Мої заявки»: лише власні заявки зі статусом текстом (AC-FRM-10, AC-LANG-06); після подання —
-// «Purchase submitted» (AC-FRM-11). Порожній список — без окремого тексту до відповіді PM на Q6
-// (ValiaBihun/2026-quitcode-dream-team#58).
+// «Purchase submitted» (AC-FRM-11). Без жодної поданої заявки — «You have not submitted any requests yet» замість
+// списку (AC-FRM-14; відповідь PM ValiaBihun/2026-quitcode-dream-team#58).
 export default async function MyRequestsPage({ searchParams }: PageProps<"/purchases">) {
   const viewer = await getViewer();
   if (!viewer) redirect("/login");
@@ -42,25 +42,29 @@ export default async function MyRequestsPage({ searchParams }: PageProps<"/purch
         </Link>
       </div>
       <Card>
-        <ul className="flex flex-col divide-y divide-border" data-testid="my-requests">
-          {(purchases ?? []).map((p) => (
-            <li key={p.id}>
-              <Link
-                href={`/purchases/${p.id}`}
-                className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm hover:text-accent"
-              >
-                <div className="flex flex-col">
-                  <span className="font-medium">{departmentName.get(p.department_id) ?? "—"}</span>
-                  <span className="text-muted">
-                    {PURCHASE_TYPE_LABELS[p.purchase_type as PurchaseTypeId] ?? p.purchase_type} ·{" "}
-                    {formatSubmittedAt(p.created_at)}
-                  </span>
-                </div>
-                <StatusBadge status={p.status} />
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {(purchases ?? []).length === 0 ? (
+          <EmptyState>{MESSAGES.noRequests}</EmptyState>
+        ) : (
+          <ul className="flex flex-col divide-y divide-border" data-testid="my-requests">
+            {(purchases ?? []).map((p) => (
+              <li key={p.id}>
+                <Link
+                  href={`/purchases/${p.id}`}
+                  className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm hover:text-accent"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{departmentName.get(p.department_id) ?? "—"}</span>
+                    <span className="text-muted">
+                      {PURCHASE_TYPE_LABELS[p.purchase_type as PurchaseTypeId] ?? p.purchase_type} ·{" "}
+                      {formatSubmittedAt(p.created_at)}
+                    </span>
+                  </div>
+                  <StatusBadge status={p.status} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </Card>
     </PageShell>
   );
