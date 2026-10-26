@@ -222,12 +222,6 @@ export function OpenBook({ className }: { className?: string }) {
       scheme.removeEventListener("change", paintText);
     };
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reduced.matches) {
-      draw();
-      return stopThemeWatch;
-    }
-
     const tick = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
@@ -284,23 +278,54 @@ export function OpenBook({ className }: { className?: string }) {
       flights = flights.filter((f) => f.p > 0 && f.p < 1);
 
       draw();
+      // Нічого не летить і нового аркуша не буде — книга в спокої: лишаємо останній кадр і не крутимо цикл
+      // марно. Його знову запускає рух миші, вихід миші за сторінку чи зміна розміру.
+      const resting = flights.length === 0 && !(want && next >= lo && next <= hi);
+      raf = resting ? 0 : requestAnimationFrame(tick);
+    };
+
+    // За prefers-reduced-motion книга лежить розкритою посередині й не гортається; налаштування можна змінити й
+    // на відкритій сторінці.
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const start = () => {
+      if (reduced.matches) {
+        draw();
+        return;
+      }
+      if (raf) return;
+      last = performance.now();
       raf = requestAnimationFrame(tick);
+    };
+    const onReducedChange = () => {
+      if (reduced.matches) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+        flights = [];
+        s = 0.5;
+      }
+      start();
     };
 
     const onMove = (e: PointerEvent) => {
       pointer = e.pointerType === "mouse" ? { x: e.clientX, y: e.clientY } : null;
+      start();
     };
     const onLeave = () => {
       pointer = null;
+      start();
     };
     window.addEventListener("pointermove", onMove);
+    window.addEventListener("resize", start);
     document.documentElement.addEventListener("mouseleave", onLeave);
-    raf = requestAnimationFrame(tick);
+    reduced.addEventListener("change", onReducedChange);
+    start();
     return () => {
       cancelAnimationFrame(raf);
       stopThemeWatch();
       window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("resize", start);
       document.documentElement.removeEventListener("mouseleave", onLeave);
+      reduced.removeEventListener("change", onReducedChange);
     };
   }, []);
 
