@@ -10,6 +10,8 @@ import { Button as ButtonBase } from "./button";
 import { Input as InputBase } from "./input";
 
 export { Label } from "./label";
+export { OpenBook } from "./open-book";
+export { SchoolBackdrop } from "./school-backdrop";
 export { ThemeToggle } from "./theme-toggle";
 export { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./table";
 

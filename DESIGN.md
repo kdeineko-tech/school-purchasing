@@ -28,6 +28,8 @@
 | `status-pending` / `status-pending-foreground` | статус «Awaiting approval» — теплий жовтий | `oklch(0.955 0.045 91.7)` / `oklch(0.489 0.093 82.3)` | `oklch(0.329 0.035 86.3)` / `oklch(0.88 0.099 89.8)` | `bg-status-pending`, `text-status-pending-foreground` |
 | `status-approved` / `status-approved-foreground` | статус «Approved» — зелений | `oklch(0.933 0.029 140.5)` / `oklch(0.429 0.075 151.3)` | `oklch(0.343 0.049 152.2)` / `oklch(0.858 0.074 141.4)` | `bg-status-approved`, `text-status-approved-foreground` |
 | `status-rejected` / `status-rejected-foreground` | статус «Rejected» — червоний | `oklch(0.927 0.026 29.4)` / `oklch(0.465 0.144 29.5)` | `oklch(0.317 0.054 29)` / `oklch(0.841 0.068 28.8)` | `bg-status-rejected`, `text-status-rejected-foreground` |
+| `book-cover` | лише декоративна 3D-книга на сторінці входу (`OpenBook`): шкіряна палітурка | `oklch(0.43 0.07 52)` | `oklch(0.36 0.055 50)` | `bg-book-cover` |
+| `book-paper` / `book-edge` / `book-ink` | там само: папір сторінок, зріз блоку сторінок, рядки «тексту» | `oklch(0.96 0.025 88)` / `oklch(0.84 0.045 80)` / `oklch(0.6 0.025 70)` | `oklch(0.84 0.03 86)` / `oklch(0.7 0.04 78)` / `oklch(0.52 0.025 70)` | `bg-book-paper`, `bg-book-edge` |
 
 Палітра «Calm School»: основні кольори задала розробниця (hex — `background` `#F7F5EF` / `#19231D`, `card` `#FFFFFF` / `#243129`, `popover`·`muted` `#F1F0E8` / `#2D3B31`, `primary` `#244C3A` / `#A8C3A0`, `foreground` `#29342D` / `#F0F2E9`, `border` `#E3E1D7` / `#3B4A3E`); решту токенів підібрано в тих самих тонах і перевірено контрастом нижче.
 
@@ -62,6 +64,8 @@
 | `input` на `background` | 3,3 | 4,2 | ≥ 3 |
 | `ring` на `background` | 8,9 | 8,4 | ≥ 3 |
 | `ring` на `card` | 9,7 | 7,1 | ≥ 3 |
+
+Токени `book-*` — лише для декоративної книги (`aria-hidden`, без тексту й дій), тож норм контрасту для них немає; у компонентах застосунку їх не використовуємо.
 
 ## 3. Типографіка
 
