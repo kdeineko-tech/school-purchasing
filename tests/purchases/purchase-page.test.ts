@@ -192,4 +192,23 @@ describe("сторінка закупівлі", () => {
     expect(client.from).not.toHaveBeenCalledWith("purchase_permissions");
     expect(html).not.toContain("data-role");
   });
+
+  it("автор на сторінці своєї заявки бачить посилання назад «My requests»", async () => {
+    setPurchaseDb({ visible: purchase() });
+
+    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+    expect(html).toContain('href="/purchases">← My requests</a>');
+    expect(html).not.toContain("← Approvals");
+  });
+
+  it("схвалювач, який відкрив чужу заявку свого відділу, бачить посилання назад «Approvals»", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    setPurchaseDb({ visible: purchase(), approves: [PRIMARY.id] });
+
+    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+    expect(html).toContain('href="/approvals">← Approvals</a>');
+    expect(html).not.toContain("← My requests");
+  });
 });

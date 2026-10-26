@@ -20,6 +20,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const price = (value: number | null) => (value === null ? "—" : Number(value).toFixed(2));
 
+// Куди «назад»: автор відкриває свою заявку з «My requests», а схвалювач чи адміністратор чужу — зі списку для
+// рішення (сторінка Approvals чи картка на головній).
+function backLink(viewerId: string, authorId: string) {
+  return viewerId === authorId ? { href: "/purchases", label: "My requests" } : { href: "/approvals", label: "Approvals" };
+}
+
 // Сторінка закупівлі: її бачать автор, схвалювач її відділу й адміністратор; іншим — «Not enough permissions» без
 // даних закупівлі (AC-FRM-08). RLS не повертає чужу закупівлю, тож «немає» й «чужа» виглядають однаково й нічого не
 // розкривають. Статус — текстом (AC-LANG-06). Схвалювач відділу, не автор, вирішує заявку «Очікує схвалення»
@@ -78,7 +84,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
   );
 
   return (
-    <PageShell viewer={viewer} title="Purchase" back={{ href: "/purchases", label: "My requests" }}>
+    <PageShell viewer={viewer} title="Purchase" back={backLink(viewer.id, purchase.author_id)}>
       {errorMessage && <Alert testId="decision-error">{errorMessage}</Alert>}
       <Card>
         <dl className="grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-3 text-sm">
