@@ -14,9 +14,13 @@ declare
   v_uid uuid := (select auth.uid());
   v_role text;
   v_purchase_id uuid;
-  -- «Порожні» символи для полів рядка — ті самі, що прибирає trim() у формі: пробіл, \t, \n, вертикальна табуляція,
-  -- form feed, \r, нерозривний пробіл. Один набір і в перевірці LINE_FIELDS, і під час запису.
-  v_blank constant text := ' ' || chr(9) || chr(10) || chr(11) || chr(12) || chr(13) || chr(160);
+  -- «Порожні» символи для полів рядка — рівно ті, що прибирає String.prototype.trim() у формі (WhiteSpace і
+  -- LineTerminator за ECMAScript): U+0009–000D, пробіл, U+00A0, U+1680, U+2000–200A, U+2028, U+2029, U+202F, U+205F,
+  -- U+3000, U+FEFF. Один набір і в перевірці LINE_FIELDS, і під час запису.
+  v_blank constant text := chr(9) || chr(10) || chr(11) || chr(12) || chr(13) || chr(32) || chr(160) || chr(5760) ||
+    chr(8192) || chr(8193) || chr(8194) || chr(8195) || chr(8196) || chr(8197) || chr(8198) || chr(8199) ||
+    chr(8200) || chr(8201) || chr(8202) || chr(8232) || chr(8233) || chr(8239) || chr(8287) || chr(12288) ||
+    chr(65279);
 begin
   -- Працівник, який увійшов і активний (AC-ORG-12).
   if v_uid is null or not private.is_active_user() then

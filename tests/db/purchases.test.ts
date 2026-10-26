@@ -124,6 +124,8 @@ describe("подання закупівлі в базі", () => {
     ["мета — перенос рядка", { name: "Paper A4", purpose: "\n", quantity: "3", unit_price: "20.00" }],
     ["кількість — \\r\\n", { name: "Paper A4", purpose: "Printing", quantity: "\r\n", unit_price: "20.00" }],
     ["ціна — нерозривний пробіл", { name: "Paper A4", purpose: "Printing", quantity: "3", unit_price: "\u00a0" }],
+    ["назва — широкий пробіл U+2003", { name: "\u2003", purpose: "Printing", quantity: "3", unit_price: "20.00" }],
+    ["мета — U+FEFF", { name: "Paper A4", purpose: "\ufeff", quantity: "3", unit_price: "20.00" }],
   ])("AC-FRM-15: поле лише з «порожніх» символів (%s) — LINE_FIELDS, нової заявки немає", async (_case, line) => {
     const before = await countPurchases(member1);
 
@@ -133,6 +135,23 @@ describe("подання закупівлі в базі", () => {
         JSON.stringify([line]),
       ]),
     ).rejects.toThrow(/LINE_FIELDS/);
+    expect(await countPurchases(member1)).toBe(before);
+  });
+
+  it("AC-FRM-15: назва з будь-якого символу, який прибирає trim() у формі, — LINE_FIELDS (набори в базі й у формі збігаються)", async () => {
+    const blanks = Array.from({ length: 0x10000 }, (_, c) => String.fromCharCode(c)).filter((ch) => ch.trim() === "");
+    expect(blanks).toHaveLength(25);
+    const before = await countPurchases(member1);
+
+    for (const ch of blanks) {
+      await expect(
+        t.asUser(member1, "select public.submit_purchase($1, 'purchasing_department', $2::jsonb)", [
+          PRIMARY,
+          JSON.stringify([{ name: ch, purpose: "Printing", quantity: "3", unit_price: "20.00" }]),
+        ]),
+        `U+${ch.charCodeAt(0).toString(16).padStart(4, "0")}`,
+      ).rejects.toThrow(/LINE_FIELDS/);
+    }
     expect(await countPurchases(member1)).toBe(before);
   });
 
