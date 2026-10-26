@@ -33,17 +33,21 @@ function setPurchaseDb({
   approves = [],
   departmentError = null,
   authorName = "Andrii Demo-First",
+  authorError = null,
 }: {
   visible: ReturnType<typeof purchase> | null;
   approves?: string[];
   departmentError?: { message: string } | null;
   authorName?: string;
+  authorError?: { code: string; message: string } | null;
 }) {
   const ok = <T>(data: T) => Promise.resolve({ data, error: null });
   const client = {
     // purchase_author_names віддає ім'я лише для видимої заявки (міграція 20261026155141_purchase_author_names.sql).
     rpc: vi.fn((_fn: string, args: { p_purchase_ids: string[] }) =>
-      ok(visible && args.p_purchase_ids.includes(visible.id) ? [{ purchase_id: visible.id, author_name: authorName }] : []),
+      authorError
+        ? Promise.resolve({ data: null, error: authorError })
+        : ok(visible && args.p_purchase_ids.includes(visible.id) ? [{ purchase_id: visible.id, author_name: authorName }] : []),
     ),
     from: vi.fn((table: string) => {
       switch (table) {
@@ -210,5 +214,30 @@ describe("сторінка закупівлі", () => {
 
     expect(html).toContain('href="/approvals">← Approvals</a>');
     expect(html).not.toContain("← My requests");
+  });
+
+  it("поки міграції з purchase_author_names немає в базі (PGRST202), сторінка заявки відкривається з «Author: —»", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    setPurchaseDb({
+      visible: purchase(),
+      approves: [PRIMARY.id],
+      authorError: { code: "PGRST202", message: "Could not find the function public.purchase_author_names" },
+    });
+
+    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+    expect(html).toContain('data-testid="purchase-author">—<');
+    expect(html).toContain("Primary School");
+  });
+
+  it("інша помилка бази під час читання автора не ховається", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    setPurchaseDb({
+      visible: purchase(),
+      approves: [PRIMARY.id],
+      authorError: { code: "57014", message: "canceling statement due to statement timeout" },
+    });
+
+    await expect(PurchasePage(props(PURCHASE_ID))).rejects.toThrow("Failed to read request authors");
   });
 });

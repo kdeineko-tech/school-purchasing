@@ -24,9 +24,15 @@ export type PurchaseListData = {
 
 // Ім'я автора для заявок, які переглядач і так бачить: функція бази public.purchase_author_names віддає лише ім'я
 // (без імені — email), без інших даних профілю (AC-APR-10; міграція 20261026155141_purchase_author_names.sql).
+// Vercel викладає код одразу після merge, а міграцію застосовує db-deploy у CI трохи пізніше; прев'ю PR працює з
+// тією самою базою ще до merge. Поки функції в базі немає (PostgREST — PGRST202, Postgres — 42883), сторінки
+// показують «Author: —» замість помилки. Будь-яку іншу помилку бази не ховаємо.
+const MISSING_FUNCTION = new Set(["PGRST202", "42883"]);
+
 export async function loadAuthorNames(supabase: Supabase, purchaseIds: string[]): Promise<Map<string, string>> {
   if (purchaseIds.length === 0) return new Map();
   const { data, error } = await supabase.rpc("purchase_author_names", { p_purchase_ids: purchaseIds });
+  if (error && MISSING_FUNCTION.has(error.code)) return new Map();
   if (error) throw new Error(`Failed to read request authors: ${error.message}`);
   return new Map((data ?? []).map((r) => [r.purchase_id, r.author_name]));
 }
