@@ -12,8 +12,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { error } = await searchParams;
   const message = typeof error === "string" ? ERRORS[error] : undefined;
 
+  // На низькому екрані (≤ 720px) — менші відступи, щоб форма входу вміщалась разом із книгою.
   return (
-    <main className="relative isolate flex flex-1 flex-col items-center justify-center gap-6 px-4 py-16">
+    <main className="relative isolate flex flex-1 flex-col items-center justify-center gap-6 px-4 py-16 [@media(max-height:720px)]:py-6">
       <SchoolBackdrop />
       <ThemeToggle className="absolute top-4 right-4" />
       <OpenBook />
