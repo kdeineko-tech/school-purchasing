@@ -98,6 +98,11 @@ function exportedActionName(line) {
   return arrow ? arrow[1] : null;
 }
 
+// Рядок коду без вмісту рядкових літералів ("…", '…', `…`): текст "auth.signOut()" у лапках — не виклик сесії.
+function stripStrings(line) {
+  return line.replace(/(["'`])(?:\\.|(?!\1)[^\\])*\1/g, (m, q) => q + q);
+}
+
 const problems = [];
 const report = (file, line, message) =>
   problems.push(`${relative(root, file).split(sep).join("/")}:${line}  ${message}`);
@@ -127,7 +132,7 @@ for (const file of walk(src)) {
     const body = code.slice(start, starts[k + 1]?.i ?? code.length);
     // Виняток лише для дій, що справді створюють чи завершують сесію: сам коментар без сесійного виклику не рахується.
     if (/^\s*\/\/\s*auth-ok:\s*\S/.test(rawLines[start - 1] ?? "")) {
-      if (!body.some((l) => SESSION_CALL.test(l))) {
+      if (!body.some((l) => SESSION_CALL.test(stripStrings(l)))) {
         report(file, start + 1, `${name}: auth-ok дозволено лише для дій, що створюють або завершують сесію`);
       }
       return;

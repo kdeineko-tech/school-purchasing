@@ -133,6 +133,19 @@ export async function wipe() {
     expect(out).toContain("wipe: auth-ok дозволено лише для дій, що створюють або завершують сесію");
   });
 
+  it("fails on auth-ok when the session call is only text in a string literal", () => {
+    const { code, out } = run(
+      action(`// auth-ok: виходимо.
+export async function wipe() {
+  const note = "auth.signOut()";
+  const supabase = await createClient();
+  await supabase.from("purchases").delete();
+}`),
+    );
+    expect(code).toBe(1);
+    expect(out).toContain("wipe: auth-ok дозволено лише для дій, що створюють або завершують сесію");
+  });
+
   it("passes a guard whose block opens on the next line and returns", () => {
     const { code } = run(
       action(`export async function save() {
