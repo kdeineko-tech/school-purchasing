@@ -1,5 +1,6 @@
 // Компоненти застосунку поверх shadcn/ui (DESIGN.md, розділ 5). Лише вигляд: тексти й поведінку задають сторінки.
 // Кольори — лише семантичні токени з src/app/globals.css.
+import Image from "next/image";
 import type { ComponentProps, ReactNode } from "react";
 import type { AppRole } from "@/lib/org/access";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,14 @@ export function Select({ className, ...props }: ComponentProps<"select">) {
       )}
       {...props}
     />
+  );
+}
+
+// Лого школи (public/logo.png): герб на власному темно-зеленому тлі, тож однаковий у світлій і темній темі.
+// Поруч завжди є назва «School Purchasing», тому зображення декоративне (alt="").
+export function Logo({ size, className }: { size: number; className?: string }) {
+  return (
+    <Image src="/logo.png" alt="" width={size} height={size} priority className={cn("rounded-lg", className)} />
   );
 }
 

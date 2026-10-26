@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { signOut } from "@/app/login/actions";
 import { canOpenAdminPages } from "@/lib/org/access";
 import type { ViewerProfile } from "@/lib/org/viewer";
-import { Button, RoleBadge } from "./ui";
+import { Button, Logo, RoleBadge } from "./ui";
 
 export function PageShell({
   viewer,
@@ -25,7 +25,7 @@ export function PageShell({
       <header className="border-b border-border bg-card">
         <div className="mx-auto flex w-full max-w-4xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3 sm:px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span className="grid size-7 place-items-center rounded-lg bg-primary text-sm text-primary-foreground">S</span>
+            <Logo size={32} />
             School Purchasing
           </Link>
           {viewer && (

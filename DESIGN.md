@@ -1,6 +1,6 @@
 # Дизайн-система: School Purchasing
 
-- **Джерело:** артефакт Claude Design (Design System) — https://claude.ai/artifact/HHx1LvhQe5MeYqef7joXb3 (приватний; знімок — в описі PR). Створено в Claude Code з «Вигляду й тону» PM і наявного `src/app/globals.css`.
+- **Джерело:** артефакт Claude Design (Design System) — https://claude.ai/artifact/HHx1LvhQe5MeYqef7joXb3 (приватний; знімок — в описі PR). Створено в Claude Code з «Вигляду й тону» PM; палітра — «Calm School» (теплий світлий фон, глибокий зелений бренд; темна тема — приглушені зелені), лого — герб школи.
 - **Вхід від PM:** розділ «Вигляд і тон» у `requirements/product.md` (знімок 2026-10-25).
 - **Код:** токени — `src/app/globals.css`; компоненти — `src/components/ui/` (shadcn/ui і обгортки застосунку в `src/components/ui/index.tsx`); перевірка — `npm run check:design`.
 
@@ -14,20 +14,22 @@
 
 | Токен | Для чого | Світла | Темна | Клас |
 |---|---|---|---|---|
-| `background` / `foreground` | тло сторінки й основний текст | `oklch(0.975 0.004 265)` / `oklch(0.21 0.015 265)` | `oklch(0.165 0.012 265)` / `oklch(0.94 0.008 265)` | `bg-background`, `text-foreground` |
-| `card` / `card-foreground` | картки, форми, таблиці | `oklch(1 0 0)` / `oklch(0.21 0.015 265)` | `oklch(0.21 0.014 265)` / `oklch(0.94 0.008 265)` | `bg-card`, `text-card-foreground` |
-| `popover` / `popover-foreground` | діалоги, випадні списки | `oklch(1 0 0)` / `oklch(0.21 0.015 265)` | `oklch(0.21 0.014 265)` / `oklch(0.94 0.008 265)` | `bg-popover`, `text-popover-foreground` |
-| `primary` / `primary-foreground` | одна основна дія на екран («Submit», «Approve»), посилання, знак «S» | `oklch(0.49 0.2 275)` / `oklch(0.99 0.003 265)` | `oklch(0.72 0.13 275)` / `oklch(0.165 0.012 265)` | `bg-primary`, `text-primary-foreground`, `text-primary` |
-| `secondary` / `secondary-foreground` | другорядна дія («Add line», «Remove»), значок ролі | `oklch(0.955 0.008 265)` / `oklch(0.21 0.015 265)` | `oklch(0.27 0.015 265)` / `oklch(0.94 0.008 265)` | `bg-secondary`, `text-secondary-foreground` |
-| `muted` / `muted-foreground` | приглушене тло (відмова, заголовок таблиці), підписи й мета-текст | `oklch(0.955 0.008 265)` / `oklch(0.47 0.02 265)` | `oklch(0.27 0.015 265)` / `oklch(0.75 0.02 265)` | `bg-muted`, `text-muted-foreground` |
-| `accent` / `accent-foreground` | наведення, вибраний рядок, повідомлення про успіх, значок адміністратора | `oklch(0.95 0.03 275)` / `oklch(0.4 0.17 275)` | `oklch(0.28 0.06 275)` / `oklch(0.86 0.07 275)` | `bg-accent`, `text-accent-foreground` |
-| `destructive` / `destructive-foreground` | лише «Reject» і текст помилки введення | `oklch(0.5 0.19 27)` / `oklch(0.99 0.003 265)` | `oklch(0.7 0.16 25)` / `oklch(0.165 0.012 265)` | `bg-destructive`, `text-destructive` |
-| `border` | декоративні межі карток, роздільники рядків | `oklch(0.91 0.008 265)` | `oklch(0.31 0.015 265)` | `border-border` |
-| `input` | межа поля вводу й контурної кнопки | `oklch(0.6 0.02 265)` | `oklch(0.56 0.02 265)` | `border-input` |
-| `ring` | кільце фокусу | `oklch(0.49 0.2 275)` | `oklch(0.72 0.13 275)` | `ring-ring`, `outline-ring` |
-| `status-pending` / `status-pending-foreground` | статус «Awaiting approval» — теплий жовтий | `oklch(0.95 0.07 88)` / `oklch(0.42 0.1 68)` | `oklch(0.31 0.06 80)` / `oklch(0.88 0.12 88)` | `bg-status-pending`, `text-status-pending-foreground` |
-| `status-approved` / `status-approved-foreground` | статус «Approved» — зелений | `oklch(0.95 0.05 152)` / `oklch(0.42 0.11 152)` | `oklch(0.3 0.05 152)` / `oklch(0.86 0.12 152)` | `bg-status-approved`, `text-status-approved-foreground` |
-| `status-rejected` / `status-rejected-foreground` | статус «Rejected» — червоний | `oklch(0.95 0.03 25)` / `oklch(0.47 0.17 27)` | `oklch(0.31 0.06 25)` / `oklch(0.84 0.09 25)` | `bg-status-rejected`, `text-status-rejected-foreground` |
+| `background` / `foreground` | тло сторінки й основний текст | `oklch(0.97 0.008 91.5)` / `oklch(0.312 0.019 157.2)` | `oklch(0.244 0.018 158.4)` / `oklch(0.957 0.012 116.8)` | `bg-background`, `text-foreground` |
+| `card` / `card-foreground` | картки, форми, таблиці | `oklch(1 0 0)` / `oklch(0.312 0.019 157.2)` | `oklch(0.298 0.023 157.7)` / `oklch(0.957 0.012 116.8)` | `bg-card`, `text-card-foreground` |
+| `popover` / `popover-foreground` | діалоги, випадні списки | `oklch(1 0 0)` / `oklch(0.312 0.019 157.2)` | `oklch(0.336 0.025 153.8)` / `oklch(0.957 0.012 116.8)` | `bg-popover`, `text-popover-foreground` |
+| `primary` / `primary-foreground` | одна основна дія на екран («Submit», «Approve»), посилання | `oklch(0.381 0.055 162.7)` / `oklch(0.97 0.008 91.5)` | `oklch(0.787 0.057 138.6)` / `oklch(0.244 0.018 158.4)` | `bg-primary`, `text-primary-foreground`, `text-primary` |
+| `secondary` / `secondary-foreground` | другорядна дія («Add line», «Remove»), значок ролі | `oklch(0.954 0.011 100.8)` / `oklch(0.312 0.019 157.2)` | `oklch(0.336 0.025 153.8)` / `oklch(0.957 0.012 116.8)` | `bg-secondary`, `text-secondary-foreground` |
+| `muted` / `muted-foreground` | приглушене тло (відмова, заголовок таблиці), підписи й мета-текст | `oklch(0.954 0.011 100.8)` / `oklch(0.511 0.02 153.2)` | `oklch(0.336 0.025 153.8)` / `oklch(0.788 0.018 140)` | `bg-muted`, `text-muted-foreground` |
+| `accent` / `accent-foreground` | наведення, вибраний рядок, повідомлення про успіх, значок адміністратора | `oklch(0.934 0.018 134.9)` / `oklch(0.381 0.055 162.7)` | `oklch(0.364 0.036 155.1)` / `oklch(0.873 0.041 137.2)` | `bg-accent`, `text-accent-foreground` |
+| `destructive` / `destructive-foreground` | лише «Reject» і текст помилки введення | `oklch(0.501 0.178 28.7)` / `oklch(1 0 0)` | `oklch(0.796 0.092 27.6)` / `oklch(0.244 0.018 158.4)` | `bg-destructive`, `text-destructive` |
+| `border` | декоративні межі карток, роздільники рядків | `oklch(0.909 0.014 97.5)` | `oklch(0.392 0.028 150.9)` | `border-border` |
+| `input` | межа поля вводу й контурної кнопки | `oklch(0.62 0.016 155.4)` | `oklch(0.602 0.023 151.9)` | `border-input` |
+| `ring` | кільце фокусу | `oklch(0.381 0.055 162.7)` | `oklch(0.787 0.057 138.6)` | `ring-ring`, `outline-ring` |
+| `status-pending` / `status-pending-foreground` | статус «Awaiting approval» — теплий жовтий | `oklch(0.955 0.045 91.7)` / `oklch(0.489 0.093 82.3)` | `oklch(0.329 0.035 86.3)` / `oklch(0.88 0.099 89.8)` | `bg-status-pending`, `text-status-pending-foreground` |
+| `status-approved` / `status-approved-foreground` | статус «Approved» — зелений | `oklch(0.933 0.029 140.5)` / `oklch(0.429 0.075 151.3)` | `oklch(0.343 0.049 152.2)` / `oklch(0.858 0.074 141.4)` | `bg-status-approved`, `text-status-approved-foreground` |
+| `status-rejected` / `status-rejected-foreground` | статус «Rejected» — червоний | `oklch(0.927 0.026 29.4)` / `oklch(0.465 0.144 29.5)` | `oklch(0.317 0.054 29)` / `oklch(0.841 0.068 28.8)` | `bg-status-rejected`, `text-status-rejected-foreground` |
+
+Палітра «Calm School»: основні кольори задала розробниця (hex — `background` `#F7F5EF` / `#19231D`, `card` `#FFFFFF` / `#243129`, `popover`·`muted` `#F1F0E8` / `#2D3B31`, `primary` `#244C3A` / `#A8C3A0`, `foreground` `#29342D` / `#F0F2E9`, `border` `#E3E1D7` / `#3B4A3E`); решту токенів підібрано в тих самих тонах і перевірено контрастом нижче.
 
 Правила за змістом (з «Вигляду й тону» PM):
 
@@ -42,24 +44,24 @@
 
 | Пара | Світла | Темна | Норма |
 |---|---|---|---|
-| `foreground` на `background` | 16,5 | 16,2 | ≥ 4.5 |
-| `foreground` на `card` | 17,7 | 14,9 | ≥ 4.5 |
-| `muted-foreground` на `background` | 6,4 | 8,7 | ≥ 4.5 |
-| `muted-foreground` на `card` | 6,8 | 8,0 | ≥ 4.5 |
-| `muted-foreground` на `muted` | 6,0 | 6,8 | ≥ 4.5 |
-| `primary-foreground` на `primary` | 6,5 | 7,6 | ≥ 4.5 |
-| `primary` на `card` (посилання) | 6,7 | 7,0 | ≥ 4.5 |
-| `secondary-foreground` на `secondary` | 15,6 | 12,6 | ≥ 4.5 |
-| `accent-foreground` на `accent` | 8,4 | 9,6 | ≥ 4.5 |
-| `destructive-foreground` на `destructive` | 6,4 | 6,7 | ≥ 4.5 |
-| `destructive` на `card` | 6,6 | 6,2 | ≥ 4.5 |
-| `status-pending-foreground` на `status-pending` | 7,4 | 9,2 | ≥ 4.5 |
-| `status-approved-foreground` на `status-approved` | 7,1 | 9,1 | ≥ 4.5 |
-| `status-rejected-foreground` на `status-rejected` | 6,3 | 8,0 | ≥ 4.5 |
-| `input` на `card` | 3,9 | 3,8 | ≥ 3 |
-| `input` на `background` | 3,7 | 4,1 | ≥ 3 |
-| `ring` на `background` | 6,3 | 7,6 | ≥ 3 |
-| `ring` на `card` | 6,7 | 7,0 | ≥ 3 |
+| `foreground` на `background` | 11,9 | 14,3 | ≥ 4.5 |
+| `foreground` на `card` | 12,9 | 12,0 | ≥ 4.5 |
+| `muted-foreground` на `background` | 5,2 | 8,4 | ≥ 4.5 |
+| `muted-foreground` на `card` | 5,7 | 7,0 | ≥ 4.5 |
+| `muted-foreground` на `muted` | 5,0 | 6,1 | ≥ 4.5 |
+| `primary-foreground` на `primary` | 8,9 | 8,4 | ≥ 4.5 |
+| `primary` на `card` (посилання) | 9,7 | 7,1 | ≥ 4.5 |
+| `secondary-foreground` на `secondary` | 11,3 | 10,4 | ≥ 4.5 |
+| `accent-foreground` на `accent` | 8,0 | 7,2 | ≥ 4.5 |
+| `destructive-foreground` на `destructive` | 6,5 | 8,2 | ≥ 4.5 |
+| `destructive` на `card` | 6,5 | 6,9 | ≥ 4.5 |
+| `status-pending-foreground` на `status-pending` | 5,6 | 8,6 | ≥ 4.5 |
+| `status-approved-foreground` на `status-approved` | 6,5 | 7,6 | ≥ 4.5 |
+| `status-rejected-foreground` на `status-rejected` | 6,0 | 7,8 | ≥ 4.5 |
+| `input` на `card` | 3,6 | 3,5 | ≥ 3 |
+| `input` на `background` | 3,3 | 4,2 | ≥ 3 |
+| `ring` на `background` | 8,9 | 8,4 | ≥ 3 |
+| `ring` на `card` | 9,7 | 7,1 | ≥ 3 |
 
 ## 3. Типографіка
 
@@ -73,6 +75,12 @@
 | Назва в рядку, кнопка | `text-sm font-medium` | список заявок, кнопки |
 | Підпис, мета | `text-sm text-muted-foreground` | тип · дата під рядком, `dt` у списках |
 | Значок | `text-xs font-medium` | лише `Badge` |
+
+### Лого
+
+- Герб школи — `public/logo.png` (256×256), іконка вкладки — `src/app/icon.png`. Має власне темно-зелене тло, тож однаковий в обох темах.
+- Лише через компонент `Logo` (`size`: 32 у шапці, 88 на сторінці входу); поруч завжди текст «School Purchasing», тому `alt=""`.
+- Не перефарбовуємо, не обрізаємо до кола й не кладемо на `bg-primary`: герб і так темно-зелений.
 
 ## 4. Відступи й радіуси
 
@@ -96,6 +104,7 @@
 | `Dialog` | — | лише підтвердження незворотної дії |
 | `Alert` | `destructive` (помилка), `neutral` (відмова), `success` (успіх) | текст — дослівно з AC; помилка `role="alert"`, успіх `role="status"` |
 | `EmptyState` | — | одне речення замість списку |
+| `Logo` | `size` | герб школи з `public/logo.png`; лише поруч із назвою «School Purchasing» |
 
 ## 6. Стани
 

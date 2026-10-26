@@ -2,64 +2,64 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* Токени дизайн-системи School Purchasing (DESIGN.md, розділ 2; джерело — артефакт Claude Design).
+/* Токени дизайн-системи School Purchasing, палітра Calm School (DESIGN.md, розділ 2; джерело — артефакт Claude Design).
    Значення — OKLCH; темна тема — за системою (prefers-color-scheme), ті самі назви. Новий токен — DESIGN.md, розділ 9. */
 :root {
-  --background: oklch(0.975 0.004 265);
-  --foreground: oklch(0.21 0.015 265);
+  --background: oklch(0.97 0.008 91.5);
+  --foreground: oklch(0.312 0.019 157.2);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.21 0.015 265);
+  --card-foreground: oklch(0.312 0.019 157.2);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.21 0.015 265);
-  --primary: oklch(0.49 0.2 275);
-  --primary-foreground: oklch(0.99 0.003 265);
-  --secondary: oklch(0.955 0.008 265);
-  --secondary-foreground: oklch(0.21 0.015 265);
-  --muted: oklch(0.955 0.008 265);
-  --muted-foreground: oklch(0.47 0.02 265);
-  --accent: oklch(0.95 0.03 275);
-  --accent-foreground: oklch(0.4 0.17 275);
-  --destructive: oklch(0.5 0.19 27);
-  --destructive-foreground: oklch(0.99 0.003 265);
-  --border: oklch(0.91 0.008 265);
-  --input: oklch(0.6 0.02 265);
-  --ring: oklch(0.49 0.2 275);
-  --status-pending: oklch(0.95 0.07 88);
-  --status-pending-foreground: oklch(0.42 0.1 68);
-  --status-approved: oklch(0.95 0.05 152);
-  --status-approved-foreground: oklch(0.42 0.11 152);
-  --status-rejected: oklch(0.95 0.03 25);
-  --status-rejected-foreground: oklch(0.47 0.17 27);
+  --popover-foreground: oklch(0.312 0.019 157.2);
+  --primary: oklch(0.381 0.055 162.7);
+  --primary-foreground: oklch(0.97 0.008 91.5);
+  --secondary: oklch(0.954 0.011 100.8);
+  --secondary-foreground: oklch(0.312 0.019 157.2);
+  --muted: oklch(0.954 0.011 100.8);
+  --muted-foreground: oklch(0.511 0.02 153.2);
+  --accent: oklch(0.934 0.018 134.9);
+  --accent-foreground: oklch(0.381 0.055 162.7);
+  --destructive: oklch(0.501 0.178 28.7);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.909 0.014 97.5);
+  --input: oklch(0.62 0.016 155.4);
+  --ring: oklch(0.381 0.055 162.7);
+  --status-pending: oklch(0.955 0.045 91.7);
+  --status-pending-foreground: oklch(0.489 0.093 82.3);
+  --status-approved: oklch(0.933 0.029 140.5);
+  --status-approved-foreground: oklch(0.429 0.075 151.3);
+  --status-rejected: oklch(0.927 0.026 29.4);
+  --status-rejected-foreground: oklch(0.465 0.144 29.5);
   --radius: 0.75rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: oklch(0.165 0.012 265);
-    --foreground: oklch(0.94 0.008 265);
-    --card: oklch(0.21 0.014 265);
-    --card-foreground: oklch(0.94 0.008 265);
-    --popover: oklch(0.21 0.014 265);
-    --popover-foreground: oklch(0.94 0.008 265);
-    --primary: oklch(0.72 0.13 275);
-    --primary-foreground: oklch(0.165 0.012 265);
-    --secondary: oklch(0.27 0.015 265);
-    --secondary-foreground: oklch(0.94 0.008 265);
-    --muted: oklch(0.27 0.015 265);
-    --muted-foreground: oklch(0.75 0.02 265);
-    --accent: oklch(0.28 0.06 275);
-    --accent-foreground: oklch(0.86 0.07 275);
-    --destructive: oklch(0.7 0.16 25);
-    --destructive-foreground: oklch(0.165 0.012 265);
-    --border: oklch(0.31 0.015 265);
-    --input: oklch(0.56 0.02 265);
-    --ring: oklch(0.72 0.13 275);
-    --status-pending: oklch(0.31 0.06 80);
-    --status-pending-foreground: oklch(0.88 0.12 88);
-    --status-approved: oklch(0.3 0.05 152);
-    --status-approved-foreground: oklch(0.86 0.12 152);
-    --status-rejected: oklch(0.31 0.06 25);
-    --status-rejected-foreground: oklch(0.84 0.09 25);
+    --background: oklch(0.244 0.018 158.4);
+    --foreground: oklch(0.957 0.012 116.8);
+    --card: oklch(0.298 0.023 157.7);
+    --card-foreground: oklch(0.957 0.012 116.8);
+    --popover: oklch(0.336 0.025 153.8);
+    --popover-foreground: oklch(0.957 0.012 116.8);
+    --primary: oklch(0.787 0.057 138.6);
+    --primary-foreground: oklch(0.244 0.018 158.4);
+    --secondary: oklch(0.336 0.025 153.8);
+    --secondary-foreground: oklch(0.957 0.012 116.8);
+    --muted: oklch(0.336 0.025 153.8);
+    --muted-foreground: oklch(0.788 0.018 140);
+    --accent: oklch(0.364 0.036 155.1);
+    --accent-foreground: oklch(0.873 0.041 137.2);
+    --destructive: oklch(0.796 0.092 27.6);
+    --destructive-foreground: oklch(0.244 0.018 158.4);
+    --border: oklch(0.392 0.028 150.9);
+    --input: oklch(0.602 0.023 151.9);
+    --ring: oklch(0.787 0.057 138.6);
+    --status-pending: oklch(0.329 0.035 86.3);
+    --status-pending-foreground: oklch(0.88 0.099 89.8);
+    --status-approved: oklch(0.343 0.049 152.2);
+    --status-approved-foreground: oklch(0.858 0.074 141.4);
+    --status-rejected: oklch(0.317 0.054 29);
+    --status-rejected-foreground: oklch(0.841 0.068 28.8);
   }
 }
 

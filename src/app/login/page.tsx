@@ -1,4 +1,4 @@
-import { Alert, Button, Input } from "@/components/ui";
+import { Alert, Button, Input, Logo } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { login } from "./actions";
 
@@ -16,9 +16,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
     <main className="flex flex-1 items-center justify-center px-4 py-16">
       <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-sm">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
-          <span className="grid size-10 place-items-center rounded-xl bg-primary text-lg font-semibold text-primary-foreground">
-            S
-          </span>
+          <Logo size={88} className="rounded-2xl" />
           <div>
             <h1 className="text-xl font-semibold">Sign in</h1>
             <p className="text-sm text-muted-foreground">School Purchasing</p>
