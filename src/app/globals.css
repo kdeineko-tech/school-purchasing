@@ -148,7 +148,8 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    /* accent-primary — нативні чекбокси, радіо й повзунки в кольорі бренду, а не системному синьому. */
+    @apply bg-background text-foreground accent-primary;
   }
   html {
     @apply font-sans;
