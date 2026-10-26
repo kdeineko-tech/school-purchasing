@@ -86,6 +86,9 @@
 | AC-APR-05 | Схвалювач схвалює власну заявку напряму | `supabase/migrations/20261025223225_purchase_decisions.sql` (decide_purchase), `src/lib/purchases/decisions.ts` (canDecide), `src/app/purchases/[id]/page.tsx` | `tests/purchases/decisions.test.ts`, `tests/db/decisions.test.ts` | реалізовано |
 | AC-APR-06 | Відхилення без причини | `src/lib/purchases/decisions.ts` (validateDecision), `src/app/purchases/actions.ts` (decidePurchase), `supabase/migrations/20261025223225_purchase_decisions.sql` (decide_purchase) | `tests/purchases/decisions.test.ts`, `tests/db/decisions.test.ts` | реалізовано |
 | AC-APR-07 | Відхилення з причиною | `src/app/purchases/actions.ts` (decidePurchase), `src/app/purchases/[id]/page.tsx` (причина поруч зі статусом), `supabase/migrations/20261025223225_purchase_decisions.sql` (decide_purchase) | `tests/purchases/decisions.test.ts`, `tests/db/decisions.test.ts` | реалізовано |
+| AC-APR-08 | Ім'я автора в списку й на сторінці заявки | — | — | відкладено (чекає реалізації) |
+| AC-APR-09 | Email замість імені | — | — | відкладено (чекає реалізації) |
+| AC-APR-10 | Без інших даних профілю автора | — | — | відкладено (чекає реалізації) |
 | AC-LANG-01 | Будь-яка сторінка англійською | `src/lib/org/messages.ts`, `src/components/ui/index.tsx` (roleLabel), `src/components/page-shell.tsx`, `src/app/layout.tsx` (lang="en") | `tests/org/english.test.ts` | реалізовано |
 | AC-LANG-02 | Вхід англійською | `src/app/login/page.tsx` | `tests/org/english.test.ts` | реалізовано |
 | AC-LANG-03 | Відмова без права англійською | `src/lib/org/messages.ts` (forbidden), `src/app/admin/no-access.tsx` | `tests/org/english.test.ts` | реалізовано |
