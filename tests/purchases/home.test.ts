@@ -58,7 +58,17 @@ function setDb({
     from: vi.fn((table: string) => {
       switch (table) {
         case "purchases":
-          return { select: () => ({ eq: () => ({ order: ordered(mine) }), in: () => listQuery }) };
+          // eq(author_id).order() — рядки; eq(author_id).eq(status) з head: true — лише кількість (countMyAwaiting).
+          return {
+            select: () => ({
+              eq: () => ({
+                order: ordered(mine),
+                eq: (_column: string, status: string) =>
+                  Promise.resolve({ data: null, count: mine.filter((p) => p.status === status).length, error: null }),
+              }),
+              in: () => listQuery,
+            }),
+          };
         case "department_members":
           return { select: () => ({ eq: () => ({ eq: () => ok(approves.map((d) => ({ department_id: d }))) }) }) };
         case "departments":
@@ -238,3 +248,29 @@ describe("автор заявки на головній", () => {
   });
 });
 
+describe("лічильник власних заявок на головній", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("біля «My recent requests» — кількість власних заявок «Awaiting approval», схвалені й відхилені не рахуються", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(P1, "requester"));
+    setDb({ mine: [row(1), row(2), row(3, { status: "approved" }), row(4, { status: "rejected" })] });
+
+    const html = renderToStaticMarkup(await Home());
+    const card = html.slice(html.indexOf('data-testid="dashboard-mine"'));
+
+    expect(card).toMatch(/data-testid="dashboard-count"[^>]*><span data-slot="badge"[^>]*>2</);
+    expect(card).toContain("2 awaiting approval");
+  });
+
+  it("без заявок в очікуванні лічильника немає", async () => {
+    vi.mocked(getViewer).mockResolvedValue(viewer(P1, "requester"));
+    setDb({ mine: [row(1, { status: "approved" })] });
+
+    const html = renderToStaticMarkup(await Home());
+    const card = html.slice(html.indexOf('data-testid="dashboard-mine"'));
+
+    expect(card).not.toContain('data-testid="dashboard-count"');
+  });
+});

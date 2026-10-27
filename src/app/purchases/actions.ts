@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
-import { validateDecision } from "@/lib/purchases/decisions";
+import { type Decision, validateDecision } from "@/lib/purchases/decisions";
 import { linesForDatabase, parseLines, validateSubmission } from "@/lib/purchases/form";
 import { loadFormOptions } from "@/lib/purchases/options";
 import { createClient } from "@/lib/supabase/server";
@@ -59,10 +59,13 @@ const DECISION_ERRORS: Record<string, string | null> = {
   NOT_PENDING: null,
 };
 
-function backToPurchase(id: string, error?: string): never {
+// decided — після успішного рішення сторінка заявки показує підтвердження «Request approved» / «Request rejected».
+function backToPurchase(id: string, error?: string, decided?: Decision): never {
   revalidatePath(`/purchases/${id}`);
   revalidatePath("/approvals");
-  redirect(`/purchases/${id}${error ? `?error=${encodeURIComponent(error)}` : ""}`);
+  revalidatePath("/");
+  const query = error ? `?error=${encodeURIComponent(error)}` : decided ? `?decided=${decided}` : "";
+  redirect(`/purchases/${id}${query}`);
 }
 
 // AC-APR-02, AC-APR-03, AC-APR-05, AC-APR-06, AC-APR-07: рішення схвалювача. Перше правило — доменна функція з
@@ -88,5 +91,5 @@ export async function decidePurchase(formData: FormData) {
     throw new Error(`Failed to decide purchase: ${error.message}`);
   }
 
-  backToPurchase(id);
+  backToPurchase(id, undefined, check.decision);
 }

@@ -14,9 +14,10 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Назва вкладки — «<сторінка> · School Purchasing»; сторінки задають лише свою частину (metadata.title).
 export const metadata: Metadata = {
-  title: "School Purchasing",
-  description: "Next.js + Supabase + OpenSpec",
+  title: { default: "School Purchasing", template: "%s · School Purchasing" },
+  description: "School purchase requests and approvals",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

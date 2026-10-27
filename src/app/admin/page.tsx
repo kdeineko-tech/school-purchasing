@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
 import { canOpenAdminPages } from "@/lib/org/access";
 import { getViewer } from "@/lib/org/viewer";
 import { NoAccess } from "./no-access";
+
+export const metadata: Metadata = { title: "Settings" };
 
 // Налаштування школи — лише для адміністратора (AC-ORG-09).
 export default async function AdminHome() {

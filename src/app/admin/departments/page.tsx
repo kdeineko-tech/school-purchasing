@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
 import { Alert, Badge, Button, Card, EmptyState, Input } from "@/components/ui";
@@ -8,6 +9,8 @@ import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { createDepartment } from "../actions";
 import { NoAccess } from "../no-access";
+
+export const metadata: Metadata = { title: "Departments" };
 
 // Налаштування відділів — лише для адміністратора (AC-ORG-09); створення відділу (AC-ORG-34).
 export default async function DepartmentsPage({ searchParams }: PageProps<"/admin/departments">) {

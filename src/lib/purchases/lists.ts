@@ -59,6 +59,18 @@ export async function loadMyRequests(supabase: Supabase, viewerId: string, limit
   return { rows, total: count ?? rows.length, departmentName: new Map((departments ?? []).map((d) => [d.id, d.name])) };
 }
 
+// Скільки власних заявок ще чекає рішення — лічильник біля «My recent requests» на головній. Рядків не читаємо,
+// лише кількість (head: true).
+export async function countMyAwaiting(supabase: Supabase, viewerId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from("purchases")
+    .select("id", { count: "exact", head: true })
+    .eq("author_id", viewerId)
+    .eq("status", "awaiting_approval");
+  if (error) throw new Error(`Failed to count requests: ${error.message}`);
+  return count ?? 0;
+}
+
 // Список для рішення: «Очікує схвалення» відділів, які переглядач схвалює, крім власних, старіші першими (AC-APR-01).
 export async function loadDecisionRequests(
   supabase: Supabase,

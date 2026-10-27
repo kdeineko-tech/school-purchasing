@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
@@ -7,6 +8,8 @@ import { getViewer } from "@/lib/org/viewer";
 import { loadMyRequests } from "@/lib/purchases/lists";
 import { createClient } from "@/lib/supabase/server";
 import { PurchaseList } from "./purchase-list";
+
+export const metadata: Metadata = { title: "My requests" };
 
 // «Мої заявки»: лише власні заявки зі статусом текстом (AC-FRM-10, AC-LANG-06); після подання —
 // «Purchase submitted» (AC-FRM-11). Без жодної поданої заявки — «You have not submitted any requests yet» замість

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
@@ -6,6 +7,8 @@ import { approvedDepartments, autoApproveDepartments, requesterDepartments } fro
 import { allowedPurchaseTypes, allowedRequestTypes, permissionsFromRow } from "@/lib/org/permissions";
 import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
+
+export const metadata: Metadata = { title: "My profile" };
 
 // Власний профіль: заявник і схвалювач бачать свої відділи — де подають заявки, де схвалюють і де ввімкнено
 // автосхвалення, — змінювати їх не можуть (вимога ValiaBihun/2026-quitcode-dream-team#2, «Користувачі й ролі»;

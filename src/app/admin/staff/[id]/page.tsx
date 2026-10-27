@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { PageShell } from "@/components/page-shell";
 import { Alert, Badge, Button, Card, EmptyState, RoleBadge, Select } from "@/components/ui";
@@ -9,6 +10,8 @@ import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { addRequester, removeRequester, setActive, setApprover, setAutoApprove, setPermissions } from "../../actions";
 import { NoAccess } from "../../no-access";
+
+export const metadata: Metadata = { title: "Employee" };
 
 // Профіль працівника для адміністратора (AC-ORG-09): відділи, де він подає заявки (AC-ORG-01),
 // схвалення відділів і роль за ними (AC-ORG-02 … AC-ORG-05, AC-ORG-19, AC-ORG-20, AC-ORG-24),

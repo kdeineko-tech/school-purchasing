@@ -1,7 +1,8 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { NoAccess } from "@/app/admin/no-access";
 import { PageShell } from "@/components/page-shell";
-import { Alert, Button, Card, Input } from "@/components/ui";
+import { Alert, Card, Input, Notice } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { canDecide } from "@/lib/purchases/decisions";
@@ -14,7 +15,10 @@ import {
 } from "@/lib/purchases/form";
 import { createClient } from "@/lib/supabase/server";
 import { decidePurchase } from "../actions";
+import { DecisionButtons } from "./decision-buttons";
 import { StatusBadge } from "../status-badge";
+
+export const metadata: Metadata = { title: "Purchase" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -36,7 +40,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
   if (!viewer) redirect("/login");
   const { id } = await params;
   // Показуємо лише власні повідомлення застосунку, а не довільний текст з адреси.
-  const { error } = await searchParams;
+  const { error, decided } = await searchParams;
   const known: string[] = Object.values(MESSAGES);
   const errorMessage = typeof error === "string" && known.includes(error) ? error : null;
   if (!UUID.test(id)) return <NoAccess viewer={viewer} />;
@@ -77,6 +81,14 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
   // Помилку бази не видаємо за «немає відділу».
   if (departmentError) throw new Error(`Failed to read department: ${departmentError.message}`);
 
+  // Підтвердження після рішення — лише якщо заявка справді в цьому статусі (не довіряємо самій адресі).
+  const DECIDED: Record<string, { status: string; text: string }> = {
+    approve: { status: "approved", text: "Request approved" },
+    reject: { status: "rejected", text: "Request rejected" },
+  };
+  const done = typeof decided === "string" ? DECIDED[decided] : undefined;
+  const decidedNotice = done && done.status === purchase.status ? done.text : null;
+
   const decidable = canDecide(
     viewer,
     { authorId: purchase.author_id, departmentId: purchase.department_id, status: purchase.status },
@@ -86,6 +98,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
   return (
     <PageShell viewer={viewer} title="Purchase" back={backLink(viewer.id, purchase.author_id)}>
       {errorMessage && <Alert testId="decision-error">{errorMessage}</Alert>}
+      {decidedNotice && <Notice testId="decision-done">{decidedNotice}</Notice>}
       <Card>
         <dl className="grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-3 text-sm">
           <dt className="text-muted-foreground">Status</dt>
@@ -132,20 +145,13 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
       </Card>
       {decidable && (
         <Card title="Decision">
-          <form action={decidePurchase} className="flex flex-col gap-3 text-sm" data-testid="decision-form">
+          <form id="decision-form" action={decidePurchase} className="flex flex-col gap-3 text-sm" data-testid="decision-form">
             <input type="hidden" name="purchaseId" value={purchase.id} />
             <label className="flex flex-col gap-1.5 font-medium">
               Reason (required to reject)
               <Input name="reason" maxLength={500} />
             </label>
-            <div className="flex flex-wrap gap-2">
-              <Button type="submit" name="decision" value="approve">
-                Approve
-              </Button>
-              <Button type="submit" name="decision" value="reject" variant="destructive">
-                Reject
-              </Button>
-            </div>
+            <DecisionButtons formId="decision-form" />
           </form>
         </Card>
       )}
