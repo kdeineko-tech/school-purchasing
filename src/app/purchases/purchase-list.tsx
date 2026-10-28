@@ -3,6 +3,8 @@
 // Спільні для «My requests», «Approvals» і головної. Коли місця досить (контейнер ширший за 36rem — повні сторінки
 // списків), рядки вишикувані в колонки з заголовками, як таблиця; у вузьких картках головної й на телефоні —
 // компактний рядок.
+// Рядки без фонового підвантаження (prefetch={false}): інакше кожна видима заявка — окремий серверний запит, який
+// конкурує з переходом на іншу сторінку. Посилання меню й карток головної підвантажуються, як і раніше.
 import Link from "next/link";
 import type { PurchaseListData } from "@/lib/purchases/lists";
 import { formatSubmittedAt, PURCHASE_TYPE_LABELS, type PurchaseTypeId } from "@/lib/purchases/form";
@@ -35,6 +37,7 @@ export function PurchaseList({
             <li key={p.id}>
               <Link
                 href={`/purchases/${p.id}`}
+                prefetch={false}
                 className={`flex flex-wrap items-center justify-between gap-2 py-3 text-sm hover:text-primary ${COLUMNS}`}
               >
                 <div className="flex min-w-0 flex-col">

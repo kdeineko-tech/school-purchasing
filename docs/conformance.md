@@ -60,7 +60,7 @@
 | AC-ORG-31 | Зняття ролі з адміністратора без відділів схвалення | — | — | відкладено (чекає реалізації) |
 | AC-ORG-32 | Зняття ролі з адміністратора-схвалювача | — | — | відкладено (чекає реалізації) |
 | AC-ORG-11 | Адміністратор без відділів | — | — | відкладено (чекає реалізації) |
-| AC-ORG-12 | Деактивований працівник не входить у систему й бачить повідомлення | `src/app/login/actions.ts` (login), `src/lib/supabase/proxy.ts`, `src/app/admin/actions.ts` (setActive) | `tests/org/deactivation.test.ts`, `tests/org/proxy.test.ts`, `tests/db/roles.test.ts` | реалізовано |
+| AC-ORG-12 | Деактивований працівник не входить у систему й бачить повідомлення | `src/app/login/actions.ts` (login), `src/lib/org/viewer.ts` (getViewer), `src/app/auth/signed-out/route.ts` (вихід із сесії), `src/app/admin/actions.ts` (setActive) | `tests/org/deactivation.test.ts`, `tests/org/signed-out.test.ts`, `tests/db/roles.test.ts` | реалізовано |
 | AC-ORG-16 | Вибір схвалювача відділу | — | — | відкладено (чекає реалізації) |
 | AC-ORG-28 | Вибір особи «від імені» | — | — | відкладено (чекає реалізації) |
 | AC-ORG-30 | Повторна активація схвалювача | — | — | відкладено (чекає реалізації) |
