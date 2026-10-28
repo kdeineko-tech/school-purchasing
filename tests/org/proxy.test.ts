@@ -1,69 +1,56 @@
 import { NextRequest } from "next/server";
-import { describe, expect, it, vi, type Mock } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { updateSession } from "@/lib/supabase/proxy";
 
-// Підставний клієнт @supabase/ssr: сесія є, профіль з потрібною активністю; signOut, як справжній,
-// очищує cookie сесії через setAll і передає заголовки кешування.
-const state: { isActive: boolean | null; signOut: Mock<() => void> } = {
-  isActive: true,
-  signOut: vi.fn<() => void>(),
-};
+// Підставний клієнт @supabase/ssr для proxy: є сесія чи ні. Профіль proxy не читає — це робить getViewer на
+// сторінці (tests/org/signed-out.test.ts), тож from() тут має лишитися невикликаним.
+const state = { claims: true as boolean, from: vi.fn() };
 
 vi.mock("@supabase/ssr", () => ({
-  createServerClient: (
-    _url: string,
-    _key: string,
-    options: { cookies: { setAll: (c: unknown[], h: Record<string, string>) => void } },
-  ) => ({
+  createServerClient: () => ({
     auth: {
-      getClaims: async () => ({ data: { claims: { sub: "u1" } }, error: null }),
-      signOut: async () => {
-        state.signOut();
-        options.cookies.setAll([{ name: "sb-auth", value: "", options: { maxAge: 0 } }], {
-          "Cache-Control": "private, no-cache, no-store, must-revalidate, max-age=0",
-        });
-        return { error: null };
-      },
+      getClaims: async () => ({ data: state.claims ? { claims: { sub: "u1" } } : null, error: null }),
     },
-    from: () => ({
-      select: () => ({
-        eq: () => ({ maybeSingle: async () => ({ data: state.isActive === null ? null : { is_active: state.isActive }, error: null }),
-        }),
-      }),
-    }),
+    from: (...args: unknown[]) => {
+      state.from(...args);
+      throw new Error("proxy must not read the database");
+    },
   }),
 }));
 
-describe("сесія деактивованого працівника", () => {
-  it("AC-ORG-12: працівника деактивували під час сесії — вихід і повідомлення на сторінці входу", async () => {
-    state.isActive = false;
-    state.signOut.mockClear();
+describe("proxy: перевірка сесії", () => {
+  it("працівник із сесією проходить далі; профіль із бази proxy не читає", async () => {
+    state.claims = true;
+    state.from.mockClear();
 
     const response = await updateSession(new NextRequest("http://localhost:3000/admin/staff"));
 
-    expect(state.signOut).toHaveBeenCalled();
-    expect(response.headers.get("location")).toBe("http://localhost:3000/login?error=deactivated");
-    expect(response.headers.get("cache-control")).toContain("no-store");
-    expect(response.cookies.get("sb-auth")?.value).toBe("");
-  });
-
-  it("AC-ORG-12: активний працівник проходить далі без виходу з сесії", async () => {
-    state.isActive = true;
-    state.signOut.mockClear();
-
-    const response = await updateSession(new NextRequest("http://localhost:3000/admin/staff"));
-
-    expect(state.signOut).not.toHaveBeenCalled();
     expect(response.headers.get("location")).toBeNull();
+    expect(state.from).not.toHaveBeenCalled();
   });
 
-  it("сесія без профілю — вихід і сторінка входу без повідомлення про деактивацію", async () => {
-    state.isActive = null;
-    state.signOut.mockClear();
+  it("відповідь має заголовок Server-Timing з тривалістю перевірки сесії", async () => {
+    state.claims = true;
 
-    const response = await updateSession(new NextRequest("http://localhost:3000/admin/staff"));
+    const response = await updateSession(new NextRequest("http://localhost:3000/approvals"));
 
-    expect(state.signOut).toHaveBeenCalled();
+    expect(response.headers.get("server-timing")).toMatch(/^proxy;desc="session check";dur=\d+$/);
+  });
+
+  it("без сесії на закриту сторінку — перенаправлення на вхід", async () => {
+    state.claims = false;
+
+    const response = await updateSession(new NextRequest("http://localhost:3000/approvals"));
+
     expect(response.headers.get("location")).toBe("http://localhost:3000/login");
+  });
+
+  it("без сесії сторінка входу й /auth/signed-out відкриваються", async () => {
+    state.claims = false;
+
+    for (const path of ["/login", "/auth/signed-out?reason=deactivated"]) {
+      const response = await updateSession(new NextRequest(`http://localhost:3000${path}`));
+      expect(response.headers.get("location")).toBeNull();
+    }
   });
 });
