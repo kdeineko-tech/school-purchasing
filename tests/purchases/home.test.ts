@@ -2,11 +2,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import Home from "@/app/page";
 import { initials } from "@/components/user-menu";
-import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { OFFICE, P1, P2, PRIMARY, viewer } from "./fake-db";
+import { signIn, withViewer } from "../support/viewer";
 
-vi.mock("@/lib/org/viewer", () => ({ getViewer: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/navigation", () => ({
   redirect: vi.fn((url: string) => {
@@ -78,7 +77,7 @@ function setDb({
       }
     }),
   };
-  vi.mocked(createClient).mockResolvedValue(client as never);
+  vi.mocked(createClient).mockResolvedValue(withViewer(client) as never);
   return client;
 }
 
@@ -95,13 +94,13 @@ describe("головна — робоча панель", () => {
   });
 
   it("гість на головній бачить сторінку входу", async () => {
-    vi.mocked(getViewer).mockResolvedValue(null);
+    signIn(null);
 
     await expect(Home()).rejects.toThrow("REDIRECT /login");
   });
 
   it("AC-APR-04: заявник на головній не бачить заявок для рішення — лише власні", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1, "requester"));
+    signIn(viewer(P1, "requester"));
     const client = setDb({ mine: [row(1)], forDecision: [row(2, { author_id: P2 })], approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await Home());
@@ -113,7 +112,7 @@ describe("головна — робоча панель", () => {
   });
 
   it("AC-APR-01: схвалювач бачить на головній заявки свого відділу для рішення — п'ять найстаріших — і кількість усіх", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     setDb({ forDecision: [1, 2, 3, 4, 5, 6, 7].map((n) => row(n)), approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await Home());
@@ -127,7 +126,7 @@ describe("головна — робоча панель", () => {
   });
 
   it("AC-APR-01: власна заявка схвалювача не потрапляє в картку для рішення", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     setDb({ forDecision: [row(1, { author_id: P2 }), row(2)], approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await Home());
@@ -136,7 +135,7 @@ describe("головна — робоча панель", () => {
   });
 
   it("AC-FRM-10: на головній — не більше п'яти власних заявок, новіші першими, і посилання на всі", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1, "requester"));
+    signIn(viewer(P1, "requester"));
     setDb({ mine: [1, 2, 3, 4, 5, 6, 7].map((n) => row(n)) });
 
     const html = renderToStaticMarkup(await Home());
@@ -148,7 +147,7 @@ describe("головна — робоча панель", () => {
   });
 
   it("AC-FRM-14: без власних заявок — «You have not submitted any requests yet»; без заявок для рішення — «No requests awaiting your decision»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     setDb({ approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await Home());
@@ -158,7 +157,7 @@ describe("головна — робоча панель", () => {
   });
 
   it("під привітанням — роль і email одним рядком; окремої картки Email / Role немає", async () => {
-    vi.mocked(getViewer).mockResolvedValue({ ...viewer(P1, "admin"), fullName: "Olena Demo-Admin" });
+    signIn({ ...viewer(P1, "admin"), fullName: "Olena Demo-Admin" });
     setDb({});
 
     const html = renderToStaticMarkup(await Home());
@@ -176,7 +175,7 @@ describe("шапка", () => {
   });
 
   it("AC-ORG-09: заявник не бачить у шапці «Approvals» і «Settings»; «My profile» — у меню під аватаром", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1, "requester"));
+    signIn(viewer(P1, "requester"));
     setDb({});
 
     const html = renderToStaticMarkup(await Home());
@@ -190,7 +189,7 @@ describe("шапка", () => {
   });
 
   it("AC-ORG-09: адміністратор бачить у шапці «Approvals» і «Settings»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1, "admin"));
+    signIn(viewer(P1, "admin"));
     setDb({});
 
     const html = renderToStaticMarkup(await Home());
@@ -214,7 +213,7 @@ describe("автор заявки на головній", () => {
   });
 
   it("AC-APR-08: схвалювач бачить у картці для рішення автора кожної заявки", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     const client = setDb({
       forDecision: [row(1), row(2)],
       approves: [PRIMARY.id],
@@ -229,7 +228,7 @@ describe("автор заявки на головній", () => {
   });
 
   it("AC-APR-09: у картці для рішення автор без імені показаний своїм email", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     setDb({ forDecision: [row(1)], approves: [PRIMARY.id], authors: { [row(1).id]: "petro@example.test" } });
 
     const html = renderToStaticMarkup(await Home());
@@ -239,7 +238,7 @@ describe("автор заявки на головній", () => {
   });
 
   it("AC-APR-08: у власних заявках рядка «Author» немає — автор там сам переглядач", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1, "requester"));
+    signIn(viewer(P1, "requester"));
     setDb({ mine: [row(1)] });
 
     const html = renderToStaticMarkup(await Home());
@@ -254,7 +253,7 @@ describe("лічильник власних заявок на головній",
   });
 
   it("біля «My recent requests» — кількість власних заявок «Awaiting approval», схвалені й відхилені не рахуються", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1, "requester"));
+    signIn(viewer(P1, "requester"));
     setDb({ mine: [row(1), row(2), row(3, { status: "approved" }), row(4, { status: "rejected" })] });
 
     const html = renderToStaticMarkup(await Home());
@@ -265,7 +264,7 @@ describe("лічильник власних заявок на головній",
   });
 
   it("без заявок в очікуванні лічильника немає", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1, "requester"));
+    signIn(viewer(P1, "requester"));
     setDb({ mine: [row(1, { status: "approved" })] });
 
     const html = renderToStaticMarkup(await Home());

@@ -3,11 +3,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import MyRequestsPage from "@/app/purchases/page";
 import PurchasePage from "@/app/purchases/[id]/page";
 import { canSeePurchase } from "@/lib/purchases/form";
-import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { ADMIN, fakeDb, P1, P2, PRIMARY, viewer } from "./fake-db";
+import { signIn, withViewer } from "../support/viewer";
 
-vi.mock("@/lib/org/viewer", () => ({ getViewer: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -71,7 +70,7 @@ function setPurchaseDb({
       }
     }),
   };
-  vi.mocked(createClient).mockResolvedValue(client as never);
+  vi.mocked(createClient).mockResolvedValue(withViewer(client) as never);
   return client;
 }
 
@@ -81,11 +80,11 @@ describe("сторінка закупівлі", () => {
   beforeEach(() => {
     // Лише історія викликів: підставні значення (mockResolvedValue) кожен тест задає сам.
     vi.clearAllMocks();
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1));
+    signIn(viewer(P1));
   });
 
   it("AC-FRM-08: працівник 2 (заявник відділу, не автор і не схвалювач) бачить «Not enough permissions», даних закупівлі немає", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2));
+    signIn(viewer(P2));
     setPurchaseDb({ visible: null });
 
     const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
@@ -127,7 +126,7 @@ describe("сторінка закупівлі", () => {
 
   it("AC-LANG-06: у «Мої заявки» статус підписано текстом", async () => {
     const db = fakeDb({ departments: [PRIMARY], purchases: [{ ...purchase(), author_id: P1 }] });
-    vi.mocked(createClient).mockResolvedValue(db.client as never);
+    vi.mocked(createClient).mockResolvedValue(withViewer(db.client) as never);
 
     const html = renderToStaticMarkup(
       await MyRequestsPage({ params: Promise.resolve({}), searchParams: Promise.resolve({}) } as never),
@@ -138,7 +137,7 @@ describe("сторінка закупівлі", () => {
   });
 
   it("схвалювач відділу бачить закупівлю свого відділу", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     setPurchaseDb({ visible: purchase(), approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
@@ -147,12 +146,14 @@ describe("сторінка закупівлі", () => {
   });
 
   it("некоректний ідентифікатор — відмова без запиту до бази", async () => {
-    setPurchaseDb({ visible: purchase() });
+    const client = setPurchaseDb({ visible: purchase() });
 
     const html = renderToStaticMarkup(await PurchasePage(props("not-a-uuid")));
 
     expect(html).toContain("Not enough permissions");
-    expect(createClient).not.toHaveBeenCalled();
+    // Лише перевірка сесії й профілю (getViewer); жодного запиту заявки.
+    expect(client.from).not.toHaveBeenCalled();
+    expect(client.rpc).not.toHaveBeenCalled();
   });
 
   it("помилка читання відділу не видається за «—»", async () => {
@@ -162,13 +163,13 @@ describe("сторінка закупівлі", () => {
   });
 
   it("гість — сторінка входу", async () => {
-    vi.mocked(getViewer).mockResolvedValue(null);
+    signIn(null);
 
     await expect(PurchasePage(props(PURCHASE_ID))).rejects.toThrow("REDIRECT /login");
   });
 
   it("AC-APR-08: схвалювач відділу бачить на сторінці заявки автора «Andrii Demo-First»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     const client = setPurchaseDb({ visible: purchase(), approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
@@ -178,7 +179,7 @@ describe("сторінка закупівлі", () => {
   });
 
   it("AC-APR-09: автор без імені — на сторінці заявки його email", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     setPurchaseDb({ visible: purchase(), approves: [PRIMARY.id], authorName: "petro@example.test" });
 
     const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
@@ -187,7 +188,7 @@ describe("сторінка закупівлі", () => {
   });
 
   it("AC-APR-10: сторінка заявки не читає профіль автора — ролі, відділів і дозволів автора немає", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     const client = setPurchaseDb({ visible: purchase(), approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
@@ -207,7 +208,7 @@ describe("сторінка закупівлі", () => {
   });
 
   it("схвалювач, який відкрив чужу заявку свого відділу, бачить посилання назад «Approvals»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     setPurchaseDb({ visible: purchase(), approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
@@ -217,7 +218,7 @@ describe("сторінка закупівлі", () => {
   });
 
   it("поки міграції з purchase_author_names немає в базі (PGRST202), сторінка заявки відкривається з «Author: —»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     setPurchaseDb({
       visible: purchase(),
       approves: [PRIMARY.id],
@@ -231,7 +232,7 @@ describe("сторінка закупівлі", () => {
   });
 
   it("інша помилка бази під час читання автора не ховається", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P2, "approver"));
+    signIn(viewer(P2, "approver"));
     setPurchaseDb({
       visible: purchase(),
       approves: [PRIMARY.id],

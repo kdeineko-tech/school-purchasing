@@ -10,6 +10,9 @@ export type ViewerProfile = Viewer & {
   fullName: string | null;
 };
 
+/** Колонки профілю, які читає getViewer (тести підставляють за ними рядок профілю в мок клієнта Supabase). */
+export const VIEWER_PROFILE_COLUMNS = "id, email, full_name, role, is_active";
+
 export async function getViewer(): Promise<ViewerProfile | null> {
   const supabase = await createClient();
 
@@ -21,7 +24,7 @@ export async function getViewer(): Promise<ViewerProfile | null> {
   // RLS: власний профіль видно завжди, навіть неактивному.
   const { data: profile, error } = await supabase
     .from("profiles")
-    .select("id, email, full_name, role, is_active")
+    .select(VIEWER_PROFILE_COLUMNS)
     .eq("id", claims.sub)
     .maybeSingle();
   // Помилку бази (наприклад, міграцію ще не застосовано) не видаємо за «не увійшов»:

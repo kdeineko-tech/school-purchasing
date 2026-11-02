@@ -1,10 +1,9 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import ProfilePage from "@/app/profile/page";
-import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
+import { signIn, withViewer } from "../support/viewer";
 
-vi.mock("@/lib/org/viewer", () => ({ getViewer: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/navigation", () => ({
   redirect: vi.fn((url: string) => {
@@ -41,7 +40,7 @@ function setDb(members: { department_id: string; approves: boolean; auto_approve
       }
     }),
   };
-  vi.mocked(createClient).mockResolvedValue(client as never);
+  vi.mocked(createClient).mockResolvedValue(withViewer(client) as never);
 }
 
 const viewer = (role: "requester" | "approver" | "admin") => ({
@@ -62,7 +61,7 @@ describe("профіль працівника", () => {
   });
 
   it("AC-ORG-01: у профілі — відділи, де працівник подає заявки, а відділу, де він не заявник, немає", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer("approver"));
+    signIn(viewer("approver"));
     setDb([
       { department_id: PRIMARY.id, approves: true, auto_approve: true },
       { department_id: OFFICE.id, approves: false, auto_approve: false },
@@ -76,7 +75,7 @@ describe("профіль працівника", () => {
   });
 
   it("біля відділу видно, де працівник схвалює і де ввімкнено автосхвалення", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer("approver"));
+    signIn(viewer("approver"));
     setDb([
       { department_id: PRIMARY.id, approves: true, auto_approve: true },
       { department_id: OFFICE.id, approves: false, auto_approve: false },
@@ -92,7 +91,7 @@ describe("профіль працівника", () => {
   });
 
   it("посилання на заявки: заявник бачить «New purchase» і «My requests», без «Approvals»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer("requester"));
+    signIn(viewer("requester"));
     setDb([{ department_id: PRIMARY.id, approves: false, auto_approve: false }]);
 
     const links = renderToStaticMarkup(await ProfilePage()).split('data-testid="profile-links"')[1] ?? "";
@@ -103,7 +102,7 @@ describe("профіль працівника", () => {
   });
 
   it("посилання на заявки: схвалювач бачить і «Approvals»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer("approver"));
+    signIn(viewer("approver"));
     setDb([{ department_id: PRIMARY.id, approves: true, auto_approve: false }]);
 
     const links = renderToStaticMarkup(await ProfilePage()).split('data-testid="profile-links"')[1] ?? "";
@@ -112,7 +111,7 @@ describe("профіль працівника", () => {
   });
 
   it("працівник без відділів бачить «None.»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer("requester"));
+    signIn(viewer("requester"));
     setDb([]);
 
     const html = renderToStaticMarkup(await ProfilePage());
@@ -121,7 +120,7 @@ describe("профіль працівника", () => {
   });
 
   it("гість — сторінка входу", async () => {
-    vi.mocked(getViewer).mockResolvedValue(null);
+    signIn(null);
 
     await expect(ProfilePage()).rejects.toThrow("REDIRECT /login");
   });

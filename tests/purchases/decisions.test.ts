@@ -4,12 +4,11 @@ import ApprovalsPage from "@/app/approvals/page";
 import { decidePurchase } from "@/app/purchases/actions";
 import PurchasePage from "@/app/purchases/[id]/page";
 import { MESSAGES } from "@/lib/org/messages";
-import { getViewer } from "@/lib/org/viewer";
 import { canDecide, decisionList, validateDecision } from "@/lib/purchases/decisions";
 import { createClient } from "@/lib/supabase/server";
 import { form, OFFICE, P1, P2, PRIMARY, viewer } from "./fake-db";
+import { signIn, withViewer } from "../support/viewer";
 
-vi.mock("@/lib/org/viewer", () => ({ getViewer: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -75,8 +74,8 @@ function setDb({ purchases = [], approves = [], rpcError = null }: { purchases?:
       }
     }),
   };
-  vi.mocked(createClient).mockResolvedValue(client as never);
-  return { rpc };
+  vi.mocked(createClient).mockResolvedValue(withViewer(client) as never);
+  return { rpc, client };
 }
 
 const pageProps = (searchParams: Record<string, string> = {}) =>
@@ -119,7 +118,7 @@ describe("правила рішення", () => {
 describe("дія decidePurchase", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
+    signIn(viewer(MARIA, "approver"));
   });
 
   it("AC-APR-02: Марія схвалює заявку — rpc decide_purchase і повернення на сторінку заявки", async () => {
@@ -172,7 +171,7 @@ describe("дія decidePurchase", () => {
   });
 
   it("гість не вирішує — сторінка входу", async () => {
-    vi.mocked(getViewer).mockResolvedValue(null);
+    signIn(null);
     const { rpc } = setDb({});
 
     await expect(decidePurchase(form({ purchaseId: ID, decision: "approve" }))).rejects.toThrow("REDIRECT /login");
@@ -186,18 +185,20 @@ describe("сторінки рішення", () => {
   });
 
   it("AC-APR-04: працівник 1 з роллю requester на списку для рішення бачить «Not enough permissions», жодної заявки", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1, "requester"));
-    setDb({ purchases: [row()] });
+    signIn(viewer(P1, "requester"));
+    const { client, rpc } = setDb({ purchases: [row()] });
 
     const html = renderToStaticMarkup(await ApprovalsPage());
 
     expect(html).toContain("Not enough permissions");
     expect(html).not.toContain("decision-list");
-    expect(createClient).not.toHaveBeenCalled();
+    // Лише перевірка сесії й профілю (getViewer); жодного запиту заявок.
+    expect(client.from).not.toHaveBeenCalled();
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("AC-APR-01: Марія бачить у списку для рішення заявки свого відділу", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
+    signIn(viewer(MARIA, "approver"));
     setDb({ purchases: [row(), row({ id: "00000000-0000-4000-8000-0000000000c2" })], approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await ApprovalsPage());
@@ -207,7 +208,7 @@ describe("сторінки рішення", () => {
   });
 
   it("AC-APR-08: у списку для рішення Марія бачить автора заявки", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
+    signIn(viewer(MARIA, "approver"));
     const { rpc } = setDb({ purchases: [row()], approves: [PRIMARY.id] });
     rpc.mockResolvedValue({ data: [{ purchase_id: ID, author_name: "Andrii Demo-First" }], error: null });
 
@@ -218,7 +219,7 @@ describe("сторінки рішення", () => {
   });
 
   it("порожній список для рішення — «No requests awaiting your decision»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
+    signIn(viewer(MARIA, "approver"));
     setDb({ purchases: [], approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await ApprovalsPage());
@@ -227,7 +228,7 @@ describe("сторінки рішення", () => {
   });
 
   it("AC-APR-02: на сторінці заявки свого відділу Марія бачить кнопки «Approve» і «Reject»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
+    signIn(viewer(MARIA, "approver"));
     setDb({ purchases: [row()], approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await PurchasePage(pageProps()));
@@ -238,7 +239,7 @@ describe("сторінки рішення", () => {
   });
 
   it("AC-APR-05: схвалювач-автор не бачить кнопок рішення для власної заявки", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
+    signIn(viewer(MARIA, "approver"));
     setDb({ purchases: [row({ author_id: MARIA })], approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await PurchasePage(pageProps()));
@@ -247,7 +248,7 @@ describe("сторінки рішення", () => {
   });
 
   it("AC-APR-07: на сторінці відхиленої заявки причину «Немає бюджету» показано поруч зі статусом «Rejected»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1));
+    signIn(viewer(P1));
     setDb({ purchases: [row({ status: "rejected", rejection_reason: "Немає бюджету" })] });
 
     const html = renderToStaticMarkup(await PurchasePage(pageProps()));
@@ -258,7 +259,7 @@ describe("сторінки рішення", () => {
   });
 
   it("AC-APR-06: після відхилення без причини на сторінці — «Provide a reason», статус «Awaiting approval»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
+    signIn(viewer(MARIA, "approver"));
     setDb({ purchases: [row()], approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await PurchasePage(pageProps({ error: "Provide a reason" })));
@@ -268,7 +269,7 @@ describe("сторінки рішення", () => {
   });
 
   it("довільний текст у ?error= не показуємо", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
+    signIn(viewer(MARIA, "approver"));
     setDb({ purchases: [row()], approves: [PRIMARY.id] });
 
     const html = renderToStaticMarkup(await PurchasePage(pageProps({ error: "Click here to win" })));
@@ -280,7 +281,7 @@ describe("сторінки рішення", () => {
 describe("підтвердження після рішення", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(getViewer).mockResolvedValue(viewer(MARIA, "approver"));
+    signIn(viewer(MARIA, "approver"));
   });
 
   it("після схвалення — повернення на сторінку заявки з ?decided=approve", async () => {

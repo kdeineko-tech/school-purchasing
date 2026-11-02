@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { submitPurchase } from "@/app/purchases/actions";
 import { MESSAGES } from "@/lib/org/messages";
-import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { ADMIN, fakeDb, form, HIGH, ONE_LINE, OFFICE, P1, PRIMARY, viewer } from "./fake-db";
+import { signIn, withViewer } from "../support/viewer";
 
-vi.mock("@/lib/org/viewer", () => ({ getViewer: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -16,7 +15,7 @@ vi.mock("next/navigation", () => ({
 
 function useDb(state: Parameters<typeof fakeDb>[0]) {
   const db = fakeDb({ departments: [PRIMARY, OFFICE, HIGH], ...state });
-  vi.mocked(createClient).mockResolvedValue(db.client as never);
+  vi.mocked(createClient).mockResolvedValue(withViewer(db.client) as never);
   return db;
 }
 
@@ -24,7 +23,7 @@ const member1 = [{ profile_id: P1, department_id: PRIMARY.id }];
 
 describe("подання закупівлі (submitPurchase)", () => {
   beforeEach(() => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1));
+    signIn(viewer(P1));
   });
 
   it("AC-FRM-07: працівник 1 подає закупівлю з рядком «Paper A4» у «Primary School» — rpc submit_purchase", async () => {
@@ -136,7 +135,7 @@ describe("подання закупівлі (submitPurchase)", () => {
   });
 
   it("AC-ORG-22: адміністратор без відділів подає закупівлю в будь-який відділ", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(ADMIN, "admin"));
+    signIn(viewer(ADMIN, "admin"));
     const { rpc } = useDb({ members: [] });
 
     await expect(
@@ -146,7 +145,7 @@ describe("подання закупівлі (submitPurchase)", () => {
   });
 
   it("AC-ORG-23: адміністратор без дозволу подає «Self-purchase»", async () => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(ADMIN, "admin"));
+    signIn(viewer(ADMIN, "admin"));
     const { rpc } = useDb({ members: [] });
 
     await expect(
@@ -167,7 +166,7 @@ describe("подання закупівлі (submitPurchase)", () => {
   });
 
   it("гість не подає закупівлю — сторінка входу", async () => {
-    vi.mocked(getViewer).mockResolvedValue(null);
+    signIn(null);
     const { rpc } = useDb({});
 
     await expect(submitPurchase({}, form({}))).rejects.toThrow("REDIRECT /login");
