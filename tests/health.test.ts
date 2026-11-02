@@ -30,4 +30,12 @@ describe("classifyDbProbe (/api/health)", () => {
     });
     expect(classifyDbProbe({ status: 0, error: { message: "fetch failed" } })).toEqual({ db: "down", reason: "status-0" });
   });
+
+  it("не рахує базу живою за відповіді 5xx, навіть з кодом PostgREST (PGRST300 — конфігурація JWT)", () => {
+    expect(classifyDbProbe({ status: 500, error: { code: "PGRST300", message: "JWT secret" } })).toEqual({
+      db: "down",
+      reason: "status-500-PGRST300",
+    });
+    expect(classifyDbProbe({ status: 500, error: { code: "XX000", message: "internal" } }).db).toBe("down");
+  });
 });

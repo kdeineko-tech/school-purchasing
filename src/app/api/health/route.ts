@@ -22,7 +22,12 @@ export async function GET() {
       { auth: { persistSession: false, autoRefreshToken: false } },
     );
     // GET, не HEAD: потрібне тіло помилки, щоб відрізнити «anon без прав» (база відповіла) від «хибний ключ».
-    const { error, status } = await supabase.from("profiles").select("id").limit(1);
+    // Тайм-аут: завислий запит дає db "down" (503, reason "exception"), а не відповідь, що не приходить.
+    const { error, status } = await supabase
+      .from("profiles")
+      .select("id")
+      .limit(1)
+      .abortSignal(AbortSignal.timeout(5_000));
     health = classifyDbProbe({ status, error });
   } catch {
     health = { db: "down", reason: "exception" };

@@ -12,7 +12,12 @@ const base = (/^https?:\/\//.test(rawBase) ? rawBase : rawBase ? `https://${rawB
 
 const get = async (path) => {
   try {
-    const r = await fetch(base + path, { redirect: "manual", headers: { "user-agent": "smoke/1.0 (D0)" } });
+    // Тайм-аут на запит і читання тіла: завислий прод дає status 0 і зрозумілу помилку, а не тайм-аут job.
+    const r = await fetch(base + path, {
+      redirect: "manual",
+      headers: { "user-agent": "smoke/1.0 (D0)" },
+      signal: AbortSignal.timeout(15_000),
+    });
     return {
       status: r.status,
       location: r.headers.get("location") ?? "",
@@ -26,11 +31,24 @@ const get = async (path) => {
 const vercelWall = (r) =>
   /vercel\.com\/(sso|login)|_vercel_sso/.test(r.location) || ((r.status === 401 || r.status === 403) && /vercel/i.test(r.text));
 
+// Редірект "/" дозволено лише на /login того самого застосунку (гість без сесії), не на інший шлях чи домен.
+const isLoginRedirect = (location) => {
+  try {
+    const url = new URL(location, base);
+    return url.origin === new URL(base).origin && url.pathname === "/login";
+  } catch {
+    return false;
+  }
+};
+
 async function main() {
   const fail = [];
   const root = await get("/");
   if (vercelWall(root)) fail.push(`"/": стіна входу Vercel — Settings → Deployment Protection → вимкніть Vercel Authentication`);
   else if (root.status === 0) fail.push(`"/": недоступний (${root.text})`);
+  else if (root.status >= 300 && root.status < 400 && !isLoginRedirect(root.location)) {
+    fail.push(`"/": HTTP ${root.status} → ${root.location || "(без Location)"} — очікували 200 або редірект на /login`);
+  }
   else if (root.status >= 400) {
     const hint = root.vercelError === "MIDDLEWARE_INVOCATION_FAILED" ? " — у Vercel бракує NEXT_PUBLIC_SUPABASE_*?" : "";
     fail.push(`"/": HTTP ${root.status} ${root.vercelError}${hint}`.trim());
