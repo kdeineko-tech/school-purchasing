@@ -44,3 +44,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Тестові акаунти у відкритому вигляді — ніколи в git; комітимо лише accounts.zip (AES-256, пароль курсу)
+accounts.txt
