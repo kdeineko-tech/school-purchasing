@@ -52,7 +52,7 @@
 ## 5. Повернення, редагування й повторне подання
 
 - [ ] 5.1 Міграція: `purchases.return_reason` і `check` (повернена — з причиною); `decide_purchase` — рішення `return`
-  (`REASON_REQUIRED`), запис `returned`; `resubmit_purchase` (лише автор, лише `returned`; ті самі перевірки рядків;
+  (`REASON_REQUIRED`), запис `returned`; `resubmit_purchase` (лише автор, лише `returned`; обов'язкові поля рядків; межі — до відповіді на доповнення Q11 #66;
   відділ і тип ті самі; запис `submitted`; номер той самий — до відповіді на Q13 #68); `canEditReturned`;
   «Return for revision» з причиною; причина повернення на сторінці заявки; сторінка `/purchases/[id]/edit` (до відповіді
   на Q11 #66 — змінити, додати, видалити рядки); «Returned for revision»; без «Edit» і «Submit» для «Rejected»; тести.

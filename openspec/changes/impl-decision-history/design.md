@@ -47,14 +47,15 @@ ADR 0003: функції бази `private` definer + `public` invoker. Нове
 | `/purchases/new` | усі, хто увійшов | межі рядка у формі; введене лишається | «Quantity: a whole number from 1», «Price: a number from 0» | HIST-03 … 05 |
 | `/purchases/[id]` | автор, схвалювач відділу, `admin` | номер; сума кожного рядка й сума заявки; статус кожного рядка після рішення; причина повернення; блок «History» | чужа заявка — «Not enough permissions» без даних і без історії | DEC-02, 05, 08, 11, HIST-01, 02, 06 … 10, LANG-09 |
 | `/purchases/[id]` — рішення (`canDecide`) | схвалювач відділу, не автор | позначка «Reject line» біля кожного рядка; «Approve»; «Reject» (діалог, причина); «Return for revision» (причина) | усі рядки позначено й «Approve» — «All lines are rejected: reject the whole request»; повернення без причини — «Provide a reason» | DEC-01, 03, 04, 06 |
-| `/purchases/[id]/edit` | лише автор, лише статус «Returned for revision» | форма з рядками заявки (відділ і тип — лише для читання), «Submit» | ті самі межі й обов'язкові поля, що при поданні; інший статус чи не автор — «Not enough permissions» | DEC-05, 07, 11 |
+| `/purchases/[id]/edit` | лише автор, лише статус «Returned for revision» | форма з рядками заявки (відділ і тип — лише для читання), «Submit» | обов'язкові поля, як при поданні; межі кількості й ціни — **до відповіді PM на доповнення Q11 (#66)**: ті самі, що при поданні (рекомендація A); інший статус чи не автор — «Not enough permissions» | DEC-05, 07, 11 |
 | `/approvals`, головна | як у зрізі 2 | номер у рядку; нові статуси | — | HIST-01, LANG-09 |
 
 - Компоненти — лише з `@/components/ui` (DESIGN.md); статус заявки й рядка — `StatusBadge` з текстом (AC-LANG-09):
   «Partially approved», «Returned for revision»; статус рядка — «Approved» / «Rejected» / без позначки до рішення.
 - Підписи історії — «Submitted», «Approved», «Rejected», «Returned for revision» (таблиця #49), ім'я — як у зрізі 2
   (ім'я, без імені — email), дата й час — `America/New_York` (`formatSubmittedAt`).
-- Суми — у доменному модулі в цілих центах (`Math.round(quantity × price × 100)`), показ — два знаки. **До відповіді PM
+- Суми — у доларах США, у доменному модулі в цілих центах (`Math.round(quantity × price × 100)`), показ — два знаки
+  (вимога «Суми рядків і заявки»). **До відповіді PM
   на Q10 (#65):** сума заявки — за всіма рядками (рекомендація A); відхилені рядки лише позначено.
 - Форма подання й форма редагування — один клієнтський компонент рядків (`useActionState`, керовані поля), різні
   server actions (`submitPurchase`, `resubmitPurchase`).
@@ -71,7 +72,7 @@ ADR 0003: функції бази `private` definer + `public` invoker. Нове
 
 | Таблиця | Зміна | AC |
 |---|---|---|
-| `purchases` | `number integer unique not null` з послідовності `purchase_number_seq` (start 1); наявні заявки — номери за порядком `created_at` (власне припущення в журналі); статуси + `partially_approved`, `returned` — новий `purchases_status_check` (зняти старий → додати новий); `return_reason text` + `check`: повернена — лише з причиною | HIST-01, DEC-01, 04, 06 |
+| `purchases` | `number integer unique not null` з послідовності `purchase_number_seq` (start 1); наявні заявки — номери за порядком `created_at` (рішення плану: перенесення наявних даних, а не правило специфікації; AC-HIST-01 описує порожню систему); послідовність не відкочується, а grant `delete` на `purchases` немає — номер не повторюється навіть після видалення (вимога «Номер заявки»); статуси + `partially_approved`, `returned` — новий `purchases_status_check` (зняти старий → додати новий); `return_reason text` + `check`: повернена — лише з причиною | HIST-01, DEC-01, 04, 06 |
 | `purchase_lines` | `status text not null default 'pending'` (`pending` / `approved` / `rejected`); `check` `quantity >= 1` і `unit_price >= 0` як `not valid` — нові й змінені рядки перевіряються, старі тестові дані міграцію не ламають | DEC-01, 02, HIST-03 … 05 |
 | `purchase_events` (нова) | `id`, `purchase_id → purchases on delete cascade`, `kind` (`submitted` / `approved` / `partially_approved` / `rejected` / `returned`), `actor_id → profiles`, `reason`, `created_at`; наявні заявки — записи з `created_at` / `author_id` і з `decided_at` / `decided_by` | HIST-06 … 09 |
 
@@ -88,7 +89,7 @@ ADR 0003: функції бази `private` definer + `public` invoker. Нове
 |---|---|---|---|---|
 | `purchases` | без змін (`purchases_select_visible`) | немає grant — `submit_purchase` | немає grant — `decide_purchase`, `resubmit_purchase` | немає grant |
 | `purchase_lines` | без змін (видима заявка) | немає grant — `submit_purchase`, `resubmit_purchase` | немає grant — `decide_purchase` (статус рядка) | немає grant — `resubmit_purchase` |
-| `purchase_events` | `grant select`; політика: `exists` видимої заявки (та сама умова, що й `purchases_select_visible`) — HIST-10, 11 | немає grant — лише функції | немає grant (історію не редагують) | немає grant |
+| `purchase_events` | `grant select`; політика: `exists` видимої заявки (та сама умова, що й `purchases_select_visible`) — HIST-10, 11 | немає grant — лише функції | немає grant: наявні записи історії не змінюються (вимога «Історія подання й рішень») | немає grant |
 
 Column grants не потрібні: на `update` у `authenticated` grant немає взагалі.
 
@@ -103,7 +104,8 @@ Column grants не потрібні: на `update` у `authenticated` grant не
   (DEC-03); `return` без причини → `REASON_REQUIRED` (DEC-06); `return` → `returned`, `return_reason` (DEC-04);
   запис в історії з `decided_by` і причиною (HIST-07 … 09). Заявник без права — `FORBIDDEN` (DEC-09).
 - `resubmit_purchase(p_purchase_id, p_lines jsonb)`: `for update`; лише автор і лише `returned`, інакше `FORBIDDEN`
-  (DEC-08, DEC-11); ті самі перевірки рядків, що в `submit_purchase`; заміна рядків, статуси рядків — `pending`, статус
+  (DEC-08, DEC-11); обов'язкові поля рядків, як у `submit_purchase`, а межі кількості й ціни — до відповіді на доповнення
+  Q11 (#66), за рекомендацією ті самі; заміна рядків, статуси рядків — `pending`, статус
   заявки — `awaiting_approval`, відділ і тип не змінюються (DEC-07); запис `submitted` в історії.
 - `purchase_history(p_purchase_id)`: записи лише видимої заявки (умова `purchases_select_visible`) з іменем того, хто
   діяв (без імені — email, як `purchase_author_names`), без інших даних профілю (HIST-06 … 10).
