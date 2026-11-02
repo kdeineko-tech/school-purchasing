@@ -17,7 +17,8 @@
     "users:demo": "node --env-file=.env.local scripts/create-demo-users.mjs",
     "check:boundary": "node scripts/check-server-boundary.mjs",
     "check:auth": "node scripts/check-auth-rules.mjs",
-    "check:design": "node scripts/check-design-tokens.mjs"
+    "check:design": "node scripts/check-design-tokens.mjs",
+    "smoke": "node scripts/smoke.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
