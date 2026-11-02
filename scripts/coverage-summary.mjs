@@ -16,7 +16,15 @@ const LAYERS = [
 const layerIndex = (file) => LAYERS.findIndex((l) => l.test.test(file));
 const pct = (m) => (m.total === 0 ? "—" : `${Math.floor(m.pct)} %`);
 
-const summary = JSON.parse(readFileSync(process.argv[2] ?? "coverage/coverage-summary.json", "utf8"));
+const report = process.argv[2] ?? "coverage/coverage-summary.json";
+let summary;
+try {
+  summary = JSON.parse(readFileSync(report, "utf8"));
+} catch (error) {
+  // Крок Summary у quality.yml іде з if: always(): якщо test:coverage не дав звіту, пояснюємо це, а не кидаємо виняток.
+  console.error(`Не вдалося прочитати звіт покриття ${report}: ${error.message}. Спершу запустіть npm run test:coverage.`);
+  process.exit(1);
+}
 const rows = Object.entries(summary)
   .filter(([file]) => file !== "total")
   .map(([file, m]) => ({ file: path.relative(process.cwd(), file).replaceAll("\\", "/"), layer: layerIndex(file), m }))
