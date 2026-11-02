@@ -30,16 +30,17 @@
 
 - PR воріт: https://github.com/kdeineko-tech/school-purchasing/pull/53
 - Зелений `quality` на `main`: https://github.com/kdeineko-tech/school-purchasing/actions/runs/41528293073 (коміт `c65758c`, 2026-11-02; усі три jobs — success)
-- Обов'язкові перевірки в `solo-main`: «Ворота: fallow audit», «Покриття: доменна підлога» — додає власниця репо після
-  зеленого прогону на `main` <!-- дата -->. «Порада: вразливі залежності» (`npm audit`) — дорадча завжди.
+- Обов'язкові перевірки в `solo-main` з 2026-11-02 (після зеленого прогону на `main`): `spec`, `app`, `conformance`,
+  `db-check`, «Ворота: fallow audit», «Покриття: доменна підлога» (GitHub Actions). «Порада: вразливі залежності»
+  (`npm audit`) — дорадча завжди.
 
 Що працює:
 
 | Шар | Де | Статус |
 |---|---|---|
 | тестові правила лінтера (`@vitest/eslint-plugin` 1.6.27, `eslint-plugin-playwright` 2.12.1) | `eslint.config.mjs` → `npm run lint` у job `app` | обов'язковий одразу |
-| `fallow audit` (3.35.0) — лише нові знахідки відносно бази PR | `quality.yml`, «Ворота: fallow audit» | дорадчий → обов'язковий |
-| покриття з підлогою для 10 доменних модулів | `quality.yml`, «Покриття: доменна підлога» (+ таблиця в Summary) | дорадчий → обов'язковий |
+| `fallow audit` (3.35.0) — лише нові знахідки відносно бази PR | `quality.yml`, «Ворота: fallow audit» | обов'язковий з 2026-11-02 |
+| покриття з підлогою для 10 доменних модулів | `quality.yml`, «Покриття: доменна підлога» (+ таблиця в Summary) | обов'язковий з 2026-11-02 |
 | `npm audit --omit=dev --audit-level=high` | `quality.yml`, «Порада: вразливі залежності» | лише попередження |
 | локально перед PR | `npm run gates` (lint + typecheck + `fallow audit --base origin/main`) | — |
 
