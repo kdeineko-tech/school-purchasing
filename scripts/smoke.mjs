@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // D0 smoke розгорнутого застосунку: лише GET, без входу й форм, без секретів (Node 24, без залежностей).
 // Використання: node scripts/smoke.mjs <base-url> [expected-sha]     (або npm run smoke -- <base-url> [sha])
-//   1) "/"           → редірект на /login або 200 (не 401/404/5xx і не стіна входу Vercel);
+//   1) "/"           → 200 або редірект на /login того самого застосунку (не інший код і не стіна входу Vercel);
 //   2) "/login"      → 200 і поле пароля (застосунок справді віддає сторінку);
 //   3) "/api/health" → 200 {db:"ok"}; з expected-sha — sha збігається (до 6 спроб × 20 с: прод-домен перемикається
 //                      на новий деплой не миттєво).
@@ -46,10 +46,12 @@ async function main() {
   const root = await get("/");
   if (vercelWall(root)) fail.push(`"/": стіна входу Vercel — Settings → Deployment Protection → вимкніть Vercel Authentication`);
   else if (root.status === 0) fail.push(`"/": недоступний (${root.text})`);
-  else if (root.status >= 300 && root.status < 400 && !isLoginRedirect(root.location)) {
-    fail.push(`"/": HTTP ${root.status} → ${root.location || "(без Location)"} — очікували 200 або редірект на /login`);
-  }
-  else if (root.status >= 400) {
+  else if (root.status >= 300 && root.status < 400) {
+    if (!isLoginRedirect(root.location)) {
+      fail.push(`"/": HTTP ${root.status} → ${root.location || "(без Location)"} — очікували 200 або редірект на /login`);
+    }
+  } else if (root.status !== 200) {
+    // 201/204 тощо теж збій: "/" має віддати сторінку, а не порожню відповідь.
     const hint = root.vercelError === "MIDDLEWARE_INVOCATION_FAILED" ? " — у Vercel бракує NEXT_PUBLIC_SUPABASE_*?" : "";
     fail.push(`"/": HTTP ${root.status} ${root.vercelError}${hint}`.trim());
   }
