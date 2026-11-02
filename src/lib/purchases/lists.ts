@@ -2,6 +2,7 @@
 // не показувала більше чи інше, ніж повні списки. Клієнт Supabase — від переглядача (RLS діє).
 import { decisionList } from "@/lib/purchases/decisions";
 import type { createClient } from "@/lib/supabase/server";
+import { timed } from "@/lib/timing";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -31,7 +32,9 @@ const MISSING_FUNCTION = new Set(["PGRST202", "42883"]);
 
 export async function loadAuthorNames(supabase: Supabase, purchaseIds: string[]): Promise<Map<string, string>> {
   if (purchaseIds.length === 0) return new Map();
-  const { data, error } = await supabase.rpc("purchase_author_names", { p_purchase_ids: purchaseIds });
+  const { data, error } = await timed("author-names", async () =>
+    supabase.rpc("purchase_author_names", { p_purchase_ids: purchaseIds }),
+  );
   if (error && MISSING_FUNCTION.has(error.code)) return new Map();
   if (error) throw new Error(`Failed to read request authors: ${error.message}`);
   return new Map((data ?? []).map((r) => [r.purchase_id, r.author_name]));
@@ -49,10 +52,12 @@ export async function loadMyRequests(supabase: Supabase, viewerId: string, limit
     .eq("author_id", viewerId)
     .order("created_at", { ascending: false });
   const [{ data: purchases, count, error: purchasesError }, { data: departments, error: departmentsError }] =
-    await Promise.all([
-      limit === undefined ? purchasesQuery : purchasesQuery.limit(limit),
-      supabase.from("departments").select("id, name"),
-    ]);
+    await timed("my-requests", async () =>
+      Promise.all([
+        limit === undefined ? purchasesQuery : purchasesQuery.limit(limit),
+        supabase.from("departments").select("id, name"),
+      ]),
+    );
   const readError = purchasesError ?? departmentsError;
   if (readError) throw new Error(`Failed to read requests: ${readError.message}`);
   const rows = purchases ?? [];
@@ -62,11 +67,13 @@ export async function loadMyRequests(supabase: Supabase, viewerId: string, limit
 // Скільки власних заявок ще чекає рішення — лічильник біля «My recent requests» на головній. Рядків не читаємо,
 // лише кількість (head: true).
 export async function countMyAwaiting(supabase: Supabase, viewerId: string): Promise<number> {
-  const { count, error } = await supabase
-    .from("purchases")
-    .select("id", { count: "exact", head: true })
-    .eq("author_id", viewerId)
-    .eq("status", "awaiting_approval");
+  const { count, error } = await timed("count-awaiting", async () =>
+    supabase
+      .from("purchases")
+      .select("id", { count: "exact", head: true })
+      .eq("author_id", viewerId)
+      .eq("status", "awaiting_approval"),
+  );
   if (error) throw new Error(`Failed to count requests: ${error.message}`);
   return count ?? 0;
 }
@@ -77,11 +84,9 @@ export async function loadDecisionRequests(
   viewerId: string,
   limit?: number,
 ): Promise<PurchaseListData> {
-  const { data: approved, error: approvedError } = await supabase
-    .from("department_members")
-    .select("department_id")
-    .eq("profile_id", viewerId)
-    .eq("approves", true);
+  const { data: approved, error: approvedError } = await timed("approved-departments", async () =>
+    supabase.from("department_members").select("department_id").eq("profile_id", viewerId).eq("approves", true),
+  );
   if (approvedError) throw new Error(`Failed to read approved departments: ${approvedError.message}`);
   const approvedDepartmentIds = (approved ?? []).map((r) => r.department_id);
   if (approvedDepartmentIds.length === 0) return { rows: [], total: 0, departmentName: new Map() };
@@ -95,10 +100,12 @@ export async function loadDecisionRequests(
     .neq("author_id", viewerId)
     .order("created_at", { ascending: true });
   const [{ data: purchases, count, error: purchasesError }, { data: departments, error: departmentsError }] =
-    await Promise.all([
-      limit === undefined ? purchasesQuery : purchasesQuery.limit(limit),
-      supabase.from("departments").select("id, name"),
-    ]);
+    await timed("decision-list", async () =>
+      Promise.all([
+        limit === undefined ? purchasesQuery : purchasesQuery.limit(limit),
+        supabase.from("departments").select("id, name"),
+      ]),
+    );
   const readError = purchasesError ?? departmentsError;
   if (readError) throw new Error(`Failed to read requests for decision: ${readError.message}`);
 
