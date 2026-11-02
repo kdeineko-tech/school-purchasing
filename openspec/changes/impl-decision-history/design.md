@@ -2,10 +2,12 @@
 
 ## Context
 
-- Специфікація: `openspec/specs/revision-decisions/spec.md` (AC-DEC-01 … AC-DEC-11), `openspec/specs/purchase-history/spec.md`
-  (AC-HIST-01 … AC-HIST-11), `openspec/specs/english-interface/spec.md` (AC-LANG-09).
-- Знімок вимог PM 2026-11-02 (ValiaBihun/2026-quitcode-dream-team#63, #64, #49). Відкриті питання розробника Q10–Q13
-  (#65 … #68) впливають на чотири рішення нижче — їх позначено «до відповіді PM»; Q14 (#69) на план не впливає.
+- Специфікація: `openspec/specs/revision-decisions/spec.md` (AC-DEC-01 … AC-DEC-12), `openspec/specs/purchase-history/spec.md`
+  (AC-HIST-01 … AC-HIST-14), `openspec/specs/english-interface/spec.md` (AC-LANG-09).
+- Знімок вимог PM 2026-11-02 після відповідей на Q10–Q14 (ValiaBihun/2026-quitcode-dream-team#63, #64, #49; питання
+  #65 … #69): PM обрала рекомендовані варіанти — сума за всіма рядками, редагування полів і рядків без типу й відділу з
+  тими самими межами, окремі записи «Частково схвалено» й повторного «Подано», номер той самий (AC-DEC-12,
+  AC-HIST-12 … AC-HIST-14).
 - Другий зріз дав: `purchases` (`status`: `awaiting_approval` / `approved` / `rejected`, `rejection_reason`,
   `decided_by`, `decided_at`), `purchase_lines` (`quantity integer`, `unit_price numeric(12,2)`), RLS
   `purchases_select_visible` (активний і автор / схвалює відділ / `admin`), функції `submit_purchase`,
@@ -47,23 +49,24 @@ ADR 0003: функції бази `private` definer + `public` invoker. Нове
 | `/purchases/new` | усі, хто увійшов | межі рядка у формі; введене лишається | «Quantity: a whole number from 1», «Price: a number from 0» | AC-HIST-03 … AC-HIST-05 |
 | `/purchases/[id]` | автор, схвалювач відділу, `admin` | номер; сума кожного рядка й сума заявки; статус кожного рядка після рішення; причина повернення; блок «History» | чужа заявка — «Not enough permissions» без даних і без історії | AC-DEC-02, AC-DEC-05, AC-DEC-08, AC-DEC-11, AC-HIST-01, AC-HIST-02, AC-HIST-06 … AC-HIST-10, AC-LANG-09 |
 | `/purchases/[id]` — рішення (`canDecide`) | схвалювач відділу, не автор | позначка «Reject line» біля кожного рядка; «Approve»; «Reject» (діалог, причина); «Return for revision» (причина) | усі рядки позначено й «Approve» — «All lines are rejected: reject the whole request»; повернення без причини — «Provide a reason» | AC-DEC-01, AC-DEC-03, AC-DEC-04, AC-DEC-06 |
-| `/purchases/[id]/edit` | лише автор, лише статус «Returned for revision» | форма з рядками заявки (відділ і тип — лише для читання), «Submit» | обов'язкові поля, як при поданні; межі кількості й ціни — **до відповіді PM на доповнення Q11 (#66)**: ті самі, що при поданні (рекомендація A); інший статус чи не автор — «Not enough permissions» | AC-DEC-05, AC-DEC-07, AC-DEC-11 |
+| `/purchases/[id]/edit` | лише автор, лише статус «Returned for revision» | форма з рядками заявки (відділ і тип — лише для читання), «Submit» | обов'язкові поля, як при поданні; межі кількості й ціни ті самі, що при поданні, з тими самими повідомленнями (Q11, #66); інший статус чи не автор — «Not enough permissions» | AC-DEC-05, AC-DEC-07, AC-DEC-11, AC-DEC-12 |
 | `/approvals`, головна | як у зрізі 2 | номер у рядку; нові статуси | — | AC-HIST-01, AC-LANG-09 |
 
 - Компоненти — лише з `@/components/ui` (DESIGN.md); статус заявки й рядка — `StatusBadge` з текстом (AC-LANG-09):
   «Partially approved», «Returned for revision»; статус рядка — «Approved» / «Rejected» / без позначки до рішення.
-- Підписи історії — «Submitted», «Approved», «Rejected», «Returned for revision» (таблиця #49), ім'я — як у зрізі 2
+- Підписи історії — «Submitted», «Approved», «Partially approved», «Rejected», «Returned for revision» (таблиця #49), ім'я — як у зрізі 2
   (ім'я, без імені — email), дата й час — `America/New_York` (`formatSubmittedAt`).
 - Суми — у доларах США, у доменному модулі в цілих центах (`Math.round(quantity × price × 100)`), показ — два знаки
-  (вимога «Суми рядків і заявки»). **До відповіді PM
-  на Q10 (#65):** сума заявки — за всіма рядками (рекомендація A); відхилені рядки лише позначено.
+  (вимога «Суми рядків і заявки»): сума заявки — завжди за всіма рядками, зокрема для «Partially approved»; відхилені
+  рядки лише позначено (Q10, #65).
 - Форма подання й форма редагування — один клієнтський компонент рядків (`useActionState`, керовані поля), різні
   server actions (`submitPurchase`, `resubmitPurchase`).
-- **До відповіді PM на Q11 (#66):** у формі редагування можна змінити поля рядків, додати й видалити рядок (рекомендація
-  B); відділ і тип — лише для читання (AC-DEC-07: «відділ той самий»).
+- У формі редагування можна змінити поля рядків, додати й видалити рядок; відділ і тип — лише для читання (Q11, #66;
+  AC-DEC-07: «відділ той самий»); межі й повідомлення — ті самі `validateSubmission` і `MESSAGES`, що при поданні
+  (AC-DEC-12).
 - Доменний модуль `src/lib/purchases/`: `formatNumber` (AC-HIST-01), `lineTotal`, `purchaseTotal` (AC-HIST-02),
   `validateSubmission` з межами (AC-HIST-03 … AC-HIST-05), `validateDecision` з поверненням і рядками (AC-DEC-03, AC-DEC-06),
-  `canEditReturned` (AC-DEC-05, AC-DEC-11), `STATUS_LABELS` і `LINE_STATUS_LABELS` (AC-LANG-09), `HISTORY_LABELS` (AC-HIST-06 … AC-HIST-09).
+  `canEditReturned` (AC-DEC-05, AC-DEC-11), `STATUS_LABELS` і `LINE_STATUS_LABELS` (AC-LANG-09), `HISTORY_LABELS` (AC-HIST-06 … AC-HIST-09, AC-HIST-12, AC-HIST-13).
 - Нові повідомлення в `MESSAGES` — дослівно з таблиці #49.
 
 ## Дані й RLS
@@ -76,9 +79,8 @@ ADR 0003: функції бази `private` definer + `public` invoker. Нове
 | `purchase_lines` | `status text not null default 'pending'` (`pending` / `approved` / `rejected`); рядкам наявних заявок — статус заявки: `approved` для схвалених, `rejected` для відхилених, інакше `pending`; `check` `quantity >= 1` і `unit_price >= 0` як `not valid` — нові й змінені рядки перевіряються, старі тестові дані міграцію не ламають | AC-DEC-01, AC-DEC-02, AC-HIST-03 … AC-HIST-05 |
 | `purchase_events` (нова) | `id`, `purchase_id → purchases on delete cascade`, `kind` (`submitted` / `approved` / `partially_approved` / `rejected` / `returned`), `actor_id → profiles`, `reason`, `created_at`; наявні заявки — записи з `created_at` / `author_id` і з `decided_at` / `decided_by` | AC-HIST-06 … AC-HIST-09 |
 
-**До відповіді PM на Q12 (#67):** `kind` має `partially_approved`, а повторне подання — ще один `submitted`
-(рекомендація A). **До відповіді на Q13 (#68):** номер видається один раз при першому поданні; повторне подання номер не
-змінює (рекомендація A).
+`kind` має `partially_approved`, а повторне подання — ще один `submitted` (Q12, #67; AC-HIST-12, AC-HIST-13). Номер
+видається один раз при першому поданні; повторне подання номер не змінює (Q13, #68; AC-HIST-14).
 
 Кількість — уже `integer`, тож «2.5» відхиляє приведення типу: функції повертають `QUANTITY_RANGE` (а не загальний
 `INVALID_LINE`), щоб сторінка показала текст PM (AC-HIST-04).
@@ -106,9 +108,10 @@ Column grants не потрібні: на `update` у `authenticated` grant не
 - `resubmit_purchase(p_purchase_id, p_lines jsonb)`: `for update`; першою — активний (`private.is_active_user()`, як у
   `submit_purchase` і `decide_purchase`: функцію можна викликати напряму, минаючи `getViewer()`); лише автор і лише
   `returned`, інакше `FORBIDDEN`
-  (AC-DEC-08, AC-DEC-11); обов'язкові поля рядків, як у `submit_purchase`, а межі кількості й ціни — до відповіді на доповнення
-  Q11 (#66), за рекомендацією ті самі; заміна рядків, статуси рядків — `pending`, статус
-  заявки — `awaiting_approval`, відділ і тип не змінюються (AC-DEC-07); запис `submitted` в історії.
+  (AC-DEC-08, AC-DEC-11); обов'язкові поля рядків і ті самі межі кількості й ціни, що в `submit_purchase` (`QUANTITY_RANGE`, `PRICE_RANGE` —
+  AC-DEC-12; при відмові статус лишається `returned`); заміна рядків, статуси рядків — `pending`, статус заявки —
+  `awaiting_approval`, відділ, тип і номер не змінюються (AC-DEC-07, AC-HIST-14); ще один запис `submitted` в історії
+  (AC-HIST-13).
 - `purchase_history(p_purchase_id)`: записи лише видимої заявки (умова `purchases_select_visible`) з іменем того, хто
   діяв (без імені — email, як `purchase_author_names`), без інших даних профілю (AC-HIST-06 … AC-HIST-10).
 
@@ -143,8 +146,7 @@ Column grants не потрібні: на `update` у `authenticated` grant не
 
 ## Risks / Trade-offs
 
-- Q10–Q13 (#65 … #68): до відповідей PM — рекомендовані варіанти; якщо PM обере інший, зміна торкнеться лише
-  відповідних функцій і сторінок (задачі 4 і 5 — останні, щоб встигнути врахувати відповіді).
+- Q10–Q14 (#65 … #69) закрито рекомендованими варіантами; порядок задач лишається: 4 і 5 — найбільші, тож останні.
 - `not valid` для меж рядка: старі тестові рядки з від'ємною ціною лишаються, але нові й змінені перевіряються; на
   проді — лише синтетичні дані.
 - Підписи «Reject line», «Total» і «Line total» у таблиці #49 відсутні — додаємо англійською й позначаємо в описі PR;
