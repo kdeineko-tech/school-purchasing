@@ -38,4 +38,12 @@ describe("classifyDbProbe (/api/health)", () => {
     });
     expect(classifyDbProbe({ status: 500, error: { code: "XX000", message: "internal" } }).db).toBe("down");
   });
+
+  it("не рахує базу живою, коли PostgREST відхилив JWT ключа (PGRST301, PGRST303)", () => {
+    expect(classifyDbProbe({ status: 401, error: { code: "PGRST301", message: "JWT expired" } })).toEqual({
+      db: "down",
+      reason: "status-401-PGRST301",
+    });
+    expect(classifyDbProbe({ status: 401, error: { code: "PGRST303", message: "JWT claims" } }).db).toBe("down");
+  });
 });

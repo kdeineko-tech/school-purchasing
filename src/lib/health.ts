@@ -5,6 +5,8 @@
 const SQLSTATE = /^[0-9A-Z]{5}$/;
 /** PostgREST не може під'єднатися до бази. */
 const PGRST_DB_DOWN = /^PGRST00[0-3]$/;
+/** PostgREST відхилив JWT ключа: 301 — недійсний чи прострочений, 303 — заявки JWT не пройшли перевірку. */
+const PGRST_JWT_REJECTED = /^PGRST30[13]$/;
 /** Supabase відповідає 540, коли безкоштовний проєкт призупинено (Dashboard → Resume project). */
 const SUPABASE_PAUSED = 540;
 
@@ -15,7 +17,9 @@ export function classifyDbProbe({ status, error }: DbProbe): DbHealth {
   if (status === SUPABASE_PAUSED) return { db: "down", reason: "paused" };
   const code = error?.code ?? "";
   // 5xx (зокрема PGRST300 — зламана конфігурація JWT у PostgREST) — база для застосунку недоступна.
-  if (status >= 500) return { db: "down", reason: `status-${status}${code ? `-${code}` : ""}` };
+  if (status >= 500 || PGRST_JWT_REJECTED.test(code)) {
+    return { db: "down", reason: `status-${status}${code ? `-${code}` : ""}` };
+  }
   if (!error || SQLSTATE.test(code) || (code.startsWith("PGRST") && !PGRST_DB_DOWN.test(code))) {
     return { db: "ok", reason: "" };
   }
