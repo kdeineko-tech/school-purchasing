@@ -13,8 +13,10 @@
 
 ## 3 AC
 
-Усі три — лише читання: прод і preview ходять в одну базу, тож UAT нічого не записує (AC-FRM-06 — відмова сервера,
-закупівлю не подано). Акаунт — `pm-requester@example.test` (роль `requester`, без дозволу «Самостійна закупівля»).
+Прод і preview ходять в одну базу, тож UAT нічого не записує. AC-APR-04 і AC-FRM-03 — лише читання. В AC-FRM-06 є
+спроба подання, але `submitPurchase` відхиляє порожній список рядків ще до виклику функції бази (`validateSubmission`,
+`src/lib/purchases/form.ts`), а `submit_purchase` повторно перевіряє його до `insert` (`NO_LINES`); заявку не
+створено. Акаунт — `pm-requester@example.test` (роль `requester`, без дозволу «Самостійна закупівля»).
 
 | AC | Вид | «Тоді» (дослівно з вимоги PM) |
 |---|---|---|
@@ -56,13 +58,16 @@
 | unused file `src/lib/supabase/client.ts` (браузерний клієнт шаблону) | 1 | справжня | видалено: усі запити — на сервері |
 | unused file `src/components/ui/card.tsx` (shadcn) | 1 | справжня | видалено: застосунок використовує власний `Card` з `src/components/ui/index.tsx` |
 | unused export `AC_ID_GLOBAL` (`scripts/lib/spec-lib.mjs`) | 1 | справжня | прибрано (у файлі теж не використовувався) |
-| duplicate exports `addRequester` / `removeRequester` (`src/app/admin/actions.ts` ↔ `src/lib/org/membership.ts`) | 1 пара | навмисна | лишено: Server Action обгортає доменну функцію з тією ж назвою; бочок немає, імпорти однозначні |
+| duplicate exports `addRequester` / `removeRequester` (`src/app/admin/actions.ts` ↔ `src/lib/org/membership.ts`) | 1 пара | навмисна / борг | лишено: Server Actions (`src/app/admin/actions.ts`) пишуть у `department_members` напряму; однойменні функції `src/lib/org/membership.ts` — модель правил, яку викликають лише тести; імпорти однозначні. Борг для треку B: частина тестів AC-ORG-01/03 перевіряє цю модель, а не дію — правило в базі доводять тести дій і бази |
 | дублікати коду | 9 груп | навмисна / борг | лишено (ворота валять лише нові): `globals.css` — два однакові блоки темної теми навмисно (DESIGN.md, розділ 2); `check-design-tokens` ↔ `check-server-boundary` і `check-auth-rules` ↔ `check-server-boundary` — однаковий обхід файлів у наших скриптах WS7; `profile/page.tsx` ↔ `purchases/options.ts`, `admin/staff/[id]` ↔ `profile`, `purchases/lists.ts`, `org/membership.ts`, `admin/actions.ts` — дрібні повтори; усе — окремим рефакторингом |
 | складність скриптів шаблону курсу (`check-spec`, `create-demo-users`) | 4 | навмисна | `health.ignore` з причиною: початковий коміт шаблону, ми їх не змінюємо; `check-spec` має тести в `tests/scripts`, `create-demo-users` — локальний скрипт поза CI |
 | складність наших скриптів WS7 (`check-auth-rules` ×4, `check-design-tokens` ×3, `check-server-boundary` ×2) | 9 | справжня (борг) | не ігноруємо: наш код (kdeineko-tech/school-purchasing#27, #32); `check-auth-rules` і `check-design-tokens` мають тести в `tests/scripts`, `check-server-boundary` — ні; ворота валять лише нові знахідки, спрощення й тест — окремою задачею |
 | складність нашого коду застосунку (`purchases/[id]/page.tsx`, `admin/staff/[id]/page.tsx` ×2, `profile/page.tsx`, `admin/departments/page.tsx`, `api/health/route.ts`) | 6 | справжня (борг) | лишено як контекст: успадковане, ворота не валять; спрощення — окремими задачами |
 | складність `src/components/ui/open-book.tsx` (декоративна 3D-книга входу) | 3 | навмисна | лишено: анімація за кадрами |
-| `ignoreDependencies` `@tailwindcss/turbopack`, `@vitest/coverage-v8` (з матеріалів) | 2 | хибна | Tailwind 4 підключено рядком у `next.config.ts`; провайдер покриття Vitest вантажить за назвою з конфігу |
+
+Відомі хибні тривоги на нашому стеку прибрано ще до прогону — `ignoreDependencies` з матеріалів курсу:
+`@tailwindcss/turbopack` (Tailwind 4 підключено рядком у `next.config.ts`) і `@vitest/coverage-v8` (Vitest вантажить
+провайдер покриття за назвою з конфігу). У нашому прогоні хибних знахідок не було.
 
 Після розбору повний `npx fallow` (main після kdeineko-tech/school-purchasing#53, без файлу покриття — CRAP лише оцінка): мертвого
 коду 0; лишаються пара однакових назв, 9 груп дублікатів і 18 складних функцій з таблиці — усе успадковане, `fallow
