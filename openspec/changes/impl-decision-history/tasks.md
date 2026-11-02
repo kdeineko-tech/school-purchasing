@@ -40,7 +40,7 @@
 
 ## 4. Часткове схвалення
 
-- [ ] 4.1 Міграція: `purchase_lines.status`; новий `purchases_status_check` з `partially_approved` і `returned`
+- [ ] 4.1 Міграція: `purchase_lines.status` (рядкам наявних схвалених заявок — `approved`, відхилених — `rejected`); новий `purchases_status_check` з `partially_approved` і `returned`
   (зняти → додати); `decide_purchase` нової сигнатури з `p_rejected_lines` (`ALL_LINES_REJECTED`), запис
   `partially_approved` в історії (до відповіді на Q12 #67 — рекомендація A); `validateDecision`; позначка «Reject line»
   біля рядків і статуси рядків на сторінці заявки; «Partially approved» і «All lines are rejected: reject the whole
@@ -52,13 +52,13 @@
 ## 5. Повернення, редагування й повторне подання
 
 - [ ] 5.1 Міграція: `purchases.return_reason` і `check` (повернена — з причиною); `decide_purchase` — рішення `return`
-  (`REASON_REQUIRED`), запис `returned`; `resubmit_purchase` (лише автор, лише `returned`; обов'язкові поля рядків; межі — до відповіді на доповнення Q11 #66;
+  (`REASON_REQUIRED`), запис `returned`; `resubmit_purchase` (лише активний автор, лише `returned`; обов'язкові поля рядків; межі — до відповіді на доповнення Q11 #66;
   відділ і тип ті самі; запис `submitted`; номер той самий — до відповіді на Q13 #68); `canEditReturned`;
   «Return for revision» з причиною; причина повернення на сторінці заявки; сторінка `/purchases/[id]/edit` (до відповіді
   на Q11 #66 — змінити, додати, видалити рядки); «Returned for revision»; без «Edit» і «Submit» для «Rejected»; тести.
   Тести відмов і мутації: тести бази для AC-DEC-06 (без причини — статус той самий), AC-DEC-08 (колега не бачить
   повернену), AC-DEC-09 (`requester` повертає напряму — `FORBIDDEN`, статус той самий), AC-DEC-10 (`anon` — нічого),
-  AC-DEC-11 (`resubmit_purchase` для відхиленої — `FORBIDDEN`); мутації — червоні; ≥1 червоний прогін CI.
+  AC-DEC-11 (`resubmit_purchase` для відхиленої — `FORBIDDEN`); деактивований автор — `FORBIDDEN`, заявка без змін; мутації — червоні; ≥1 червоний прогін CI.
   Done when: AC-DEC-04, AC-DEC-05, AC-DEC-06, AC-DEC-07, AC-DEC-08, AC-DEC-09, AC-DEC-10, AC-DEC-11, AC-HIST-09,
   AC-LANG-09.
 
