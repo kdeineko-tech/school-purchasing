@@ -2,10 +2,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setAutoApprove as setAutoApproveAction } from "@/app/admin/actions";
 import { autoApproveDepartments, removeRequester, setAutoApprove, type Membership } from "@/lib/org/membership";
 import { MESSAGES } from "@/lib/org/messages";
-import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
+import { signIn, withViewer } from "../support/viewer";
 
-vi.mock("@/lib/org/viewer", () => ({ getViewer: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -47,13 +46,13 @@ function fakeMembersDb(row: { profile_id: string; department_id: string; auto_ap
   const select = vi.fn(() => ({
     eq: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: row, error: null }) }) }),
   }));
-  vi.mocked(createClient).mockResolvedValue({ from: vi.fn(() => ({ select, update })) } as never);
+  vi.mocked(createClient).mockResolvedValue(withViewer({ from: vi.fn(() => ({ select, update })) }) as never);
   return { update, updateEqProfile, updateEqDepartment };
 }
 
 describe("автосхвалення", () => {
   beforeEach(() => {
-    vi.mocked(getViewer).mockResolvedValue(admin);
+    signIn(admin);
   });
 
   it("AC-ORG-06: заявнику «Початкова школа» й «Офіс» увімкнено автосхвалення лише в «Офіс» — для «Початкова школа» воно вимкнене", () => {

@@ -5,11 +5,10 @@ import AdminHome from "@/app/admin/page";
 import StaffPage from "@/app/admin/staff/page";
 import { canOpenAdminPages, type AppRole } from "@/lib/org/access";
 import { MESSAGES } from "@/lib/org/messages";
-import { getViewer } from "@/lib/org/viewer";
+import { signIn } from "../support/viewer";
 
 // Сторінки адміністратора рендеримо без бази: переглядача підставляємо, Supabase не викликається,
 // бо не-адміністратор отримує відмову ще до запиту.
-vi.mock("@/lib/org/viewer", () => ({ getViewer: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/navigation", () => ({ redirect: vi.fn() }));
 
@@ -28,7 +27,7 @@ const adminPages = [
 
 describe("доступ до сторінок адміністратора", () => {
   beforeEach(() => {
-    vi.mocked(getViewer).mockReset();
+    signIn(null);
   });
 
   it("AC-ORG-09: користувач без ролі admin не відкриває список працівників і налаштування відділів, бачить «Недостатньо прав»", () => {
@@ -38,13 +37,13 @@ describe("доступ до сторінок адміністратора", () =
   });
 
   it.each(adminPages)("AC-ORG-09: заявник на %s бачить відмову «Недостатньо прав»", async (_path, Page) => {
-    vi.mocked(getViewer).mockResolvedValue(viewer("requester"));
+    signIn(viewer("requester"));
     const element = await Page(pageProps);
     expect(element.type).toBe(NoAccess);
   });
 
   it.each(adminPages)("AC-ORG-09: схвалювач на %s бачить відмову «Недостатньо прав»", async (_path, Page) => {
-    vi.mocked(getViewer).mockResolvedValue(viewer("approver"));
+    signIn(viewer("approver"));
     const element = await Page(pageProps);
     expect(element.type).toBe(NoAccess);
   });

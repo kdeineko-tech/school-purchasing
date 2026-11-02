@@ -1,10 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { setPermissions } from "@/app/admin/actions";
 import { allowedPurchaseTypes, allowedRequestTypes, type PermissionHolder } from "@/lib/org/permissions";
-import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
+import { signIn, withViewer } from "../support/viewer";
 
-vi.mock("@/lib/org/viewer", () => ({ getViewer: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -60,18 +59,18 @@ describe("дозволені типи заявок і закупівлі", () =>
 
 describe("дія setPermissions", () => {
   beforeEach(() => {
-    vi.mocked(getViewer).mockReset();
+    signIn(null);
   });
 
   function fakeProfilesDb() {
     const eq = vi.fn().mockResolvedValue({ error: null });
     const update = vi.fn(() => ({ eq }));
-    vi.mocked(createClient).mockResolvedValue({ from: vi.fn(() => ({ update })) } as never);
+    vi.mocked(createClient).mockResolvedValue(withViewer({ from: vi.fn(() => ({ update })) }) as never);
     return { update, eq };
   }
 
   it("AC-ORG-17: адміністратор видає працівнику дозвіл на «Витрату карткою» — позначені прапорці стають дозволами", async () => {
-    vi.mocked(getViewer).mockResolvedValue({
+    signIn({
       id: "a1",
       email: "admin@example.test",
       fullName: null,
@@ -93,7 +92,7 @@ describe("дія setPermissions", () => {
   });
 
   it("не-адміністратор дозволів не змінює", async () => {
-    vi.mocked(getViewer).mockResolvedValue({
+    signIn({
       id: P1,
       email: "member1@example.test",
       fullName: null,

@@ -4,10 +4,9 @@ import { departmentsWithoutApprover } from "@/lib/org/departments";
 import { removeRequester, setApprover, type Membership } from "@/lib/org/membership";
 import { MESSAGES } from "@/lib/org/messages";
 import { roleFor } from "@/lib/org/roles";
-import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
+import { signIn, withViewer } from "../support/viewer";
 
-vi.mock("@/lib/org/viewer", () => ({ getViewer: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -38,13 +37,13 @@ function fakeMembersDb(row: { profile_id: string; department_id: string; approve
   const select = vi.fn(() => ({
     eq: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: row, error: null }) }) }),
   }));
-  vi.mocked(createClient).mockResolvedValue({ from: vi.fn(() => ({ select, update, delete: del })) } as never);
+  vi.mocked(createClient).mockResolvedValue(withViewer({ from: vi.fn(() => ({ select, update, delete: del })) }) as never);
   return { update, del };
 }
 
 describe("схвалювачі відділу", () => {
   beforeEach(() => {
-    vi.mocked(getViewer).mockResolvedValue(admin);
+    signIn(admin);
   });
 
   it("AC-ORG-02: працівника, який не є заявником «Вища школа», не призначено схвалювачем — «Спершу додайте працівника до відділу як заявника»", () => {

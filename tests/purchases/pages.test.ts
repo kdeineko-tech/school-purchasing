@@ -2,11 +2,10 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import NewPurchasePage from "@/app/purchases/new/page";
 import MyRequestsPage from "@/app/purchases/page";
-import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { fakeDb, HIGH, OFFICE, P1, P2, PRIMARY, viewer } from "./fake-db";
+import { signIn, withViewer } from "../support/viewer";
 
-vi.mock("@/lib/org/viewer", () => ({ getViewer: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({
@@ -21,7 +20,7 @@ function props(searchParams: Record<string, string> = {}) {
 
 function useDb(state: Parameters<typeof fakeDb>[0]) {
   const db = fakeDb({ departments: [PRIMARY, OFFICE, HIGH], ...state });
-  vi.mocked(createClient).mockResolvedValue(db.client as never);
+  vi.mocked(createClient).mockResolvedValue(withViewer(db.client) as never);
   return db;
 }
 
@@ -36,11 +35,11 @@ const purchaseOf = (author: string, status = "awaiting_approval") => ({
 
 describe("форма закупівлі", () => {
   beforeEach(() => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1));
+    signIn(viewer(P1));
   });
 
   it("AC-FRM-09: гість, що відкриває форму закупівлі за посиланням, бачить сторінку входу", async () => {
-    vi.mocked(getViewer).mockResolvedValue(null);
+    signIn(null);
 
     await expect(NewPurchasePage()).rejects.toThrow("REDIRECT /login");
   });
@@ -83,11 +82,11 @@ describe("форма закупівлі", () => {
 
 describe("«Мої заявки»", () => {
   beforeEach(() => {
-    vi.mocked(getViewer).mockResolvedValue(viewer(P1));
+    signIn(viewer(P1));
   });
 
   it("AC-FRM-09: гість не бачить «Мої заявки» — сторінка входу", async () => {
-    vi.mocked(getViewer).mockResolvedValue(null);
+    signIn(null);
 
     await expect(MyRequestsPage(props())).rejects.toThrow("REDIRECT /login");
   });

@@ -3,10 +3,9 @@ import { addRequester as addRequesterAction, createDepartment } from "@/app/admi
 import { isDuplicateName, validateNewDepartment } from "@/lib/org/departments";
 import { addRequester, requesterDepartments } from "@/lib/org/membership";
 import { MESSAGES } from "@/lib/org/messages";
-import { getViewer } from "@/lib/org/viewer";
 import { createClient } from "@/lib/supabase/server";
+import { signIn, withViewer } from "../support/viewer";
 
-vi.mock("@/lib/org/viewer", () => ({ getViewer: vi.fn() }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 // redirect() у Next.js кидає виняток і зупиняє дію — імітуємо так само.
@@ -22,7 +21,7 @@ function fakeDepartmentsDb(existingNames: string[]) {
   const insert = vi.fn().mockResolvedValue({ error: null });
   const select = vi.fn().mockResolvedValue({ data: existingNames.map((name) => ({ name })), error: null });
   const client = { from: vi.fn(() => ({ select, insert })) };
-  vi.mocked(createClient).mockResolvedValue(client as never);
+  vi.mocked(createClient).mockResolvedValue(withViewer(client) as never);
   return { insert };
 }
 
@@ -34,7 +33,7 @@ function form(fields: Record<string, string>) {
 
 describe("відділи", () => {
   beforeEach(() => {
-    vi.mocked(getViewer).mockResolvedValue(admin);
+    signIn(admin);
   });
 
   it("AC-ORG-34: відділ «початкова школа» не створено, бо вже є «Початкова школа», — повідомлення «Відділ з такою назвою вже є»", () => {
@@ -86,12 +85,12 @@ describe("заявники відділу", () => {
 
   function fakeMembersDb() {
     const insert = vi.fn().mockResolvedValue({ error: null });
-    vi.mocked(createClient).mockResolvedValue({ from: vi.fn(() => ({ insert })) } as never);
+    vi.mocked(createClient).mockResolvedValue(withViewer({ from: vi.fn(() => ({ insert })) }) as never);
     return { insert };
   }
 
   it("AC-ORG-01: дія addRequester адміністратора записує працівника заявником відділу", async () => {
-    vi.mocked(getViewer).mockResolvedValue(admin);
+    signIn(admin);
     const { insert } = fakeMembersDb();
 
     await expect(addRequesterAction(form({ profileId: P1, departmentId: D1 }))).rejects.toThrow(
@@ -101,7 +100,7 @@ describe("заявники відділу", () => {
   });
 
   it("не-адміністратор не додає заявника", async () => {
-    vi.mocked(getViewer).mockResolvedValue({ ...admin, role: "requester" });
+    signIn({ ...admin, role: "requester" });
     const { insert } = fakeMembersDb();
 
     await expect(addRequesterAction(form({ profileId: P1, departmentId: D1 }))).rejects.toThrow("REDIRECT /admin");
@@ -109,7 +108,7 @@ describe("заявники відділу", () => {
   });
 
   it("некоректний ідентифікатор не доходить до бази", async () => {
-    vi.mocked(getViewer).mockResolvedValue(admin);
+    signIn(admin);
     const { insert } = fakeMembersDb();
 
     await expect(addRequesterAction(form({ profileId: "abc", departmentId: D1 }))).rejects.toThrow(
