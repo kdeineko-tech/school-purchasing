@@ -42,12 +42,11 @@
       "scripts/zip-accounts.mjs",
       "scripts/mutation-check.mjs",
       "scripts/coverage-summary.mjs",
-      // Скрипти шаблону курсу (WS6–WS7): перевірки специфікації, дизайн-токенів, меж сервера, правил входу й демо-
-      // користувачі. Їх перевіряють власні тести в tests/scripts; складність успадкована з шаблону, ми їх не змінюємо.
+      // Скрипти шаблону проєкту курсу (початковий коміт, ми їх не змінюємо): check-spec — перевірка специфікації з
+      // тестами в tests/scripts/check-spec.test.ts; create-demo-users — локальний скрипт для синтетичних
+      // користувачів, у CI не запускається. Власні скрипти WS7 (check-design-tokens, check-server-boundary,
+      // check-auth-rules) тут навмисно НЕ ігноруємо: їхня складність — наш борг (таблиця розбору в docs/qa/proof-pack.md).
       "scripts/check-spec.mjs",
-      "scripts/check-design-tokens.mjs",
-      "scripts/check-server-boundary.mjs",
-      "scripts/check-auth-rules.mjs",
       "scripts/create-demo-users.mjs"
     ],
     "thresholdOverrides": [
