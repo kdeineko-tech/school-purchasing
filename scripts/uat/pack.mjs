@@ -26,7 +26,9 @@ export function pack(resultsPath = RESULTS) {
       const ann = (type) => test.annotations.find((a) => a.type === type)?.description;
       const acId = ann("ac");
       if (!acId) continue; // setup, прибирання — не AC
-      const result = test.results.at(-1);
+      // Впав setup (наприклад, хибний пароль) — Playwright не запускає залежні тести, і результату немає. Такий AC
+      // іде у звіт як «skipped» без кадрів → R1 FAIL, а не TypeError на result.attachments.
+      const result = test.results.at(-1) ?? { status: "skipped", attachments: [], steps: [] };
       const caseId = ann("case") ?? acId;
       const dir = path.join(WORK, caseId);
       const agentDir = path.join(dir, "agent");

@@ -53,8 +53,11 @@ const env = { ...process.env, UAT_NEGATIVE_CONTROLS: negativeControls ? "1" : ""
 if (url) env.UAT_BASE_URL = url;
 else delete env.UAT_BASE_URL;
 
-// Журнал прибирання — лише цього прогону: інакше «видалено» у звіті підсумовує адреси з попередніх прогонів.
-rmSync(path.join(ROOT, "test-results", "uat-cleanup.jsonl"), { force: true });
+// Журнал прибирання й результати — лише цього прогону: інакше «видалено» у звіті підсумовує адреси з попередніх
+// прогонів, а pack() прочитав би старий results.json, якщо Playwright завершився до запису звіту.
+for (const f of ["uat-cleanup.jsonl", "uat-cleanup.json", "results.json"]) {
+  rmSync(path.join(ROOT, "test-results", f), { force: true });
+}
 console.log(`UAT: ${url ?? "локальна збірка (npm run build && npm run start)"}${negativeControls ? " — негативні контролі" : ""}`);
 const cli = path.join(ROOT, "node_modules", "@playwright", "test", "cli.js");
 const pw = spawnSync(
@@ -95,5 +98,16 @@ if (!cases.length) {
   for (const r of rows) console.log(`  ${r.caseId}: ${r.verdict} — ${r.ruleText}`);
   const real = rows.filter((r) => !r.negativeControl);
   if (real.some((r) => r.verdict === "FAIL")) process.exitCode = 1;
+  // Негативний контроль, що отримав PASS, не спрацював: UAT не показав, що вміє падати.
+  const falsePass = rows.filter((r) => r.negativeControl && r.verdict === "PASS");
+  if (falsePass.length) {
+    console.error(`Негативний контроль не спрацював (PASS): ${falsePass.map((r) => r.caseId).join(", ")}`);
+    process.exitCode = 1;
+  }
+  // Playwright упав (setup, прибирання), а FAIL серед AC немає — прогін однаково невдалий.
+  if (!negativeControls && pw.status !== 0 && !real.some((r) => r.verdict === "FAIL")) {
+    console.error(`Playwright завершився з кодом ${pw.status}, хоча FAIL серед AC немає (setup або прибирання?).`);
+    process.exitCode = 1;
+  }
   if (real.some((r) => r.verdict === "NEEDS-HUMAN")) console.log("Є NEEDS-HUMAN: рішення — за PM (див. звіт).");
 }

@@ -28,7 +28,12 @@ export function report(rows = combine(), { out } = {}) {
   const runFile = path.join(WORK, "run.json");
   const run = existsSync(runFile) ? readJson(runFile) : {};
   const started = run.startedAt ?? rows[0]?.assertions.startTime ?? new Date().toISOString();
-  const outDir = path.resolve(ROOT, out ?? path.join("docs", "qa", "uat", kyivDate(started)));
+  // Негативні контролі — ніколи в docs/qa/uat/: інакше `uat:review` після `uat:nc --skip-review` перезаписав би
+  // закомічений звіт справжнього прогону.
+  const defaultOut = run.negativeControls
+    ? path.join("test-results", "uat-report-nc")
+    : path.join("docs", "qa", "uat", kyivDate(started));
+  const outDir = path.resolve(ROOT, out ?? defaultOut);
   rmSync(path.join(outDir, "frames"), { recursive: true, force: true });
   mkdirSync(path.join(outDir, "frames"), { recursive: true });
   const cleanupFile = path.join(ROOT, "test-results", "uat-cleanup.json");
@@ -74,6 +79,8 @@ export function report(rows = combine(), { out } = {}) {
     baseURL: run.baseURL ?? null,
     deployedSha: run.deployedSha ?? null,
     testsCommit: run.gitSha ?? null,
+    // true — тести йшли з незакомічених змін, і testsCommit їх не відтворює.
+    testsDirty: Boolean(run.gitDirty),
     reviewer: { model: HAIKU, disputes: SONNET },
     note: "Відео й траси не в git (test-results/ локально, артефакт CI). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
     results: real.map(entry),
