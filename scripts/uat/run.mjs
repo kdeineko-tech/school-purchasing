@@ -98,16 +98,12 @@ if (!cases.length) {
   for (const r of rows) console.log(`  ${r.caseId}: ${r.verdict} — ${r.ruleText}`);
   const real = rows.filter((r) => !r.negativeControl);
   if (real.some((r) => r.verdict === "FAIL")) process.exitCode = 1;
-  // Негативний контроль, що отримав PASS, не спрацював: UAT не показав, що вміє падати.
-  const falsePass = rows.filter((r) => r.negativeControl && r.verdict === "PASS");
-  if (falsePass.length) {
-    console.error(`Негативний контроль не спрацював (PASS): ${falsePass.map((r) => r.caseId).join(", ")}`);
-    process.exitCode = 1;
-  }
-  // Контроль не запустився (впав setup) — його FAIL за R1 нічого не доводить.
-  const skippedNc = rows.filter((r) => r.negativeControl && r.assertions.status === "skipped");
-  if (negativeControls && skippedNc.length) {
-    console.error(`Негативний контроль не запустився: ${skippedNc.map((r) => r.caseId).join(", ")}`);
+  // Негативний контроль спрацював, лише коли його твердження справді впало (status "failed") і підсумок — FAIL.
+  // Пройшло (passed), не запустилось (skipped — впав setup), тайм-аут чи перерваний прогін нічого не доводять.
+  const brokenNc = rows.filter((r) => r.negativeControl && (r.assertions.status !== "failed" || r.verdict !== "FAIL"));
+  if (brokenNc.length) {
+    const list = brokenNc.map((r) => `${r.caseId} (твердження: ${r.assertions.status}, вердикт: ${r.verdict})`);
+    console.error(`Негативний контроль не спрацював: ${list.join(", ")}`);
     process.exitCode = 1;
   }
   // Playwright упав (setup, прибирання), а FAIL серед AC немає — прогін однаково невдалий.
