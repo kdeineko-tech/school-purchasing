@@ -56,9 +56,10 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
 - `.claude/commands/` — наші `requirements-sync.md` і `conformance.md` (у `.cursor/commands/` — посилання на них);
   `.claude/skills/` — наші скіли `spec-clarify` і `spec-review`; Cursor читає їх звідти ж. `openspec-*` і `/opsx*`
   у `.claude/` та `.cursor/` згенерував OpenSpec (однакові копії для двох інструментів) — вручну не редагуй.
-- Нові шари курсу — новими файлами: e2e-тести — `tests/e2e/*.spec.ts` (Vitest їх не запускає, і `ac:coverage`
-  не рахує їх як покриття AC, доки e2e не запускає окремий крок CI — тоді фільтр у `scripts/lib/test-titles.mjs`
-  розширюють разом із цим кроком), нові перевірки — окремим workflow у `.github/workflows/`. Jobs `spec`, `app`,
+- Нові шари курсу — новими файлами: e2e-тести — `tests/e2e/*.spec.ts` (Playwright; Vitest їх не запускає).
+  Рішення курсу WS8 (`docs/uat-guide.md`, «`ac:coverage` і `conformance.md`»): `ac:coverage` рахує їх як покриття AC
+  (`scripts/lib/test-titles.mjs`), а доказ прогону — звіт UAT на проді в `docs/qa/uat/<дата>/`, бо в CI e2e не
+  запускаються; нові перевірки — окремим workflow у `.github/workflows/`. Jobs `spec`, `app`,
   `conformance`, `db-check`, `db-deploy` у `ci.yml` не перейменовуй і не видаляй: на їхніх назвах тримається ruleset.
 
 ## Процес і ролі

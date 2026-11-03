@@ -104,6 +104,12 @@ if (!cases.length) {
     console.error(`Негативний контроль не спрацював (PASS): ${falsePass.map((r) => r.caseId).join(", ")}`);
     process.exitCode = 1;
   }
+  // Контроль не запустився (впав setup) — його FAIL за R1 нічого не доводить.
+  const skippedNc = rows.filter((r) => r.negativeControl && r.assertions.status === "skipped");
+  if (negativeControls && skippedNc.length) {
+    console.error(`Негативний контроль не запустився: ${skippedNc.map((r) => r.caseId).join(", ")}`);
+    process.exitCode = 1;
+  }
   // Playwright упав (setup, прибирання), а FAIL серед AC немає — прогін однаково невдалий.
   if (!negativeControls && pw.status !== 0 && !real.some((r) => r.verdict === "FAIL")) {
     console.error(`Playwright завершився з кодом ${pw.status}, хоча FAIL серед AC немає (setup або прибирання?).`);
