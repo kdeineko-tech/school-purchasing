@@ -1,0 +1,146 @@
+// npm run uat — UAT за AC на РОЗГОРНУТОМУ застосунку: запис → кадри «Тоді» → вердикт агента → звіт для PM.
+//   npm run uat -- --url https://<ваш-прод>.vercel.app      (або змінна UAT_BASE_URL; без неї — локальна збірка)
+//   npm run uat -- --url … --grep-invert '@writes'          (лише AC, що нічого не пишуть; решта аргументів → Playwright)
+//   npm run uat:nc -- --url …                               (негативні контролі; звіт у test-results/uat-report-nc/)
+// Кроки: playwright test → pack.mjs → review.mjs (claude -p) → combine.mjs → report.mjs.
+// Звіт пишеться завжди, навіть якщо тести червоні: FAIL — теж результат для PM. Код виходу 1, якщо є FAIL.
+import { execFileSync, spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { pack } from "./pack.mjs";
+import { review } from "./review.mjs";
+import { combine } from "./combine.mjs";
+import { report } from "./report.mjs";
+import { ROOT, WORK, rel } from "./lib.mjs";
+
+const argv = process.argv.slice(2);
+const take = (name) => {
+  const i = argv.indexOf(name);
+  if (i < 0) return undefined;
+  const [, value] = argv.splice(i, 2);
+  return value;
+};
+const flag = (name) => {
+  const i = argv.indexOf(name);
+  if (i >= 0) argv.splice(i, 1);
+  return i >= 0;
+};
+
+const url = (take("--url") ?? process.env.UAT_BASE_URL)?.replace(/\/+$/, "");
+const negativeControls = flag("--negative-controls");
+const skipReview = flag("--skip-review");
+const git = (...a) => {
+  try {
+    return execFileSync("git", a, { encoding: "utf8" }).trim();
+  } catch {
+    return null;
+  }
+};
+
+async function deployedSha(base) {
+  if (!base) return null;
+  try {
+    const res = await fetch(`${base}/api/health`, { redirect: "manual" });
+    if (!res.headers.get("content-type")?.includes("json")) return null;
+    return (await res.json()).sha ?? null;
+  } catch {
+    return null;
+  }
+}
+
+const startedAt = new Date().toISOString();
+const env = { ...process.env, UAT_NEGATIVE_CONTROLS: negativeControls ? "1" : "" };
+if (url) env.UAT_BASE_URL = url;
+else delete env.UAT_BASE_URL;
+
+// Журнал прибирання й результати — лише цього прогону: інакше «видалено» у звіті підсумовує адреси з попередніх
+// прогонів, а pack() прочитав би старий results.json, якщо Playwright завершився до запису звіту.
+for (const f of ["uat-cleanup.jsonl", "uat-cleanup.json", "results.json"]) {
+  rmSync(path.join(ROOT, "test-results", f), { force: true });
+}
+console.log(`UAT: ${url ?? "локальна збірка (npm run build && npm run start)"}${negativeControls ? " — негативні контролі" : ""}`);
+const cli = path.join(ROOT, "node_modules", "@playwright", "test", "cli.js");
+const pw = spawnSync(
+  process.execPath,
+  [cli, "test", `--project=${negativeControls ? "negative-controls" : "chromium"}`, ...argv],
+  { stdio: "inherit", env },
+);
+const playwrightMs = Date.now() - Date.parse(startedAt);
+
+const cases = pack();
+mkdirSync(WORK, { recursive: true });
+writeFileSync(
+  path.join(WORK, "run.json"),
+  JSON.stringify(
+    {
+      baseURL: url ?? "http://localhost:3000",
+      deployedSha: await deployedSha(url),
+      gitSha: git("rev-parse", "HEAD"),
+      gitBranch: git("rev-parse", "--abbrev-ref", "HEAD"),
+      gitDirty: Boolean(git("status", "--porcelain")),
+      startedAt,
+      playwrightMs,
+      playwrightExit: pw.status,
+      negativeControls,
+    },
+    null,
+    2,
+  ),
+);
+// process.exitCode, а не process.exit(): на Windows exit() після fetch падає з assertion libuv.
+if (!cases.length) {
+  console.error("Жодного AC-тесту в результатах Playwright — звіту не буде.");
+  process.exitCode = 1;
+} else {
+  if (!skipReview) await review();
+  const { outDir, rows } = report(combine(), { out: negativeControls ? "test-results/uat-report-nc" : undefined });
+  console.log(`\nЗвіт: ${rel(outDir)}/report.md`);
+  for (const r of rows) console.log(`  ${r.caseId}: ${r.verdict} — ${r.ruleText}`);
+  const real = rows.filter((r) => !r.negativeControl);
+  if (real.some((r) => r.verdict === "FAIL")) process.exitCode = 1;
+  // Негативний контроль спрацював, лише коли його твердження справді впало (status "failed") і підсумок — FAIL.
+  // Пройшло (passed), не запустилось (skipped — впав setup), тайм-аут чи перерваний прогін нічого не доводять.
+  const brokenNc = rows.filter((r) => r.negativeControl && (r.assertions.status !== "failed" || r.verdict !== "FAIL"));
+  if (brokenNc.length) {
+    const list = brokenNc.map((r) => `${r.caseId} (твердження: ${r.assertions.status}, вердикт: ${r.verdict})`);
+    console.error(`Негативний контроль не спрацював: ${list.join(", ")}`);
+    process.exitCode = 1;
+  }
+  // Playwright упав (setup, прибирання), а FAIL серед AC немає — прогін однаково невдалий.
+  if (!negativeControls && pw.status !== 0 && !real.some((r) => r.verdict === "FAIL")) {
+    console.error(`Playwright завершився з кодом ${pw.status}, хоча FAIL серед AC немає (setup або прибирання?).`);
+    process.exitCode = 1;
+  }
+  // У режимі NC код Playwright ненульовий за задумом (NC-1 падає), тож збій setup чи прибирання шукаємо окремо:
+  // впалий тест без анотації ac — це не очікуваний провал контролю.
+  if (negativeControls) {
+    const brokenInfra = infraFailures();
+    if (brokenInfra.length) {
+      console.error(`Під час негативних контролів упали службові тести: ${brokenInfra.join(", ")}`);
+      process.exitCode = 1;
+    }
+  }
+  if (real.some((r) => r.verdict === "NEEDS-HUMAN")) console.log("Є NEEDS-HUMAN: рішення — за PM (див. звіт).");
+}
+
+/** Назви тестів без анотації ac (setup, прибирання), що не пройшли, з test-results/results.json. */
+function infraFailures() {
+  const file = path.join(ROOT, "test-results", "results.json");
+  if (!existsSync(file)) return ["немає test-results/results.json"];
+  const failed = [];
+  const walk = (suite) => {
+    for (const spec of suite.specs ?? []) {
+      for (const t of spec.tests ?? []) {
+        // status тесту в JSON-звіті Playwright: expected | unexpected | flaky | skipped; unexpected — упав.
+        const isAc = t.annotations?.some((a) => a.type === "ac");
+        if (!isAc && t.status === "unexpected") failed.push(spec.title);
+      }
+    }
+    (suite.suites ?? []).forEach(walk);
+  };
+  const report = JSON.parse(readFileSync(file, "utf8"));
+  // Помилки поза тестами (необроблений виняток у worker, teardown fixture) Playwright пише у верхньорівневе errors.
+  if (report.errors?.length) failed.push("помилка Playwright поза тестами");
+  report.suites?.forEach(walk);
+  return failed;
+}

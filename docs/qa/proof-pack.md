@@ -9,7 +9,7 @@
 
 - Прод-URL: https://school-purchasing-lemon.vercel.app
 - Вимоги: https://github.com/ValiaBihun/2026-quitcode-dream-team · джерело: issues · знімок 2026-11-02
-- `/api/health` на момент UAT: <!-- заповнюємо в кроці C -->
+- `/api/health` на момент UAT: sha `56fad31`, env production, db ok, 03.11.2026 16:45 (Київ)
 
 ## 3 AC
 
@@ -137,7 +137,42 @@ Stryker на модулях наших AC (`--mutate src/lib/purchases/form.ts,s
 
 ## C. UAT на проді
 
-<!-- крок C: специфікації Playwright, звіт, кадри, вердикт агента, приймання PM -->
+Специфікація: `tests/e2e/purchases.spec.ts` (3 AC, тег `@uat`), вхід — `tests/e2e/auth.setup.ts` (роль `requester` =
+`pm-requester@example.test`, пароль — `DEMO_USER_PASSWORD` з `.env.local`, без запису). Прогін — `npm run uat -- --url
+https://school-purchasing-lemon.vercel.app --grep-invert '@writes'` у звичайному терміналі.
+
+| AC | Специфікація | Тест (твердження) | Агент | Вердикт | Кадр |
+|---|---|---|---|---|---|
+| AC-APR-04 | `tests/e2e/purchases.spec.ts` (AC-APR-04) | passed | Haiku: PASS | **PASS** (R6) | `docs/qa/uat/2026-11-03/frames/AC-APR-04-then-1.png` |
+| AC-FRM-06 | `tests/e2e/purchases.spec.ts` (AC-FRM-06) | passed | Haiku: PASS | **PASS** (R6) | `docs/qa/uat/2026-11-03/frames/AC-FRM-06-then-1.png` |
+| AC-FRM-03 | `tests/e2e/purchases.spec.ts` (AC-FRM-03) | passed | Haiku: PASS | **PASS** (R6) | `docs/qa/uat/2026-11-03/frames/AC-FRM-03-then-1.png` |
+
+- Звіт: `docs/qa/uat/2026-11-03/report.md` (і `manifest.json`), прод `56fad31`, 03.11.2026 16:45, Playwright 20,9 с.
+- **UAT знайшов ваду продукту.** Перший прогін на проді (до `56fad31`): AC-FRM-06 — **FAIL**, і твердження, і Haiku за
+  кадром — після «Add at least one line» відділ скидався на «Select a department» (React 19 скидає форму після дії
+  `<form action>`). Виправлення — kdeineko-tech/school-purchasing#56 (подання через `onSubmit` без автоскидання);
+  прогін на preview #56 — 3 з 3 PASS; на проді після деплою — 3 з 3 PASS (цей звіт). Unit- і page-тести (Vitest без
+  DOM) ваду не бачили.
+- **Збій інструмента в першому прогоні.** AC-APR-04 і AC-FRM-03: твердження пройшли, Haiku — PASS, але `afterEach`
+  (`attachRuntimeErrors` з матеріалів) чекав відповіді фонового запиту до тайм-ауту 60 с → R1 FAIL. Виправлено в
+  `tests/e2e/support/uat.ts`: відповідь кожного запиту — не довше 2 с, запит без відповіді не є 5xx.
+- Відео: вкладення в описі PR `task/uat` (не в git).
+- Рецензент: `claude-haiku-5-5` (суперечок не було, Sonnet не викликався); $0,2884 за 3 AC (ціни API; за підпискою — у
+  межах ліміту плану).
+- Негативний контроль: NC-1 (`tests/e2e/negative-controls.spec.ts`, `npm run uat:nc`) — у твердженні навмисно
+  «Access denied» замість «Not enough permissions»: твердження впало, **Haiku сказав PASS**, підсумок — **FAIL** (R1:
+  агент не перекриває впале твердження). Звіт NC — `test-results/uat-report-nc/report.md` (не в git), рядок — в описі PR.
+- Дані: лише читання, `@writes` немає; прибирання — 0 синтетичних акаунтів створено й лишилось.
+- Що агент не оцінює з кадру (лише твердження, `hidden`): «статуси заявок не змінилися» (AC-APR-04), «закупівлю не
+  подано» (AC-FRM-06), відсутність «Self-purchase» у нерозкритому нативному списку (AC-FRM-03).
+
+### Приймання PM
+
+| AC | Рішення PM | Посилання |
+|---|---|---|
+| AC-APR-04 | <!-- ✅ / ❌ / NEEDS-HUMAN → … --> | <!-- коментар-підпис або issue «Відхилення від вимог» --> |
+| AC-FRM-06 | <!-- ✅ / ❌ / NEEDS-HUMAN → … --> | <!-- коментар-підпис або issue «Відхилення від вимог» --> |
+| AC-FRM-03 | <!-- ✅ / ❌ / NEEDS-HUMAN → … --> | <!-- коментар-підпис або issue «Відхилення від вимог» --> |
 
 ## D. Eval рецензента
 
