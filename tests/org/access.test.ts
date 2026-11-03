@@ -3,7 +3,7 @@ import DepartmentsPage from "@/app/admin/departments/page";
 import { NoAccess } from "@/app/admin/no-access";
 import AdminHome from "@/app/admin/page";
 import StaffPage from "@/app/admin/staff/page";
-import { canOpenAdminPages, type AppRole } from "@/lib/org/access";
+import { canOpenAdminPages, canOpenApprovals, type AppRole } from "@/lib/org/access";
 import { MESSAGES } from "@/lib/org/messages";
 import { signIn } from "../support/viewer";
 
@@ -55,5 +55,16 @@ describe("доступ до сторінок адміністратора", () =
   it("деактивований адміністратор і гість не відкривають сторінки адміністратора", () => {
     expect(canOpenAdminPages({ role: "admin", isActive: false })).toBe(false);
     expect(canOpenAdminPages(null)).toBe(false);
+  });
+});
+
+describe("доступ до списку для рішення", () => {
+  it("AC-APR-04: заявник не відкриває список для рішення", () => {
+    expect(canOpenApprovals({ role: "requester", isActive: true })).toBe(false);
+  });
+
+  it("схвалювач і адміністратор відкривають список для рішення", () => {
+    expect(canOpenApprovals({ role: "approver", isActive: true })).toBe(true);
+    expect(canOpenApprovals({ role: "admin", isActive: true })).toBe(true);
   });
 });

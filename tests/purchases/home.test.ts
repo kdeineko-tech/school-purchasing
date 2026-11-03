@@ -134,6 +134,16 @@ describe("головна — робоча панель", () => {
     expect(links(html, "decision-list")).toBe(1);
   });
 
+  it("AC-APR-01: на картці для рішення — кількість заявок відділу з бази", async () => {
+    signIn(viewer(P2, "approver"));
+    setDb({ forDecision: [row(1, { author_id: P2 }), row(2), row(3)], approves: [PRIMARY.id] });
+
+    const html = renderToStaticMarkup(await Home());
+
+    expect(html).toMatch(/data-slot="badge"[^>]*>3</);
+    expect(html).toContain('href="/approvals"');
+  });
+
   it("AC-FRM-10: на головній — не більше п'яти власних заявок, новіші першими, і посилання на всі", async () => {
     signIn(viewer(P1, "requester"));
     setDb({ mine: [1, 2, 3, 4, 5, 6, 7].map((n) => row(n)) });

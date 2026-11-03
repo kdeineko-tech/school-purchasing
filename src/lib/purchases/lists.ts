@@ -86,13 +86,12 @@ export async function loadDecisionRequests(
   const approvedDepartmentIds = (approved ?? []).map((r) => r.department_id);
   if (approvedDepartmentIds.length === 0) return { rows: [], total: 0, departmentName: new Map() };
 
-  // Фільтри запиту — ті самі умови, що й decisionList, тож count бази дорівнює довжині повного списку.
+  // Фільтри запиту — відділи переглядача й статус; власні заявки відсіює decisionList (canDecide), тож запит простіший.
   const purchasesQuery = supabase
     .from("purchases")
     .select("id, author_id, department_id, purchase_type, status, created_at", { count: "exact" })
     .in("department_id", approvedDepartmentIds)
     .eq("status", "awaiting_approval")
-    .neq("author_id", viewerId)
     .order("created_at", { ascending: true });
   const [{ data: purchases, count, error: purchasesError }, { data: departments, error: departmentsError }] =
     await Promise.all([

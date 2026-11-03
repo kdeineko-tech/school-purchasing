@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { NoAccess } from "@/app/admin/no-access";
 import { PageShell } from "@/components/page-shell";
 import { Card, EmptyState } from "@/components/ui";
+import { canOpenApprovals } from "@/lib/org/access";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { loadDecisionRequests } from "@/lib/purchases/lists";
@@ -17,7 +18,7 @@ export const metadata: Metadata = { title: "Approvals" };
 export default async function ApprovalsPage() {
   const viewer = await getViewer();
   if (!viewer) redirect("/login");
-  if (viewer.role === "requester") return <NoAccess viewer={viewer} />;
+  if (!canOpenApprovals(viewer)) return <NoAccess viewer={viewer} />;
 
   const { rows, departmentName, authorName } = await loadDecisionRequests(await createClient(), viewer.id);
 
