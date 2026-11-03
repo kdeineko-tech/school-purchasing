@@ -2,7 +2,9 @@
 
 // Форма закупівлі. Поля керовані: після відмови (наприклад, «Add at least one line») обрані відділ, тип і рядки
 // лишаються у формі (AC-FRM-06). Рядки йдуть у server action одним прихованим полем JSON.
-import { useActionState, useState } from "react";
+// Подаємо через onSubmit, а не `<form action>`: після дії `<form action>` React 19 скидає форму до значень першого
+// рендеру, і вибраний відділ ставав «Select a department» (знайшов UAT AC-FRM-06 на проді, WS8).
+import { startTransition, useActionState, useState, type FormEvent } from "react";
 import { Alert, Button, Input, Select } from "@/components/ui";
 import type { Department } from "@/lib/org/membership";
 import { PURCHASE_TYPE_LABELS, type PurchaseLineInput, type PurchaseTypeId } from "@/lib/purchases/form";
@@ -25,8 +27,15 @@ export function PurchaseForm({
   const updateLine = (index: number, field: keyof PurchaseLineInput, value: string) =>
     setLines((current) => current.map((line, i) => (i === index ? { ...line, [field]: value } : line)));
 
+  // Перевірку required браузер робить до події submit; далі — та сама server action, але без автоскидання форми.
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startTransition(() => formAction(formData));
+  };
+
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form onSubmit={submit} className="flex flex-col gap-5">
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1.5 text-sm font-medium">
           Department
