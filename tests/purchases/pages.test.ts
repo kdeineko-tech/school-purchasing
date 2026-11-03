@@ -68,6 +68,17 @@ describe("форма закупівлі", () => {
     expect(html).not.toContain("Self-purchase");
   });
 
+  // Контрольна пара до AC-FRM-03: «лише Purchasing department» має залежати саме від дозволу в профілі. Без цього тесту
+  // мутант, що губить дозвіл при читанні рядка профілю (permissionsFromRow → {}), лишав AC-FRM-03 зеленим (WS8, Stryker).
+  it("з дозволом «Self-purchase» у профілі в виборі типу є обидва типи", async () => {
+    useDb({ members: [{ profile_id: P1, department_id: PRIMARY.id }], selfPurchase: true });
+
+    const html = renderToStaticMarkup(await NewPurchasePage());
+
+    expect(html).toContain("Purchasing department");
+    expect(html).toContain("Self-purchase");
+  });
+
   it("AC-FRM-05: працівник без відділів бачить повідомлення, а полів форми немає", async () => {
     useDb({ members: [] });
 
