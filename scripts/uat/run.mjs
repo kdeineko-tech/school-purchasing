@@ -138,6 +138,9 @@ function infraFailures() {
     }
     (suite.suites ?? []).forEach(walk);
   };
-  JSON.parse(readFileSync(file, "utf8")).suites?.forEach(walk);
+  const report = JSON.parse(readFileSync(file, "utf8"));
+  // Помилки поза тестами (необроблений виняток у worker, teardown fixture) Playwright пише у верхньорівневе errors.
+  if (report.errors?.length) failed.push("помилка Playwright поза тестами");
+  report.suites?.forEach(walk);
   return failed;
 }
