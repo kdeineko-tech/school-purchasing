@@ -127,8 +127,11 @@ function runTests(files, label) {
   );
   const error = loadProblems(report, files);
   if (error) return { error, failed };
-  // Ненульовий код без жодного тесту, що впав (необроблена помилка Vitest), — ERROR, а не «зелено» чи SURVIVED.
-  if (!failed.length && (run.error || run.status !== 0)) {
+  // Код 1 — звичайне «тест упав» (так Vitest завершується на кожному вбитому мутанті), тож лише він лишає KILLED.
+  // Vitest не запустився, вбитий сигналом чи інший код — прогін недійсний, навіть якщо якийсь тест упав.
+  const crashed = run.error || run.signal || (run.status !== 0 && run.status !== 1);
+  // Код 1 без жодного тесту, що впав (необроблена помилка Vitest), — теж ERROR, а не «зелено» чи SURVIVED.
+  if (crashed || (run.status === 1 && !failed.length)) {
     return { error: `Vitest завершився з помилкою (код виходу ${run.status ?? run.signal})`, failed };
   }
   return { error: null, failed };
