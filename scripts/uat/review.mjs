@@ -91,7 +91,9 @@ async function reviewCase(caseDir, { model, escalate }) {
     const second = await runClaude(caseDir, SONNET);
     save(second);
     console.log(`${line(second)} (суперечка → Sonnet)`);
-  } else {
+  } else if (model !== SONNET) {
+    // Старий результат Sonnet прибираємо лише тоді, коли цей прогін — інша модель без ескалації: запуск з
+    // --model claude-sonnet-5-5 щойно записав саме цей файл.
     rmSync(path.join(caseDir, `review.${SONNET}.json`), { force: true });
   }
 }
