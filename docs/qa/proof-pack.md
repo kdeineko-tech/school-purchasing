@@ -76,7 +76,64 @@ audit` валить лише нові. У першому прогоні до `he
 
 ## B. Якість тестів
 
-<!-- крок B: рівень для кожного AC, покриття, доказ мутацією -->
+PR: гілка `task/test-quality` (Stryker 10.1.1, `scripts/mutation-check.mjs` з матеріалів курсу, мутанти на правила наших AC).
+
+### Рівень для кожного AC
+
+| AC | Де живе правило | Рівень | Чому | Тест |
+|---|---|---|---|---|
+| AC-APR-04 | сторінка `src/app/approvals/page.tsx:20` (`role === "requester"` → відмова); політика `purchases_select_visible` (`20261025185729_purchases.sql:87`); `decide_purchase` (`20261025223225_purchase_decisions.sql:38`) | база (PGlite) + сторінка; текст на екрані — UAT | відмова живе в RLS і функції бази: без тесту бази обхід сторінки (прямий `select` чи `rpc`) нічим не доведено | [tests/db/decisions.test.ts:91](https://github.com/kdeineko-tech/school-purchasing/blob/dba9155/tests/db/decisions.test.ts#L91), [tests/db/decisions.test.ts:98](https://github.com/kdeineko-tech/school-purchasing/blob/dba9155/tests/db/decisions.test.ts#L98), [tests/purchases/decisions.test.ts:187](https://github.com/kdeineko-tech/school-purchasing/blob/dba9155/tests/purchases/decisions.test.ts#L187) |
+| AC-FRM-06 | `validateSubmission` (`src/lib/purchases/form.ts:76`); `submit_purchase` — `NO_LINES` (`20261026100553_purchase_line_fields.sql:57`) | unit + база (PGlite) + дія | сервер відмовляє ще до бази, база — вдруге для прямого `rpc`; збережені значення форми — UAT | [tests/purchases/form.test.ts:72](https://github.com/kdeineko-tech/school-purchasing/blob/dba9155/tests/purchases/form.test.ts#L72), [tests/purchases/submit.test.ts:93](https://github.com/kdeineko-tech/school-purchasing/blob/dba9155/tests/purchases/submit.test.ts#L93), [tests/db/purchases.test.ts:82](https://github.com/kdeineko-tech/school-purchasing/blob/dba9155/tests/db/purchases.test.ts#L82) |
+| AC-FRM-03 | `formPurchaseTypes` (`src/lib/purchases/form.ts:60`) і `permissionsFromRow` (`src/lib/org/permissions.ts:37`) — список типів з дозволу в профілі | unit + сторінка | правило — чистий TS; подання напряму в обхід форми — AC-FRM-04 (не з наших 3) | [tests/purchases/form.test.ts:42](https://github.com/kdeineko-tech/school-purchasing/blob/dba9155/tests/purchases/form.test.ts#L42), [tests/purchases/pages.test.ts:62](https://github.com/kdeineko-tech/school-purchasing/blob/dba9155/tests/purchases/pages.test.ts#L62) + нова контрольна пара `tests/purchases/pages.test.ts:73` |
+
+### Покриття
+
+`npm run test:coverage` після PR (разом: рядки 81 %, гілки 68 %; підлога для 10 доменних модулів тримається).
+
+| Файл за AC | Рядки | Гілки | Чим доведено, якщо нижче |
+|---|---|---|---|
+| `src/lib/purchases/form.ts` | 100 % | 96 % | — (у `FLOORED`) |
+| `src/lib/org/permissions.ts` | 100 % | 100 % | — (у `FLOORED`) |
+| `src/lib/purchases/options.ts` | 100 % | 62 % | гілки — помилки читання бази; правило AC-FRM-03 — у `formPurchaseTypes` |
+| `src/app/approvals/page.tsx` | 100 % | 83 % | гілка «не увійшов» — AC-APR-04 її не стосується; відмова — RLS і `decide_purchase` (SQL-мутанти A1, A2) |
+| `src/app/purchases/actions.ts` | 97 % | 82 % | `NO_LINES` у базі — SQL-мутант F1 |
+| `src/app/purchases/new/purchase-form.tsx` | 50 % | 63 % | клієнтська форма (стан полів після помилки) — UAT AC-FRM-06 |
+| політики RLS і функції SQL | — | — | JS-покриття їх не бачить: SQL-мутації нижче |
+
+### Доказ мутацією
+
+Stryker на модулях наших AC (`--mutate src/lib/purchases/form.ts,src/lib/org/permissions.ts,src/lib/org/access.ts`):
+**92,67 % → 94,00 %** (139 → 141 вбитих зі 150; ще 4 мутанти не компілюються — `errors`); `permissions.ts` 90,48 % → **100 %**.
+
+| Мутант (файл:рядок, що змінено) | AC під загрозою | До | Тест, посилений з тексту AC | Після |
+|---|---|---|---|---|
+| `src/lib/org/permissions.ts:42` BlockStatement → `{}` і `:43` ObjectLiteral → `{}` (`permissionsFromRow` губить дозволи з рядка профілю) | AC-FRM-03 — нерозрізнений вхід: тест AC-FRM-03 бере працівника **без** дозволу, тож мутант «у всіх немає дозволів» дає той самий список | вижили (2) | `tests/purchases/pages.test.ts:73` «AC-FRM-03: контрольна пара — з дозволом «Self-purchase» у профілі в виборі типу є обидва типи» (до «лише Purchasing department» з AC-FRM-03); перевірено вручну: червоний на мутанті, зелений на коді | убиті |
+
+Інші вижилі в `form.ts` (8) — не на рядках наших AC або еквівалентні:
+
+| Мутант | Категорія | Причина |
+|---|---|---|
+| `form.ts:87` `typeof raw !== "string"` → `false`, `form.ts:91` `catch {}` → порожній (`parseLines`, шлях AC-FRM-06) | еквівалентний | не-рядок чи зіпсований JSON однаково дають `[]`: `JSON.parse` нерядка або кидає (→ `catch`), або повертає не-масив (→ `!Array.isArray` → `[]`); порожній `catch` теж веде до `return []` |
+| `form.ts:95` `text()` (2) | прогалина AC-FRM-15 (не з наших 3) | поле рядка не-рядком у JSON; борг для AC-FRM-15 |
+| `form.ts:78` `every` → `some` | прогалина AC-FRM-15 (не з наших 3) | у тестах AC-FRM-15 один рядок, а на одному рядку `every` і `some` однакові; потрібен тест з двома рядками; борг |
+| `form.ts:55` сортування відділів адміністратора (2) | не наш AC (AC-ORG-22) | порядок у списку не перевіряється; борг |
+| `form.ts:26`, `form.ts:32` формат дати подання | не наш AC (AC-FRM-10) | жоден тест не перевіряє результат `formatSubmittedAt`; борг |
+
+- SQL-мутації (`npm run mutation:sql -- --markdown`), гарнес — наш `tests/db/supabase-pglite.ts`:
+
+| Мутант | AC | Що зламано | Вердикт | Який тест упав |
+|---|---|---|---|---|
+| A1 | AC-APR-04 | `decide_purchase`: вирішує будь-хто з відділу заявки, а не лише його схвалювач (прибрано `and m.approves`) | KILLED | AC-APR-04: працівник 1 з роллю requester не вирішує заявку — FORBIDDEN, статус той самий |
+| A2 | AC-APR-04 | `purchases_select_visible`: заявки відділу бачить будь-хто з входом, а не лише схвалювач відділу | KILLED | AC-APR-03: Марія не бачить заявки відділу «Office» за прямим запитом; AC-APR-04: заявник не бачить чужих заявок свого відділу, тож і списку для рішення |
+| F1 | AC-FRM-06 | `submit_purchase`: порожній масив рядків більше не дає `NO_LINES` | KILLED | AC-FRM-06: закупівля без жодного рядка — NO_LINES, нової заявки немає (і для NULL чи не-масиву) |
+
+  Мутаційний бал SQL: 3 з 3 (100 %), ≈3 с. AC-FRM-03 у SQL правила не має (подання в обхід форми — AC-FRM-04).
+- Еквівалентні мутанти: `form.ts:87` і `form.ts:91` (вище); `Stryker disable` не додавали — код не змінюємо, причину
+  записано тут.
+- Stryker і тест AC-LANG-01: `tests/org/english.test.ts` сканує файли через `git ls-files`, а в пісочниці Stryker
+  `.git` немає — тест виключено лише з `vitest.stryker.config.mts` (з причиною); у `npm test` і CI він працює.
+- Борг з треку A: функції `addRequester` / `removeRequester` у `src/lib/org/membership.ts` викликають лише тести
+  (дії пишуть у базу напряму) — частина тестів AC-ORG-01/03 перевіряє модель; не наші 3 AC, окрема задача.
 
 ## C. UAT на проді
 
