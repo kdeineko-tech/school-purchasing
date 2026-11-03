@@ -24,17 +24,24 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { mutants } from "./mutants.mjs";
 
-const args = process.argv.slice(2);
-const option = (name) => (args.includes(name) ? args[args.indexOf(name) + 1] : null);
-const only = option("--only")?.split(",").map((s) => s.trim());
-const kind = option("--kind");
-const jsonOut = option("--json");
-const markdown = args.includes("--markdown");
-
 const fail = (message) => {
   console.error(`✗ ${message}`);
   process.exit(2);
 };
+
+const args = process.argv.slice(2);
+// Прапорець без значення (`--only` в кінці чи перед іншим прапорцем) — помилка, а не «без обмежень»: інакше
+// `--only` без ID мовчки запустив би всі мутанти.
+const option = (name) => {
+  if (!args.includes(name)) return null;
+  const value = args[args.indexOf(name) + 1];
+  if (value === undefined || value.startsWith("--") || value.trim() === "") fail(`Прапорець ${name} потребує значення`);
+  return value;
+};
+const only = option("--only")?.split(",").map((s) => s.trim());
+const kind = option("--kind");
+const jsonOut = option("--json");
+const markdown = args.includes("--markdown");
 
 const selected = mutants.filter((m) => (!only || only.includes(m.id)) && (!kind || m.kind === kind));
 if (only) {
@@ -118,7 +125,13 @@ function runTests(files, label) {
   const failed = report.testResults.flatMap((f) =>
     f.assertionResults.filter((a) => a.status === "failed").map((a) => a.title),
   );
-  return { error: loadProblems(report, files), failed };
+  const error = loadProblems(report, files);
+  if (error) return { error, failed };
+  // Ненульовий код без жодного тесту, що впав (необроблена помилка Vitest), — ERROR, а не «зелено» чи SURVIVED.
+  if (!failed.length && (run.error || run.status !== 0)) {
+    return { error: `Vitest завершився з помилкою (код виходу ${run.status ?? run.signal})`, failed };
+  }
+  return { error: null, failed };
 }
 
 // 0. Прогін без мутацій: тести мутантів мають бути зеленими на чистому коді.
