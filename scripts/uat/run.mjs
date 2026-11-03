@@ -5,7 +5,7 @@
 // Кроки: playwright test → pack.mjs → review.mjs (claude -p) → combine.mjs → report.mjs.
 // Звіт пишеться завжди, навіть якщо тести червоні: FAIL — теж результат для PM. Код виходу 1, якщо є FAIL.
 import { execFileSync, spawnSync } from "node:child_process";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { pack } from "./pack.mjs";
 import { review } from "./review.mjs";
@@ -111,5 +111,33 @@ if (!cases.length) {
     console.error(`Playwright завершився з кодом ${pw.status}, хоча FAIL серед AC немає (setup або прибирання?).`);
     process.exitCode = 1;
   }
+  // У режимі NC код Playwright ненульовий за задумом (NC-1 падає), тож збій setup чи прибирання шукаємо окремо:
+  // впалий тест без анотації ac — це не очікуваний провал контролю.
+  if (negativeControls) {
+    const brokenInfra = infraFailures();
+    if (brokenInfra.length) {
+      console.error(`Під час негативних контролів упали службові тести: ${brokenInfra.join(", ")}`);
+      process.exitCode = 1;
+    }
+  }
   if (real.some((r) => r.verdict === "NEEDS-HUMAN")) console.log("Є NEEDS-HUMAN: рішення — за PM (див. звіт).");
+}
+
+/** Назви тестів без анотації ac (setup, прибирання), що не пройшли, з test-results/results.json. */
+function infraFailures() {
+  const file = path.join(ROOT, "test-results", "results.json");
+  if (!existsSync(file)) return ["немає test-results/results.json"];
+  const failed = [];
+  const walk = (suite) => {
+    for (const spec of suite.specs ?? []) {
+      for (const t of spec.tests ?? []) {
+        // status тесту в JSON-звіті Playwright: expected | unexpected | flaky | skipped; unexpected — упав.
+        const isAc = t.annotations?.some((a) => a.type === "ac");
+        if (!isAc && t.status === "unexpected") failed.push(spec.title);
+      }
+    }
+    (suite.suites ?? []).forEach(walk);
+  };
+  JSON.parse(readFileSync(file, "utf8")).suites?.forEach(walk);
+  return failed;
 }
