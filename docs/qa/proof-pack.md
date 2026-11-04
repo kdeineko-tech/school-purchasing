@@ -176,4 +176,30 @@ https://school-purchasing-lemon.vercel.app --grep-invert '@writes'` у звич�
 
 ## D. Eval рецензента
 
-<!-- крок D: гілка з 3 вадами й приманкою, таблиця з цитатами, правило, повторний прогін -->
+- PR з вадами (не злитий): https://github.com/kdeineko-tech/school-purchasing/pull/58 — гілка `task/approvals-polish`;
+  усі вади пройшли обов'язкові перевірки CI, включно з тестами бази на PGlite з новою міграцією.
+- Ключ і таблиця: https://github.com/kdeineko-tech/school-purchasing/pull/58#issuecomment-6619467379
+- Рецензенти: CodeRabbit (`.coderabbit.yaml`, профіль ASSERTIVE) і `/code-review high` (`claude -p`, лише читання,
+  `--setting-sources project`, модель claude-opus-5-5: 72 с / $0,52 і 64 с / $0,45).
+
+| # | Вада (ключ) | CodeRabbit | `/code-review high` |
+|---|---|---|---|
+| 1 | права в даних: `supabase/migrations/20261103160000_purchases_select_policy.sql` — політика без `is_active_user()` | знайшов (Major, CWE-862): «Деактивований користувач із чинним JWT може читати власні заявки або заявки свого відділу» | знайшов: «Deactivated users can read purchases again, even though the comment says visibility is unchanged» |
+| 2 | логіка: `src/lib/purchases/lists.ts` — без фільтра `.neq("author_id")` лічильник рахує власні заявки (AC-APR-01) | пропустив і закріпив: «Збережіть поточний department-wide `total`… тести очікують `3`, а не `2`» | знайшов: «The "Awaiting your decision" number is now too high» |
+| 3 | тести: `tests/purchases/home.test.ts` — новий тест AC-APR-01 перевіряє мок і очікує 3 | пропустив: посаджений тест став аргументом | знайшов: «The new home test locks in the wrong count… The fake database ignores `.neq`» |
+| П | приманка: `canOpenApprovals` (`src/lib/org/access.ts`) — поведінка та сама | шум: «Додайте AC ID до назви тесту»; хибної тривоги щодо прав немає | порада, не вада: «canOpenApprovals isn't reused», «ignores isActive» |
+
+- Інші знахідки: CodeRabbit — «Оновіть матрицю відповідності для AC-APR-01» (процедурне, слушне для справжнього PR);
+  `/code-review` — наслідок вади 2 з `limit` 5 (слушна), застарілий коментар моку (слушна).
+- Правило, що закриває пропуск: kdeineko-tech/school-purchasing#59 (`AGENTS.md`, «Процес і ролі») — лічильник і список
+  рахуються з тих самих фільтрів запиту; фільтр, перенесений у TS, — «must fix»; тест на моках, що ігнорують аргументи
+  `.eq/.neq/.in`, фільтра не доводить, очікуване число — з тексту AC.
+- Повторний прогін (після `git merge main`, коміт `94f6004`):
+  - CodeRabbit (`@coderabbitai full review`) — вада 2 **знайдена**: «Виключіть власні заявки з кількості для рішення…
+    Поверніть фільтр до запиту»; вада 3 — частково («Оновіть очікування в `tests/purchases/home.test.ts`»); вада 1 —
+    тред з першого прогону відкритий;
+  - `/code-review high` — усі 3, вада 2 піднялась на 1-ше місце з цитатою правила («must fix»), вада 3 — з цитатою
+    «Тест на моках Supabase… фільтра не доводить».
+- Висновок: `/code-review high` надійніший на логіці й тестах; CodeRabbit сильний на безпеці, але посаджений тест його
+  переконав. Правило закрило пропуск щодо лічильника; «тест перевіряє мок» CodeRabbit і з правилом бачить лише частково.
+  Обидва рецензенти дорадчі — жодна вада не зупинила CI, тож рішення лишається за воротами й людиною.
