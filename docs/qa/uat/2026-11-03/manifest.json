@@ -1,0 +1,129 @@
+{
+  "kind": "uat",
+  "generatedAt": "2026-11-03T14:46:08.218Z",
+  "baseURL": "https://school-purchasing-lemon.vercel.app",
+  "deployedSha": "56fad31dad681d35139f51732c63ef64ceb3958a",
+  "testsCommit": "420568d215a461bb0bbfea6b3a95343b0cba48ea",
+  "reviewer": {
+    "model": "claude-haiku-5-5",
+    "disputes": "claude-sonnet-5-5"
+  },
+  "note": "Відео й траси не в git (test-results/ локально, артефакт CI). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "results": [
+    {
+      "id": "AC-APR-04",
+      "proof": "AC-APR-04",
+      "title": "AC-APR-04: працівник 1 з роллю requester відкриває список для рішення за прямим посиланням — «Not enough permissions», жодної заявки",
+      "screenshot": "docs/qa/uat/2026-11-03/frames/AC-APR-04-then-1.png",
+      "video": "test-results/artifacts/purchases-AC-APR-04-праців-c4974--permissions»-жодної-заявки-chromium/video.webm",
+      "trace": "test-results/artifacts/purchases-AC-APR-04-праців-c4974--permissions»-жодної-заявки-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі /approvals видно картку з написом «Not enough permissions» і посиланням «Back to home», а заявок у списку немає. Текст збігається з англійським формулюванням PM посимвольно. Дві частини «Тоді» про відсутність заявок і незмінені статуси не видно з кадру, тому їх не оцінено."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Not enough permissions",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 4136,
+      "reviewCostUsd": 0.09477,
+      "reviewWallMs": 7409
+    },
+    {
+      "id": "AC-FRM-03",
+      "proof": "AC-FRM-03",
+      "title": "AC-FRM-03: без ролі admin і без дозволу «Self-purchase» у виборі типу лише «Purchasing department»",
+      "screenshot": "docs/qa/uat/2026-11-03/frames/AC-FRM-03-then-1.png",
+      "video": "test-results/artifacts/purchases-AC-FRM-03-без-ро-cb5b7-ише-«Purchasing-department»-chromium/video.webm",
+      "trace": "test-results/artifacts/purchases-AC-FRM-03-без-ро-cb5b7-ише-«Purchasing-department»-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі /purchases/new видно поле «Purchase type», у якому вибрано «Purchasing department». Нативний список не розкритий, тож відсутність «Self-purchase» з кадру не підтверджується і оцінена як не з кадрів."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Purchase type",
+          "onPage": true
+        },
+        {
+          "quote": "Purchasing department",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 3952,
+      "reviewCostUsd": 0.09704,
+      "reviewWallMs": 7402
+    },
+    {
+      "id": "AC-FRM-06",
+      "proof": "AC-FRM-06",
+      "title": "AC-FRM-06: закупівля без жодного рядка не подається — «Add at least one line», відділ і тип лишаються у формі",
+      "screenshot": "docs/qa/uat/2026-11-03/frames/AC-FRM-06-then-1.png",
+      "video": "test-results/artifacts/purchases-AC-FRM-06-закупі-ff45d-діл-і-тип-лишаються-у-формі-chromium/video.webm",
+      "trace": "test-results/artifacts/purchases-AC-FRM-06-закупі-ff45d-діл-і-тип-лишаються-у-формі-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі frame-then-1.png сторінка /purchases/new показує червоне повідомлення «Add at least one line», у полі Department обрано «Primary School», у полі Purchase type — «Purchasing department». Текст повідомлення англійський, але ac.md прямо називає його відповідником PM-формулювання «Додайте хоча б один рядок», тож невідповідності немає. Факт неподання закупівлі на кадрі не оцінювався (це не з кадрів)."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Add at least one line",
+          "onPage": true
+        },
+        {
+          "quote": "Primary School",
+          "onPage": true
+        },
+        {
+          "quote": "Purchasing department",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 3780,
+      "reviewCostUsd": 0.0966,
+      "reviewWallMs": 7411
+    }
+  ],
+  "negativeControls": [],
+  "cleanup": {
+    "at": "2026-11-03T14:46:00.242Z",
+    "deleted": [],
+    "remaining": [],
+    "leftoverRequests": 0
+  }
+}
