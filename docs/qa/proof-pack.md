@@ -185,7 +185,7 @@ https://school-purchasing-lemon.vercel.app --grep-invert '@writes'` у звич�
 | # | Вада (ключ) | CodeRabbit | `/code-review high` |
 |---|---|---|---|
 | 1 | права в даних: `supabase/migrations/20261103160000_purchases_select_policy.sql` — політика без `is_active_user()` | знайшов (Major, CWE-862): «Деактивований користувач із чинним JWT може читати власні заявки або заявки свого відділу» | знайшов: «Deactivated users can read purchases again, even though the comment says visibility is unchanged» |
-| 2 | логіка: `src/lib/purchases/lists.ts` — без `.neq("author_id")` лічильник рахує власні заявки (AC-APR-01) | пропустив і закріпив: «Збережіть поточний department-wide `total`… тести очікують `3`, а не `2`» | знайшов: «The "Awaiting your decision" number is now too high» |
+| 2 | логіка: `src/lib/purchases/lists.ts` — без фільтра `.neq("author_id")` лічильник рахує власні заявки (AC-APR-01) | пропустив і закріпив: «Збережіть поточний department-wide `total`… тести очікують `3`, а не `2`» | знайшов: «The "Awaiting your decision" number is now too high» |
 | 3 | тести: `tests/purchases/home.test.ts` — новий тест AC-APR-01 перевіряє мок і очікує 3 | пропустив: посаджений тест став аргументом | знайшов: «The new home test locks in the wrong count… The fake database ignores `.neq`» |
 | П | приманка: `canOpenApprovals` (`src/lib/org/access.ts`) — поведінка та сама | шум: «Додайте AC ID до назви тесту»; хибної тривоги щодо прав немає | порада, не вада: «canOpenApprovals isn't reused», «ignores isActive» |
 
