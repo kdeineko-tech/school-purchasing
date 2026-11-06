@@ -79,8 +79,9 @@ ValiaBihun/2026-quitcode-dream-team#49.
 
 ### Requirement: Нові статуси зрізу 3 англійською текстом
 
-The system SHALL підписувати статуси «Частково схвалено» й «Повернено на доопрацювання» у списку, на сторінці заявки та в
-історії текстом «Partially approved» і «Returned for revision», а не лише кольором.
+The system SHALL підписувати статуси «Частково схвалено» й «Повернено на доопрацювання» у списку й на сторінці заявки
+текстом «Partially approved» і «Returned for revision», а не лише кольором; в історії — так само, коли в ній з'являться
+записи рішень (після WS9).
 
 #### Scenario: AC-LANG-09 Статуси «Partially approved» і «Returned for revision»
 
