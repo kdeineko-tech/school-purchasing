@@ -1,14 +1,16 @@
-// Рядки списку заявок: відділ, автор (лише у списку для рішення, AC-APR-08), тип · дата подання, статус текстом
+// Рядки списку заявок: номер «PUR-…» (AC-HIST-01), відділ, автор (лише у списку для рішення, AC-APR-08), тип · дата подання, статус текстом
 // (AC-FRM-10, AC-LANG-06).
 // Спільні для «My requests», «Approvals» і головної. Коли місця досить (контейнер ширший за 36rem — повні сторінки
 // списків), рядки вишикувані в колонки з заголовками, як таблиця; у вузьких картках головної й на телефоні —
 // компактний рядок.
 import Link from "next/link";
+import { formatNumber } from "@/lib/purchases/amounts";
 import type { PurchaseListData } from "@/lib/purchases/lists";
 import { formatSubmittedAt, PURCHASE_TYPE_LABELS, type PurchaseTypeId } from "@/lib/purchases/form";
 import { StatusBadge } from "./status-badge";
 
-const COLUMNS = "@xl:grid @xl:grid-cols-[minmax(0,2fr)_minmax(0,1.4fr)_minmax(0,1.2fr)_9rem] @xl:items-center @xl:gap-4";
+const COLUMNS =
+  "@xl:grid @xl:grid-cols-[5rem_minmax(0,2fr)_minmax(0,1.4fr)_minmax(0,1.2fr)_9rem] @xl:items-center @xl:gap-4";
 
 export function PurchaseList({
   rows,
@@ -22,6 +24,7 @@ export function PurchaseList({
         aria-hidden
         className={`hidden border-b border-border pb-2 text-xs font-medium tracking-wide text-muted-foreground uppercase ${COLUMNS}`}
       >
+        <span>Number</span>
         <span>{authorName ? "Department · Author" : "Department"}</span>
         <span>Purchase type</span>
         <span>Submitted</span>
@@ -37,6 +40,9 @@ export function PurchaseList({
                 href={`/purchases/${p.id}`}
                 className={`flex flex-wrap items-center justify-between gap-2 py-3 text-sm hover:text-primary ${COLUMNS}`}
               >
+                <span className="font-medium tabular-nums" data-testid="purchase-number">
+                  {formatNumber(p.number)}
+                </span>
                 <div className="flex min-w-0 flex-col">
                   <span className="font-medium">{departmentName.get(p.department_id) ?? "—"}</span>
                   {authorName && (
