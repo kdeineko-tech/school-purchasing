@@ -61,9 +61,9 @@ ADR 0005 «Історія заявки — записи функцій бази�
 
 - Компоненти — лише з `@/components/ui` (DESIGN.md); статус заявки й рядка — `StatusBadge` з текстом (AC-LANG-09):
   «Partially approved», «Returned for revision»; статус рядка — «Approved» / «Rejected» / без позначки до рішення.
-- Запис історії (#74): «Submitted · PM Demo Requester · 05.11.2026, 14:32» — підпис «Submitted» (таблиця #49), ім'я
-  автора (без імені — email, як `purchase_author_names` і AC-APR-09), дата `dd.mm.yyyy` як у списках зрізу 2, час
-  24-годинний за `America/New_York` без позначки поясу (`formatSubmittedAt` + час).
+- Запис історії (AC-HIST-06, #74): «Submitted · PM Demo Requester · 05.11.2026, 14:32» — підпис «Submitted» (таблиця
+  #49), ім'я автора (без імені — email, як `purchase_author_names` і AC-APR-09), дата `dd.mm.yyyy` як у списках
+  зрізу 2, час 24-годинний за `America/New_York` без позначки поясу (`formatSubmittedAt` + час).
 - Суми — у доларах США, у доменному модулі в цілих центах (`Math.round(quantity × price × 100)`), показ — два знаки:
   сума заявки — завжди за всіма рядками, зокрема для «Partially approved» (#65).
 - Форма подання й форма редагування — один клієнтський компонент рядків (`useActionState`, керовані поля), різні server
