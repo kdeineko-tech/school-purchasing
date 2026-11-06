@@ -16,7 +16,8 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
  * on delete cascade (інакше Auth відповідає «Database error deleting user»). У демо: leave_requests.employee_id.
  * Якщо таких таблиць немає (або всі FK — cascade), лишіть порожнім.
  */
-const OWNED_ROWS: { table: string; column: string }[] = [];
+// purchases.author_id — on delete restrict (рядки заявки й записи історії йдуть каскадом від purchases).
+const OWNED_ROWS: { table: string; column: string }[] = [{ table: "purchases", column: "author_id" }];
 
 /** Лише такі адреси прибирання має право видалити: uat-<run>[-<суфікс>]@example.test. */
 export const UAT_EMAIL = /^uat-[0-9a-z-]+@example\.test$/;
@@ -42,6 +43,40 @@ export function adminClient(): SupabaseClient {
     throw new Error("Для синтетичних даних UAT потрібні NEXT_PUBLIC_SUPABASE_URL і SUPABASE_SECRET_KEY (.env.local)");
   }
   return createClient(url, secret, { auth: { persistSession: false, autoRefreshToken: false } });
+}
+
+/** Синтетичний відділ за назвою («UAT», «UAT-2»): наявний — повторно, інакше створюємо. Робочих людей у ньому немає. */
+export async function uatDepartment(supabase: SupabaseClient, name: "UAT" | "UAT-2"): Promise<string> {
+  const { data: found, error } = await supabase.from("departments").select("id").eq("name", name).limit(1);
+  if (error) throw error;
+  if (found?.[0]) return found[0].id as string;
+  const { data, error: insertError } = await supabase.from("departments").insert({ name }).select("id").single();
+  if (insertError) throw insertError;
+  return data.id as string;
+}
+
+/**
+ * Синтетичний заявник для UAT, що пише дані: адреса uat-<прогін>-<суфікс>@example.test, випадковий пароль (у звіт не
+ * потрапляє — signIn вводить його без fill), роль requester, заявник відділу departmentName. Прибирає afterAll
+ * специфікації (deleteUatUsers(email)) і, на випадок обриву, cleanup.teardown.ts.
+ */
+export async function createUatRequester(suffix: string, fullName: string, departmentName: "UAT" | "UAT-2") {
+  const supabase = adminClient();
+  const email = uatEmail(suffix);
+  const password = randomPassword();
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { full_name: fullName },
+  });
+  if (error) throw error;
+  const departmentId = await uatDepartment(supabase, departmentName);
+  const { error: memberError } = await supabase
+    .from("department_members")
+    .insert({ profile_id: data.user.id, department_id: departmentId });
+  if (memberError) throw memberError;
+  return { email, password, id: data.user.id };
 }
 
 async function listUatUsers(supabase: SupabaseClient): Promise<{ id: string; email: string }[]> {

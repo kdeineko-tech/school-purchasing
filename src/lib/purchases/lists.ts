@@ -11,6 +11,8 @@ export type PurchaseRow = {
   purchase_type: string;
   status: string;
   created_at: string;
+  // Номер заявки (AC-HIST-01); немає, поки міграцію номера не застосовано (див. withNumber).
+  number?: number | null;
 };
 
 // total — скільки всього заявок у списку (рядків у rows може бути менше, якщо задано limit).
@@ -29,6 +31,16 @@ export type PurchaseListData = {
 // показують «Author: —» замість помилки. Будь-яку іншу помилку бази не ховаємо.
 const MISSING_FUNCTION = new Set(["PGRST202", "42883"]);
 
+// Так само з колонкою purchases.number (міграція 20261106234630_purchase_number.sql): поки її в базі немає
+// (Postgres — 42703), читаємо список без номера, і сторінки показують «—». Будь-яку іншу помилку не ховаємо.
+const MISSING_COLUMN = "42703";
+type ListResult<T> = { data: T[] | null; count: number | null; error: { code: string; message: string } | null };
+
+export async function withNumber<T>(read: (columns: string) => PromiseLike<ListResult<T>>, columns: string) {
+  const result = await read(`number, ${columns}`);
+  return result.error?.code === MISSING_COLUMN ? read(columns) : result;
+}
+
 export async function loadAuthorNames(supabase: Supabase, purchaseIds: string[]): Promise<Map<string, string>> {
   if (purchaseIds.length === 0) return new Map();
   const { data, error } = await supabase.rpc("purchase_author_names", { p_purchase_ids: purchaseIds });
@@ -43,14 +55,17 @@ export async function loadAuthorNames(supabase: Supabase, purchaseIds: string[])
 // Власні заявки, новіші першими (AC-FRM-10). RLS пропустила б і заявки відділів, які працівник схвалює,
 // тож власні відбираємо явно.
 export async function loadMyRequests(supabase: Supabase, viewerId: string, limit?: number): Promise<PurchaseListData> {
-  const purchasesQuery = supabase
-    .from("purchases")
-    .select("id, department_id, purchase_type, status, created_at", { count: "exact" })
-    .eq("author_id", viewerId)
-    .order("created_at", { ascending: false });
+  const read = (columns: string) => {
+    const query = supabase
+      .from("purchases")
+      .select(columns, { count: "exact" })
+      .eq("author_id", viewerId)
+      .order("created_at", { ascending: false });
+    return (limit === undefined ? query : query.limit(limit)) as unknown as PromiseLike<ListResult<PurchaseRow>>;
+  };
   const [{ data: purchases, count, error: purchasesError }, { data: departments, error: departmentsError }] =
     await Promise.all([
-      limit === undefined ? purchasesQuery : purchasesQuery.limit(limit),
+      withNumber(read, "id, department_id, purchase_type, status, created_at"),
       supabase.from("departments").select("id, name"),
     ]);
   const readError = purchasesError ?? departmentsError;
@@ -87,16 +102,21 @@ export async function loadDecisionRequests(
   if (approvedDepartmentIds.length === 0) return { rows: [], total: 0, departmentName: new Map() };
 
   // Фільтри запиту — ті самі умови, що й decisionList, тож count бази дорівнює довжині повного списку.
-  const purchasesQuery = supabase
-    .from("purchases")
-    .select("id, author_id, department_id, purchase_type, status, created_at", { count: "exact" })
-    .in("department_id", approvedDepartmentIds)
-    .eq("status", "awaiting_approval")
-    .neq("author_id", viewerId)
-    .order("created_at", { ascending: true });
+  const read = (columns: string) => {
+    const query = supabase
+      .from("purchases")
+      .select(columns, { count: "exact" })
+      .in("department_id", approvedDepartmentIds)
+      .eq("status", "awaiting_approval")
+      .neq("author_id", viewerId)
+      .order("created_at", { ascending: true });
+    return (limit === undefined ? query : query.limit(limit)) as unknown as PromiseLike<
+      ListResult<PurchaseRow & { author_id: string }>
+    >;
+  };
   const [{ data: purchases, count, error: purchasesError }, { data: departments, error: departmentsError }] =
     await Promise.all([
-      limit === undefined ? purchasesQuery : purchasesQuery.limit(limit),
+      withNumber(read, "id, author_id, department_id, purchase_type, status, created_at"),
       supabase.from("departments").select("id, name"),
     ]);
   const readError = purchasesError ?? departmentsError;

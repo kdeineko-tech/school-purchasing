@@ -9,7 +9,7 @@
 
 ## 1. Номер і суми
 
-- [ ] 1.1 Міграція: `private.purchase_counter` (один рядок, RLS, `revoke all … from public, anon, authenticated`),
+- [x] 1.1 Міграція: `private.purchase_counter` (один рядок, RLS, `revoke all … from public, anon, authenticated`),
   `purchases.number` (номери наявних заявок за `created_at`, `last_number` = N, далі `not null unique`);
   `private.insert_purchase_lines` (спільні перевірки рядків); `submit_purchase` (`create or replace`) видає номер;
   `formatNumber`, `lineTotal`, `purchaseTotal` (центи); номер у «My requests», «Approvals», на головній і на сторінці

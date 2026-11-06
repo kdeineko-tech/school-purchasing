@@ -6,6 +6,7 @@ import { Alert, Card, Input, Notice } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { canDecide } from "@/lib/purchases/decisions";
+import { formatCents, formatNumber, lineTotal, purchaseTotal } from "@/lib/purchases/amounts";
 import { loadAuthorNames } from "@/lib/purchases/lists";
 import {
   canSeePurchase,
@@ -34,7 +35,22 @@ function backLink(viewerId: string, authorId: string) {
 // даних закупівлі (AC-FRM-08). RLS не повертає чужу закупівлю, тож «немає» й «чужа» виглядають однаково й нічого не
 // розкривають. Статус — текстом (AC-LANG-06). Схвалювач відділу, не автор, вирішує заявку «Очікує схвалення»
 // (AC-APR-02, AC-APR-05, AC-APR-06); причину відхилення видно поруч зі статусом «Rejected» (AC-APR-07). Автор — ім'я,
-// без імені — email, без інших даних профілю (AC-APR-08, AC-APR-09, AC-APR-10).
+// без імені — email, без інших даних профілю (AC-APR-08, AC-APR-09, AC-APR-10). Номер «PUR-…» (AC-HIST-01), сума
+// кожного рядка й сума заявки за всіма рядками (AC-HIST-02).
+type PurchaseDetails = {
+  id: string;
+  author_id: string;
+  department_id: string;
+  purchase_type: string;
+  status: string;
+  rejection_reason: string | null;
+  created_at: string;
+  number?: number | null;
+};
+const DETAILS = "id, author_id, department_id, purchase_type, status, rejection_reason, created_at";
+// Поки міграцію номера не застосовано (Postgres — 42703), читаємо заявку без номера: «—» замість помилки.
+const MISSING_COLUMN = "42703";
+
 export default async function PurchasePage({ params, searchParams }: PageProps<"/purchases/[id]">) {
   const viewer = await getViewer();
   if (!viewer) redirect("/login");
@@ -51,11 +67,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
     { data: lines, error: linesError },
     { data: approved, error: approvedError },
   ] = await Promise.all([
-    supabase
-      .from("purchases")
-      .select("id, author_id, department_id, purchase_type, status, rejection_reason, created_at")
-      .eq("id", id)
-      .maybeSingle(),
+    readDetails(supabase, id),
     supabase
       .from("purchase_lines")
       .select("position, name, purpose, quantity, unit_price")
@@ -101,6 +113,10 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
       {decidedNotice && <Notice testId="decision-done">{decidedNotice}</Notice>}
       <Card>
         <dl className="grid grid-cols-[max-content_1fr] items-center gap-x-6 gap-y-3 text-sm">
+          <dt className="text-muted-foreground">Number</dt>
+          <dd className="font-medium tabular-nums" data-testid="purchase-number">
+            {formatNumber(purchase.number)}
+          </dd>
           <dt className="text-muted-foreground">Status</dt>
           <dd>
             <StatusBadge status={purchase.status} />
@@ -129,6 +145,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
               <th className="py-2 font-medium">Purpose</th>
               <th className="py-2 text-right font-medium">Quantity</th>
               <th className="py-2 text-right font-medium">Unit price</th>
+              <th className="py-2 text-right font-medium">Line total</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -138,9 +155,22 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
                 <td className="py-2">{line.purpose ?? "—"}</td>
                 <td className="py-2 text-right">{line.quantity ?? "—"}</td>
                 <td className="py-2 text-right">{price(line.unit_price)}</td>
+                <td className="py-2 text-right tabular-nums" data-testid="line-total">
+                  {formatCents(lineTotal(line.quantity, line.unit_price))}
+                </td>
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr className="border-t border-border font-medium">
+              <td className="py-2" colSpan={4}>
+                Total
+              </td>
+              <td className="py-2 text-right tabular-nums" data-testid="purchase-total">
+                {formatCents(purchaseTotal(lines ?? []))}
+              </td>
+            </tr>
+          </tfoot>
         </table>
       </Card>
       {decidable && (
@@ -157,4 +187,14 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
       )}
     </PageShell>
   );
+}
+
+async function readDetails(supabase: Awaited<ReturnType<typeof createClient>>, id: string) {
+  const read = (columns: string) =>
+    supabase.from("purchases").select(columns).eq("id", id).maybeSingle() as unknown as PromiseLike<{
+      data: PurchaseDetails | null;
+      error: { code: string; message: string } | null;
+    }>;
+  const result = await read(`number, ${DETAILS}`);
+  return result.error?.code === MISSING_COLUMN ? read(DETAILS) : result;
 }
