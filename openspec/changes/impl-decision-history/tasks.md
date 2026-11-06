@@ -28,7 +28,8 @@
   «видима заявка»; `service_role` — усі права), записи для наявних заявок; `submit_purchase` пише `submitted`;
   `private.purchase_history` (видимість — дослівно як у `purchase_author_names`; невидима — 0 рядків) з іменем (без
   імені — email); `formatHistoryEntry`; блок «History» на сторінці заявки: «Submitted · <ім'я> · dd.mm.yyyy, HH:MM»
-  за `America/New_York` (#74); `OWNED_ROWS` у `tests/e2e/support/admin.ts` — `purchases.author_id`; тести; UAT.
+  за `America/New_York` (#74); `OWNED_ROWS` у `tests/e2e/support/admin.ts` — `purchases.author_id`; прогони
+  UAT — лише по одному (`deleteUatUsers()` прибирає всі `uat-*`); тести; UAT.
   Тести відмов і мутації: AC-HIST-10 — Петро (не автор) бачить історію заявки «Офісу», але ні прямий `select` з
   `purchase_events`, ні `public.purchase_history` не повертають записів заявки «Початкової школи», статус той самий;
   сторінка `/purchases/[id]` для Петра — «Not enough permissions», без «History» і даних; автор-схвалювач іншого відділу
@@ -55,15 +56,16 @@
 
 - [ ] 4.1 Міграція: `purchases.return_reason` і `check` (повернена — з причиною); `decide_purchase` — `return`
   (`REASON_REQUIRED`); `resubmit_purchase` (лише активний автор, лише `returned`; ті самі перевірки відділу, типу й
-  рядків, що при поданні, — через `insert_purchase_lines`; поля рішення — `null`; відділ, тип і номер ті самі; ще один
-  запис `submitted` — #67, #68); `canEditReturned`; «Return for revision» з причиною; причина повернення на сторінці
-  заявки (підпис «Reason» — немає в таблиці #49, позначити в PR); кнопка «Edit» для автора поверненої заявки;
-  `/purchases/[id]/edit` (змінити, додати, видалити рядки — #66); «Returned for revision» у списку й на сторінці
-  заявки; тести; UAT.
+  рядків, що при поданні (`admin` — будь-який наявний відділ), — через `insert_purchase_lines`; поля рішення —
+  `null`; відділ, тип і номер ті самі; ще один запис `submitted` — #67, #68); `canEditReturned`; «Return for
+  revision» з причиною; причина повернення на сторінці заявки (підпис «Reason» — немає в таблиці #49, позначити в
+  PR); кнопка «Edit» для автора поверненої заявки; `/purchases/[id]/edit` (змінити, додати, видалити рядки — #66);
+  «Returned for revision» у списку й на сторінці заявки; тести; UAT.
   Тести відмов і мутації: AC-DEC-06 — без причини `REASON_REQUIRED`, статус «Очікує схвалення»; `resubmit_purchase` не
-  автором, не для `returned`, деактивованим автором чи автором поза відділом — `FORBIDDEN`, без змін; після повторного
-  подання поля рішення порожні, номер той самий, в історії ще один `submitted`; мутант `REASON_REQUIRED` у
-  `scripts/mutants.mjs` — саме тест AC-DEC-06 червоний; ≥1 червоний прогін CI.
+  автором, не для `returned`, деактивованим автором чи автором не `admin` поза відділом — `FORBIDDEN`, без змін;
+  активний автор `admin` без членства у відділі подає знову; після повторного подання поля рішення порожні, номер
+  той самий, в історії ще один `submitted`; мутант `REASON_REQUIRED` у `scripts/mutants.mjs` — саме тест AC-DEC-06
+  червоний; ≥1 червоний прогін CI.
   Done when: AC-DEC-04, AC-DEC-06, AC-DEC-07, AC-LANG-09.
 
 ## Workflow follow-up

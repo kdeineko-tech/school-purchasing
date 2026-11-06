@@ -68,7 +68,7 @@ ADR 0005 «Історія заявки — записи функцій бази�
   сума заявки — завжди за всіма рядками, зокрема для «Partially approved» (#65).
 - Форма подання й форма редагування — один клієнтський компонент рядків (`useActionState`, керовані поля), різні server
   actions (`submitPurchase`, `resubmitPurchase`); перевірки повторного подання — ті самі `validateSubmission` і
-  `MESSAGES`, що при першому поданні зрізу 2.
+  `MESSAGES`, що при першому поданні зрізу 2 (AC-DEC-07).
 - Доменний модуль `src/lib/purchases/`: `formatNumber` (AC-HIST-01), `lineTotal`, `purchaseTotal` (AC-HIST-02),
   `formatHistoryEntry` (AC-HIST-06), `validateDecision` з поверненням і рядками (AC-DEC-06), `canEditReturned`
   (AC-DEC-07), `STATUS_LABELS` і `LINE_STATUS_LABELS` (AC-LANG-09). Нові тексти в `MESSAGES` — дослівно з таблиці #49.
@@ -104,7 +104,8 @@ ADR 0005 «Історія заявки — записи функцій бази�
 
 - `private.insert_purchase_lines(p_purchase_id, p_lines)` (нова, спільна для подання й повторного подання; `revoke
   execute … from public, anon, authenticated`): перевірки рядків `NO_LINES`, `LINE_FIELDS`, `INVALID_LINE` зі зрізу 2 і
-  `insert` з `ordinality` для `position` — щоб перевірки не розійшлися між двома функціями.
+  `insert` з `ordinality` для `position` — щоб перевірки не розійшлися між двома функціями (AC-FRM-06, AC-FRM-15,
+  AC-DEC-07).
 - `submit_purchase` (`create or replace`): номер із `private.purchase_counter` (AC-HIST-01), рядки —
   `insert_purchase_lines`, запис `submitted` (AC-HIST-06).
 - `decide_purchase`: `drop function public.decide_purchase(uuid, text, text)` і
@@ -121,8 +122,9 @@ ADR 0005 «Історія заявки — записи функцій бази�
   схваленого рядка — суперечність); `return` без причини → `REASON_REQUIRED` (AC-DEC-06); `return` → `returned`,
   `return_reason` (AC-DEC-04).
 - `resubmit_purchase(p_purchase_id, p_lines jsonb)`: `for update`; першою — активний; лише автор і лише `returned`,
-  інакше `FORBIDDEN`; ті самі перевірки відділу й типу, що в `submit_purchase` (автор досі у відділі заявки,
-  «Самостійна закупівля» — з дозволом), інакше `FORBIDDEN`; `delete` усіх рядків заявки, потім
+  інакше `FORBIDDEN`; ті самі перевірки відділу й типу, що в `submit_purchase` (відділ: `admin` — будь-який наявний,
+  інші — член відділу заявки; «Самостійна закупівля»: `admin` або з дозволом), інакше `FORBIDDEN`; `delete` усіх
+  рядків заявки, потім
   `insert_purchase_lines`; статуси рядків — `pending`, статус — `awaiting_approval`; `return_reason`,
   `rejection_reason`, `decided_by`, `decided_at` — `null`; відділ, тип і номер не змінюються (AC-DEC-07, #68); ще один
   запис `submitted` (#67).
@@ -134,7 +136,7 @@ ADR 0005 «Історія заявки — записи функцій бази�
 ## Auth
 
 - `src/proxy.ts` лише перевіряє сесію (`getClaims`) і перенаправляє на `/login`; захистом не є.
-- Кожна сторінка — `getViewer()`: `getClaims()`, профіль і роль з `public.profiles`, деактивований — вихід.
+- Кожна сторінка — `getViewer()`: `getClaims()`, профіль і роль з `public.profiles`, деактивований — вихід (AC-ORG-12).
   `/purchases/[id]/edit` додатково: автор і статус `returned`, інакше «Not enough permissions» без даних.
 - Кожна Server Action (`submitPurchase`, `decidePurchase`, `resubmitPurchase`) — `getViewer()` першою, потім доменна
   перевірка з текстом PM, потім `rpc` клієнтом користувача (діють RLS, GRANT і перевірки функцій). Ідентифікаторам з
@@ -161,8 +163,9 @@ ADR 0005 «Історія заявки — записи функцій бази�
     `purchase_events` і жодних прав на `private.purchase_counter`; прямий запис — `permission denied`;
   - `decide_purchase`: у `pg_proc` рівно одна `public.decide_purchase`; виклик із трьома аргументами схвалює й
     відхиляє, як у зрізі 2;
-  - `resubmit_purchase`: не автор, не `returned`, деактивований автор, автор поза відділом — `FORBIDDEN`, заявка без
-    змін; після повторного подання поля рішення порожні, номер той самий, в історії ще один `submitted`.
+  - `resubmit_purchase`: не автор, не `returned`, деактивований автор, автор не `admin` поза відділом — `FORBIDDEN`,
+    заявка без змін; активний автор `admin` без членства у відділі заявки подає знову (як у `submit_purchase`); після
+    повторного подання поля рішення порожні, номер той самий, в історії ще один `submitted`.
 - **Тести застосунку** (`tests/purchases/*.test.ts`): доменні функції (центи, формат запису, рішення), actions (код
   винятку → текст PM), сторінки. Сторінки, де важливий фільтр чи лічильник, — з `tests/support/viewer.ts` проти бази, а
   не з моками (правило рецензента AGENTS.md); AC-HIST-10 — сторінка `/purchases/[id]` для Петра: «Not enough
@@ -173,8 +176,12 @@ ADR 0005 «Історія заявки — записи функцій бази�
   AC-HIST-10), тег `@writes`; робочих схвалювачів і даних демо PM у цих відділах немає (перевірити перед прогоном).
   Прибирання після себе — `cleanup.teardown.ts`: `OWNED_ROWS` у `tests/e2e/support/admin.ts` — `purchases.author_id`
   (рядки й події йдуть каскадом), потім `deleteUser`; `leftoverRequests` = 0; номер не повторюється, бо лічильник не
-  відкочується після видалення. AC-HIST-01 на проді: пара підряд `PUR-n`, `PUR-(n+1)` (#73); «PUR-1 і PUR-2 у порожній
-  системі» — рядок «Не перевірено» в proof pack з причиною (на проді вже є заявки) і посиланням на тест бази. Звіт
+  відкочується після видалення. Прогони UAT — лише по одному: `deleteUatUsers()` навмисно прибирає всі `uat-*`, зокрема
+  залишки обірваних прогонів, тож паралельних прогонів на одній базі немає. AC-HIST-01 на проді: пара підряд `PUR-n`,
+  `PUR-(n+1)` (#73); якщо між ними вклинилась чужа заявка — перевірити, що проміжні номери мають інших авторів, і
+  повторити прогін; знову не підряд — рядок «Не перевірено» в proof pack з причиною й посиланням на тест бази. «PUR-1 і
+  PUR-2 у порожній системі» — рядок «Не перевірено» в proof pack з причиною (на проді вже є заявки) і посиланням на тест
+  бази. Звіт
   `docs/qa/uat/<дата>/`, негативний контроль `npm run uat:nc` (NC-1 → FAIL) у звіті.
 - **Мутаційна перевірка** відмов — мутанти в `scripts/mutants.mjs` (`id`, `ac`, `file` — нова міграція, `tests`, `find`
   рівно один раз), `npm run mutation:sql -- --markdown` → `KILLED`, вивід — в описі PR:
