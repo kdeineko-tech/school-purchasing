@@ -33,21 +33,31 @@ function setPurchaseDb({
   departmentError = null,
   authorName = "Andrii Demo-First",
   authorError = null,
+  history = [],
+  historyError = null,
 }: {
   visible: ReturnType<typeof purchase> | null;
   approves?: string[];
   departmentError?: { message: string } | null;
   authorName?: string;
   authorError?: { code: string; message: string } | null;
+  history?: { kind: string; created_at: string; actor_name: string }[];
+  historyError?: { code: string; message: string } | null;
 }) {
   const ok = <T>(data: T) => Promise.resolve({ data, error: null });
   const client = {
-    // purchase_author_names віддає ім'я лише для видимої заявки (міграція 20261026155141_purchase_author_names.sql).
-    rpc: vi.fn((_fn: string, args: { p_purchase_ids: string[] }) =>
-      authorError
-        ? Promise.resolve({ data: null, error: authorError })
-        : ok(visible && args.p_purchase_ids.includes(visible.id) ? [{ purchase_id: visible.id, author_name: authorName }] : []),
-    ),
+    // purchase_author_names віддає ім'я лише для видимої заявки (міграція 20261026155141_purchase_author_names.sql);
+    // purchase_history — записи лише видимої заявки (20261109144820_purchase_history.sql).
+    rpc: vi.fn((fn: string, args: { p_purchase_ids?: string[]; p_purchase_id?: string }) => {
+      if (fn === "purchase_history") {
+        if (historyError) return Promise.resolve({ data: null, error: historyError });
+        return ok(visible && args.p_purchase_id === visible.id ? history : []);
+      }
+      if (authorError) return Promise.resolve({ data: null, error: authorError });
+      return ok(
+        visible && args.p_purchase_ids?.includes(visible.id) ? [{ purchase_id: visible.id, author_name: authorName }] : [],
+      );
+    }),
     from: vi.fn((table: string) => {
       switch (table) {
         case "purchases":
@@ -240,5 +250,68 @@ describe("сторінка закупівлі", () => {
     });
 
     await expect(PurchasePage(props(PURCHASE_ID))).rejects.toThrow("Failed to read request authors");
+  });
+});
+
+describe("історія на сторінці заявки", () => {
+  const SUBMITTED = { kind: "submitted", created_at: "2026-11-05T19:32:00Z", actor_name: "PM Demo Requester" };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    signIn(viewer(P1));
+  });
+
+  it("AC-HIST-06: працівник 1 подав закупівлю у «Primary School» і відкриває її історію — запис «Submitted» з його іменем, датою й часом за America/New_York", async () => {
+    const client = setPurchaseDb({ visible: purchase(), history: [SUBMITTED] });
+
+    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+    expect(html).toContain("History");
+    expect(html).toContain('data-testid="history-entry">Submitted · PM Demo Requester · 05.11.2026, 14:32<');
+    expect(client.rpc).toHaveBeenCalledWith("purchase_history", { p_purchase_id: PURCHASE_ID });
+  });
+
+  it("AC-HIST-06: кілька записів — у порядку, який віддала база", async () => {
+    const later = { ...SUBMITTED, created_at: "2026-11-06T13:05:00Z" };
+    setPurchaseDb({ visible: purchase(), history: [SUBMITTED, later] });
+
+    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+    expect([...html.matchAll(/data-testid="history-entry">([^<]*)</g)].map((m) => m[1])).toEqual([
+      "Submitted · PM Demo Requester · 05.11.2026, 14:32",
+      "Submitted · PM Demo Requester · 06.11.2026, 08:05",
+    ]);
+  });
+
+  it("AC-HIST-10: Петро схвалює лише «Office» і відкриває заявку «Primary School» за прямим посиланням — «Not enough permissions», історії немає", async () => {
+    signIn(viewer(P2, "approver"));
+    const client = setPurchaseDb({ visible: null, approves: ["00000000-0000-4000-8000-0000000000d2"] });
+
+    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+    expect(html).toContain("Not enough permissions");
+    expect(html).not.toContain("History");
+    expect(html).not.toContain("Submitted");
+    expect(html).not.toContain("Paper A4");
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+
+  it("AC-HIST-06: поки функції історії в базі немає (PGRST202) — блок «History» з «—», а не помилка", async () => {
+    setPurchaseDb({
+      visible: purchase(),
+      historyError: { code: "PGRST202", message: "Could not find the function public.purchase_history" },
+    });
+
+    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+    expect(html).toContain("History");
+    expect(html).not.toContain('data-testid="history-entry"');
+    expect(html).toContain("Paper A4");
+  });
+
+  it("AC-HIST-06: інша помилка бази при читанні історії не ховається", async () => {
+    setPurchaseDb({ visible: purchase(), historyError: { code: "57014", message: "statement timeout" } });
+
+    await expect(PurchasePage(props(PURCHASE_ID))).rejects.toThrow("Failed to read request history: statement timeout");
   });
 });

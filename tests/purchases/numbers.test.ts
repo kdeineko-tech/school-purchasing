@@ -68,7 +68,7 @@ function setPurchaseDb(
 ) {
   const purchase = { ...row(ID1, number, "2026-11-05T19:32:00Z"), rejection_reason: null };
   const client = {
-    rpc: vi.fn(() => ok([{ purchase_id: ID1, author_name: "PM Demo Requester" }])),
+    rpc: vi.fn((fn: string) => ok(fn === "purchase_history" ? [] : [{ purchase_id: ID1, author_name: "PM Demo Requester" }])),
     from: vi.fn((table: string) => {
       switch (table) {
         case "purchases":
