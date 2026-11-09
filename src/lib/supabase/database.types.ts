@@ -3,9 +3,9 @@
 // й описує таблиці з міграцій 20261012000000_profiles_and_roles.sql, 20261021233408_org_roles.sql і
 // 20261022000503_departments.sql, 20261022010957_approvers.sql, 20261025143511_auto_approve.sql і
 // 20261025160124_permissions.sql, 20261025185729_purchases.sql, 20261025223225_purchase_decisions.sql,
-// 20261026155141_purchase_author_names.sql (purchases, purchase_lines, submit_purchase, decide_purchase і
-// purchase_author_names — зі
-// схеми одноразової бази, supabase gen types typescript --local).
+// 20261026155141_purchase_author_names.sql, 20261106234630_purchase_number.sql (purchases, purchase_lines,
+// submit_purchase, decide_purchase і purchase_author_names — зі схеми одноразової бази,
+// supabase gen types typescript --local; purchases.number дописано вручну за міграцією).
 
 export type Json =
   | string
@@ -125,6 +125,7 @@ export type Database = {
           decided_by: string | null;
           decided_at: string | null;
           created_at: string;
+          number: number;
         };
         Insert: {
           id?: string;
@@ -136,6 +137,7 @@ export type Database = {
           decided_by?: string | null;
           decided_at?: string | null;
           created_at?: string;
+          number: number;
         };
         Update: {
           id?: string;
@@ -147,6 +149,7 @@ export type Database = {
           decided_by?: string | null;
           decided_at?: string | null;
           created_at?: string;
+          number?: number;
         };
         Relationships: [
           {

@@ -14,9 +14,11 @@
 // tests/db/profiles-db.test.ts перевіряв гарнес шаблону, а наш гарнес уже перевіряють тести бази зрізів 1–2.
 const PURCHASES = "supabase/migrations/20261025185729_purchases.sql";
 const DECISIONS = "supabase/migrations/20261025223225_purchase_decisions.sql";
-const LINE_FIELDS = "supabase/migrations/20261026100553_purchase_line_fields.sql";
+// Перевірки рядків із 20261026100553_purchase_line_fields.sql тепер у private.insert_purchase_lines (зріз 3, задача 1).
+const NUMBER = "supabase/migrations/20261106234630_purchase_number.sql";
 const PURCHASES_DB = "tests/db/purchases.test.ts";
 const DECISIONS_DB = "tests/db/decisions.test.ts";
+const NUMBERS_DB = "tests/db/numbers.test.ts";
 
 export const mutants = [
   {
@@ -32,10 +34,16 @@ export const mutants = [
     replace: "create policy purchases_select_visible\n  on public.purchases\n  for select\n  to authenticated\n  using (\n    (select private.is_active_user())\n    and (\n      author_id = (select auth.uid())\n      or true",
   },
   {
-    id: "F1", kind: "sql", ac: "AC-FRM-06", file: LINE_FIELDS, tests: [PURCHASES_DB],
-    what: "submit_purchase: порожній масив рядків більше не дає NO_LINES",
+    id: "F1", kind: "sql", ac: "AC-FRM-06", file: NUMBER, tests: [PURCHASES_DB],
+    what: "insert_purchase_lines: порожній масив рядків більше не дає NO_LINES",
     find: "  if jsonb_array_length(p_lines) = 0 then\n",
     replace: "  if false then\n",
+  },
+  {
+    id: "H1", kind: "sql", ac: "AC-HIST-01", file: NUMBER, tests: [NUMBERS_DB],
+    what: "submit_purchase: номер на 2 більший за останній виданий — після PUR-1 іде PUR-3",
+    find: "set last_number = last_number + 1\n",
+    replace: "set last_number = last_number + 2\n",
   },
   // ── Ваші мутанти: по одному на правило в SQL за кожним із ваших 3 AC ──────────────────────────────────────────
 ];
