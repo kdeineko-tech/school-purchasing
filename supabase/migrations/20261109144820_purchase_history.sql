@@ -21,12 +21,16 @@ grant select on table public.purchase_events to authenticated;
 grant select, insert, update, delete on table public.purchase_events to service_role;
 
 -- Записи бачить той, хто бачить заявку (AC-HIST-10): exists читає purchases під її RLS (purchases_select_visible —
--- активний, і автор, або схвалювач відділу, або адміністратор), як purchase_lines_select_visible.
+-- активний, і автор, або схвалювач відділу, або адміністратор), як purchase_lines_select_visible. Явне
+-- (select auth.uid()) is not null — правило шаблону для кожної політики; саму видимість дає exists.
 create policy purchase_events_select_visible
   on public.purchase_events
   for select
   to authenticated
-  using (exists (select 1 from public.purchases as p where p.id = purchase_id));
+  using (
+    (select auth.uid()) is not null
+    and exists (select 1 from public.purchases as p where p.id = purchase_id)
+  );
 
 -- 2. Наявні заявки: запис «Подано» з датою подання й автором.
 insert into public.purchase_events (purchase_id, kind, actor_id, created_at)

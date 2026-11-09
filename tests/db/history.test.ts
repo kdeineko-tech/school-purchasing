@@ -119,6 +119,19 @@ describe("історія заявки в базі", () => {
     expect(await directEvents(t, petro, id)).toEqual([{ kind: "submitted" }]);
   });
 
+  it("AC-HIST-10: деактивований автор не бачить власної історії — функція definer сама перевіряє активність", async () => {
+    const id = await submit(t, member1, PRIMARY);
+    expect(await history(t, member1, id)).toHaveLength(1);
+
+    await t.asService("update public.profiles set is_active = false where id = $1", [member1]);
+    try {
+      expect(await history(t, member1, id)).toEqual([]);
+      expect(await directEvents(t, member1, id)).toEqual([]);
+    } finally {
+      await t.asService("update public.profiles set is_active = true where id = $1", [member1]);
+    }
+  });
+
   it("AC-HIST-10: неіснуюча заявка — 0 рядків, без помилки", async () => {
     expect(await history(t, member1, "00000000-0000-4000-8000-0000000000ff")).toEqual([]);
   });

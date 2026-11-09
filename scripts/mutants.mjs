@@ -52,8 +52,8 @@ export const mutants = [
   {
     id: "H2", kind: "sql", ac: "AC-HIST-10", file: HISTORY, tests: [HISTORY_DB],
     what: "purchase_events_select_visible: записи історії будь-якої заявки бачить будь-хто з входом (умова → true)",
-    find: "using (exists (select 1 from public.purchases as p where p.id = purchase_id));",
-    replace: "using (true);",
+    find: "    and exists (select 1 from public.purchases as p where p.id = purchase_id)\n  );",
+    replace: "    and true\n  );",
   },
   {
     id: "H3", kind: "sql", ac: "AC-HIST-10", file: HISTORY, tests: [HISTORY_DB],

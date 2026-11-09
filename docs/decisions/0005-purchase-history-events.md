@@ -15,7 +15,8 @@ ValiaBihun/2026-quitcode-dream-team#74). Історію бачать лише т
 
 - Таблиця `public.purchase_events` (`purchase_id`, `kind`, `actor_id`, `created_at`): у WS9 `kind` лише `submitted`.
   `authenticated` має лише `select`; політика — «видима заявка» (`exists` у `purchases` під її RLS), як у
-  `purchase_lines`. Записів не змінює й не видаляє ніхто, крім `service_role`.
+  `purchase_lines`, плюс явне `(select auth.uid()) is not null` за правилом шаблону (надлишкове: `auth.uid()` уже
+  перевіряє політика `purchases`). Записів не змінює й не видаляє ніхто, крім `service_role`.
 - Запис пише та сама функція `private.*` (`security definer`), що змінює заявку, у тій самій транзакції:
   `submit_purchase` — `submitted`; далі `resubmit_purchase` (задача 4.1) — ще один `submitted`.
 - Читання для сторінки — `private.purchase_history(p_purchase_id)` + обгортка `public.*`: видимість — дослівно як у

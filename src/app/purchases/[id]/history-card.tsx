@@ -7,7 +7,7 @@ export function HistoryCard({ history }: { history: HistoryEntry[] }) {
   return (
     <Card title="History">
       {history.length === 0 ? (
-        <p className="text-sm text-muted-foreground">—</p>
+        <p className="text-sm text-muted-foreground" data-testid="history-empty">—</p>
       ) : (
         <ol className="flex flex-col gap-2 text-sm" data-testid="purchase-history">
           {history.map((entry) => (

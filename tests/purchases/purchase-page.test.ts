@@ -305,6 +305,7 @@ describe("історія на сторінці заявки", () => {
     const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
 
     expect(html).toContain("History");
+    expect([...html.matchAll(/data-testid="history-empty">([^<]*)</g)].map((m) => m[1])).toEqual(["—"]);
     expect(html).not.toContain('data-testid="history-entry"');
     expect(html).toContain("Paper A4");
   });
