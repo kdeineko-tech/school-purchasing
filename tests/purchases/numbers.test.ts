@@ -64,7 +64,7 @@ function setListDb(rows: ReturnType<typeof row>[], { missingNumber = false } = {
 
 function setPurchaseDb(
   lines: { position: number; name: string; purpose: string; quantity: number; unit_price: number }[],
-  { number = 7, missingNumber = false } = {},
+  { number = 7, missingNumber = false, denied = false } = {},
 ) {
   const purchase = { ...row(ID1, number, "2026-11-05T19:32:00Z"), rejection_reason: null };
   const client = {
@@ -77,6 +77,7 @@ function setPurchaseDb(
               eq: () => ({
                 maybeSingle: () => {
                   selected.push(columns);
+                  if (denied) return Promise.resolve({ data: null, error: { code: "42501", message: "denied" } });
                   if (missingNumber && columns.includes("number")) return Promise.resolve({ data: null, error: MISSING_COLUMN });
                   return ok(columns.includes("number") ? purchase : omitNumber(purchase));
                 },
@@ -131,7 +132,7 @@ describe("номер заявки й суми — доменні функції"
   });
 
   it("AC-HIST-02: суми — у цілих центах, без похибки дробів; без кількості чи ціни — «—», у суму заявки не входить", () => {
-    expect(lineTotal(3, 0.1)).toBe(30);
+    expect(lineTotal(3, 0.1)).toBe(BigInt(30));
     expect(formatCents(lineTotal(3, 0.1))).toBe("0.30");
     expect(formatCents(lineTotal(1, "0.05"))).toBe("0.05");
     expect(formatCents(lineTotal(1, 1234.5))).toBe("1234.50");
@@ -139,11 +140,26 @@ describe("номер заявки й суми — доменні функції"
     expect(lineTotal(3, "")).toBeNull();
     expect(lineTotal(3, "abc")).toBeNull();
     expect(formatCents(null)).toBe("—");
-    expect(formatCents(-150)).toBe("-1.50");
-    expect(formatCents(0)).toBe("0.00");
+    expect(formatCents(BigInt(-150))).toBe("-1.50");
+    expect(formatCents(BigInt(0))).toBe("0.00");
     expect(lineTotal(undefined, 20)).toBeNull();
-    expect(purchaseTotal([{ quantity: 2, unit_price: 1 }, { quantity: null, unit_price: 5 }])).toBe(200);
-    expect(purchaseTotal([])).toBe(0);
+    expect(purchaseTotal([{ quantity: 2, unit_price: 1 }, { quantity: null, unit_price: 5 }])).toBe(BigInt(200));
+    expect(purchaseTotal([])).toBe(BigInt(0));
+    expect(lineTotal(1.5, 20)).toBeNull();
+  });
+
+  it("AC-HIST-02: великі суми — точні до цента, без втрати точності number", () => {
+    // Найбільша ціна numeric(12, 2) × кількість ~2·10^9: у number добуток уже неточний (> 2^53).
+    expect(formatCents(lineTotal(2_000_000_000, "9999999999.99"))).toBe("19999999999980000000.00");
+    expect(formatCents(lineTotal(2_147_483_647, "0.01"))).toBe("21474836.47");
+    expect(
+      formatCents(
+        purchaseTotal([
+          { quantity: 1_000_000_000, unit_price: "9999999999.99" },
+          { quantity: 1, unit_price: "0.01" },
+        ]),
+      ),
+    ).toBe("9999999999990000000.01");
   });
 });
 
@@ -204,5 +220,12 @@ describe("номер і суми на сторінці заявки", () => {
     expect(cells(html, "purchase-number")).toEqual(["—"]);
     expect(cells(html, "purchase-total")).toEqual(["91.00"]);
     expect(selected[1]).not.toContain("number");
+  });
+
+  it("AC-HIST-01: інша помилка бази на сторінці заявки не ховається за «—» — без повторного читання", async () => {
+    setPurchaseDb(TWO_LINES, { denied: true });
+
+    await expect(PurchasePage(props(ID1))).rejects.toThrow("Failed to read purchase: denied");
+    expect(selected).toHaveLength(1);
   });
 });
