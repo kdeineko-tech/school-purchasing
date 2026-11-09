@@ -4,9 +4,10 @@
 // 20261022000503_departments.sql, 20261022010957_approvers.sql, 20261025143511_auto_approve.sql і
 // 20261025160124_permissions.sql, 20261025185729_purchases.sql, 20261025223225_purchase_decisions.sql,
 // 20261026155141_purchase_author_names.sql, 20261106234630_purchase_number.sql і
-// 20261109144820_purchase_history.sql (purchases, purchase_lines, submit_purchase, decide_purchase і
-// purchase_author_names — зі схеми одноразової бази, supabase gen types typescript --local; purchases.number,
-// purchase_events і purchase_history дописано вручну за міграціями).
+// 20261109144820_purchase_history.sql, 20261109171140_partial_approval.sql (purchases, purchase_lines, submit_purchase,
+// decide_purchase і purchase_author_names — зі схеми одноразової бази, supabase gen types typescript --local;
+// purchases.number, purchase_events, purchase_history, purchase_lines.status і p_rejected_lines дописано вручну за
+// міграціями).
 
 export type Json =
   | string
@@ -185,6 +186,7 @@ export type Database = {
           purpose: string | null;
           quantity: number | null;
           unit_price: number | null;
+          status: string;
         };
         Insert: {
           id?: string;
@@ -194,6 +196,7 @@ export type Database = {
           purpose?: string | null;
           quantity?: number | null;
           unit_price?: number | null;
+          status?: string;
         };
         Update: {
           id?: string;
@@ -203,6 +206,7 @@ export type Database = {
           purpose?: string | null;
           quantity?: number | null;
           unit_price?: number | null;
+          status?: string;
         };
         Relationships: [
           {
@@ -263,7 +267,7 @@ export type Database = {
         Returns: string;
       };
       decide_purchase: {
-        Args: { p_purchase_id: string; p_decision: string; p_reason: string | null };
+        Args: { p_purchase_id: string; p_decision: string; p_reason: string | null; p_rejected_lines?: string[] };
         Returns: undefined;
       };
       purchase_author_names: {

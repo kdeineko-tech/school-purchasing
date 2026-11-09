@@ -14,6 +14,10 @@ export const MESSAGES = {
   purchaseSubmitted: "Purchase submitted", // AC-FRM-11
   provideReason: "Provide a reason", // AC-APR-06, AC-LANG-05
   noDecisionRequests: "No requests awaiting your decision", // список для рішення без заявок
+  allLinesRejected: "All lines are rejected: reject the whole request", // захист даних при частковому схваленні
+  // Не з тексту PM: застосунок уже новий, а міграцію часткового схвалення ще не застосовано (PGRST202) — кілька хвилин
+  // між розгортанням і db-deploy.
+  decisionUnavailable: "Could not save the decision. Try again in a few minutes",
   // Не з тексту PM: кількість чи ціна рядка, які база не приводить до числа (код INVALID_LINE); межі значень —
   // наступний зріз.
   invalidLine: "Check the quantity and price in each line",

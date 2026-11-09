@@ -40,7 +40,7 @@
 
 ## 3. Часткове схвалення
 
-- [ ] 3.1 Міграція: `purchase_lines.status` (рядкам наявних — за статусом заявки); новий `purchases_status_check` з
+- [x] 3.1 Міграція: `purchase_lines.status` (рядкам наявних — за статусом заявки); новий `purchases_status_check` з
   `partially_approved` і `returned` (зняти → додати); `drop function` старого `decide_purchase(uuid, text, text)` у
   `public` і `private`, нові обидві з `p_rejected_lines uuid[] default '{}'` (статуси рядків для `approve` / `reject` /
   `return`; `ALL_LINES_REJECTED`; рядок чужої заявки чи рядки при `reject` / `return` — `FORBIDDEN`); `validateDecision`;
