@@ -129,6 +129,13 @@ describe("часткове схвалення — доменні правила"
 
   it("AC-DEC-01: позначений рядок — не id рядка — «Not enough permissions»", () => {
     expect(validateDecision("approve", "", [L2, "2"])).toEqual({ ok: false, error: MESSAGES.forbidden });
+    // id цілком, а не лише його частина в довшому рядку.
+    expect(validateDecision("approve", "", [`x${L2}`])).toEqual({ ok: false, error: MESSAGES.forbidden });
+    expect(validateDecision("approve", "", [`${L2}x`])).toEqual({ ok: false, error: MESSAGES.forbidden });
+  });
+
+  it("невідоме рішення — «Not enough permissions», навіть із причиною", () => {
+    expect(validateDecision("delete", "Немає бюджету")).toEqual({ ok: false, error: MESSAGES.forbidden });
   });
 
   it("AC-DEC-01: статуси підписано текстом — «Partially approved», рядки «Approved» і «Rejected»", () => {
