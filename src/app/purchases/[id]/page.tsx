@@ -7,6 +7,7 @@ import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { canDecide } from "@/lib/purchases/decisions";
 import { formatCents, formatNumber, lineTotal, purchaseTotal } from "@/lib/purchases/amounts";
+import { loadHistory } from "@/lib/purchases/history";
 import { loadAuthorNames } from "@/lib/purchases/lists";
 import {
   canSeePurchase,
@@ -17,6 +18,7 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import { decidePurchase } from "../actions";
 import { DecisionButtons } from "./decision-buttons";
+import { HistoryCard } from "./history-card";
 import { StatusBadge } from "../status-badge";
 
 export const metadata: Metadata = { title: "Purchase" };
@@ -36,7 +38,8 @@ function backLink(viewerId: string, authorId: string) {
 // розкривають. Статус — текстом (AC-LANG-06). Схвалювач відділу, не автор, вирішує заявку «Очікує схвалення»
 // (AC-APR-02, AC-APR-05, AC-APR-06); причину відхилення видно поруч зі статусом «Rejected» (AC-APR-07). Автор — ім'я,
 // без імені — email, без інших даних профілю (AC-APR-08, AC-APR-09, AC-APR-10). Номер «PUR-…» (AC-HIST-01), сума
-// кожного рядка й сума заявки за всіма рядками (AC-HIST-02).
+// кожного рядка й сума заявки за всіма рядками (AC-HIST-02). Історія — записи «Submitted · <ім'я> · <дата, час>»
+// (AC-HIST-06); чужу заявку з історією сторінка не показує взагалі (AC-HIST-10).
 type PurchaseDetails = {
   id: string;
   author_id: string;
@@ -86,9 +89,10 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
     return <NoAccess viewer={viewer} />;
   }
 
-  const [{ data: department, error: departmentError }, authorName] = await Promise.all([
+  const [{ data: department, error: departmentError }, authorName, history] = await Promise.all([
     supabase.from("departments").select("name").eq("id", purchase.department_id).maybeSingle(),
     loadAuthorNames(supabase, [purchase.id]),
+    loadHistory(supabase, purchase.id),
   ]);
   // Помилку бази не видаємо за «немає відділу».
   if (departmentError) throw new Error(`Failed to read department: ${departmentError.message}`);
@@ -173,6 +177,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
           </tfoot>
         </table>
       </Card>
+      <HistoryCard history={history} />
       {decidable && (
         <Card title="Decision">
           <form id="decision-form" action={decidePurchase} className="flex flex-col gap-3 text-sm" data-testid="decision-form">

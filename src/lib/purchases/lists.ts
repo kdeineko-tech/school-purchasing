@@ -29,7 +29,7 @@ export type PurchaseListData = {
 // Vercel викладає код одразу після merge, а міграцію застосовує db-deploy у CI трохи пізніше; прев'ю PR працює з
 // тією самою базою ще до merge. Поки функції в базі немає (PostgREST — PGRST202, Postgres — 42883), сторінки
 // показують «Author: —» замість помилки. Будь-яку іншу помилку бази не ховаємо.
-const MISSING_FUNCTION = new Set(["PGRST202", "42883"]);
+export const MISSING_FUNCTION = new Set(["PGRST202", "42883"]);
 
 // Так само з колонкою purchases.number (міграція 20261106234630_purchase_number.sql): поки її в базі немає
 // (Postgres — 42703), читаємо список без номера, і сторінки показують «—». Будь-яку іншу помилку не ховаємо.

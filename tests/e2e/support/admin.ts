@@ -57,10 +57,16 @@ export async function uatDepartment(supabase: SupabaseClient, name: "UAT" | "UAT
 
 /**
  * Синтетичний заявник для UAT, що пише дані: адреса uat-<прогін>-<суфікс>@example.test, випадковий пароль (у звіт не
- * потрапляє — signIn вводить його без fill), роль requester, заявник відділу departmentName. Прибирає afterAll
+ * потрапляє — signIn вводить його без fill), член відділу departmentName: роль requester, а з approves — схвалювач
+ * цього відділу (роль approver ставить тригер department_members_sync_role). Прибирає afterAll
  * специфікації (deleteUatUsers(email)) і, на випадок обриву, cleanup.teardown.ts.
  */
-export async function createUatRequester(suffix: string, fullName: string, departmentName: "UAT" | "UAT-2") {
+export async function createUatRequester(
+  suffix: string,
+  fullName: string,
+  departmentName: "UAT" | "UAT-2",
+  { approves = false }: { approves?: boolean } = {},
+) {
   const supabase = adminClient();
   const email = uatEmail(suffix);
   const password = randomPassword();
@@ -74,7 +80,7 @@ export async function createUatRequester(suffix: string, fullName: string, depar
   const departmentId = await uatDepartment(supabase, departmentName);
   const { error: memberError } = await supabase
     .from("department_members")
-    .insert({ profile_id: data.user.id, department_id: departmentId });
+    .insert({ profile_id: data.user.id, department_id: departmentId, approves });
   if (memberError) throw memberError;
   return { email, password, id: data.user.id };
 }
