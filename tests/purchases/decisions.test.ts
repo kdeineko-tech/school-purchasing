@@ -110,8 +110,13 @@ describe("правила рішення", () => {
 
   it("AC-APR-06: відхилення без причини — «Provide a reason»", () => {
     expect(validateDecision("reject", "   ")).toEqual({ ok: false, error: "Provide a reason" });
-    expect(validateDecision("reject", " Немає бюджету ")).toEqual({ ok: true, decision: "reject", reason: "Немає бюджету" });
-    expect(validateDecision("approve", "")).toEqual({ ok: true, decision: "approve", reason: null });
+    expect(validateDecision("reject", " Немає бюджету ")).toEqual({
+      ok: true,
+      decision: "reject",
+      reason: "Немає бюджету",
+      rejectedLines: [],
+    });
+    expect(validateDecision("approve", "")).toEqual({ ok: true, decision: "approve", reason: null, rejectedLines: [] });
   });
 });
 
