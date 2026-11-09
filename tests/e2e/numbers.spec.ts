@@ -3,17 +3,17 @@
 // подає закупівлі через форму, а afterAll видаляє його разом із заявками (OWNED_ROWS у support/admin.ts); залишки
 // обірваних прогонів прибирає cleanup.teardown.ts. Прогони — лише по одному: deleteUatUsers() прибирає всі uat-*.
 // На проді вже є заявки, тож «PUR-1 і PUR-2 у порожній системі» тут не перевірити: перевіряємо пару підряд PUR-n,
-// PUR-(n+1) (відповідь PM ValiaBihun/2026-quitcode-dream-team#73); «PUR-1, PUR-2» доводить тест бази
+// PUR-(n+1) — дві заявки, створені й подані одна за одною (відповіді PM ValiaBihun/2026-quitcode-dream-team#73 і
+// #76); «PUR-1, PUR-2» доводить тест бази
 // tests/db/numbers.test.ts. Чужа заявка між двома поданнями — повторити прогін; знову не підряд — «Не перевірено».
 // Інтерфейс англійською: «Мої заявки» — «My requests».
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { createUatRequester, deleteUatUsers } from "./support/admin";
+import { openNewestRequest, PAPER, PENS, submitPurchase } from "./support/purchases";
 import { attachRuntimeErrors, given, signIn, thenStep, when } from "./support/uat";
 
 test.use({ storageState: { cookies: [], origins: [] } });
 test.describe.configure({ mode: "serial" });
-
-type Line = { item: string; purpose: string; quantity: string; unitPrice: string };
 
 let requester: { email: string; password: string } | undefined;
 
@@ -30,25 +30,6 @@ test.afterAll(async () => {
   expect(result.remaining, "лишився синтетичний заявник").toEqual([]);
   expect(result.leftoverRequests, "лишились заявки синтетичного заявника").toBe(0);
 });
-
-/** Подає закупівлю через форму у відділ «UAT» з типом «Purchasing department» і чекає «My requests». */
-async function submitPurchase(page: Page, lines: Line[]) {
-  await page.goto("/purchases/new");
-  await page.getByTestId("department-select").selectOption({ label: "UAT" });
-  await page.getByTestId("purchase-type-select").selectOption({ label: "Purchasing department" });
-  for (const [i, line] of lines.entries()) {
-    await page.getByRole("button", { name: "Add line" }).click();
-    await page.getByRole("textbox", { name: "Item" }).nth(i).fill(line.item);
-    await page.getByRole("textbox", { name: "Purpose" }).nth(i).fill(line.purpose);
-    await page.getByRole("spinbutton", { name: "Quantity" }).nth(i).fill(line.quantity);
-    await page.getByRole("spinbutton", { name: "Unit price" }).nth(i).fill(line.unitPrice);
-  }
-  await page.getByRole("button", { name: "Submit" }).click();
-  await page.waitForURL((url) => url.pathname === "/purchases");
-}
-
-const PAPER: Line = { item: "Paper A4", purpose: "Printing", quantity: "3", unitPrice: "20.00" };
-const PENS: Line = { item: "Pens", purpose: "Classes", quantity: "2", unitPrice: "15.50" };
 
 test(
   "AC-HIST-01: працівник 1 подає першу закупівлю, а потім другу — у «My requests» вони мають номери підряд",
@@ -101,8 +82,7 @@ test(
     });
 
     await when("автор відкриває заявку", async () => {
-      await page.getByTestId("my-requests").getByRole("link").first().click();
-      await page.waitForURL((url) => /^\/purchases\/[0-9a-f-]{36}$/.test(url.pathname));
+      await openNewestRequest(page);
     });
 
     await thenStep(

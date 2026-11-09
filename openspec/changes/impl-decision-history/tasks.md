@@ -23,7 +23,7 @@
 
 ## 2. Історія: запис «Подано»
 
-- [ ] 2.1 ADR 0005 «Історія заявки — записи функцій бази»; міграція: `purchase_events` (`kind` лише `submitted`;
+- [x] 2.1 ADR 0005 «Історія заявки — записи функцій бази»; міграція: `purchase_events` (`kind` лише `submitted`;
   `actor_id → profiles on delete cascade`; RLS, `revoke all … from anon, authenticated`, `grant select` — політика
   «видима заявка»; `service_role` — усі права), записи для наявних заявок; `submit_purchase` пише `submitted`;
   `private.purchase_history` (видимість — дослівно як у `purchase_author_names`; невидима — 0 рядків) з іменем (без

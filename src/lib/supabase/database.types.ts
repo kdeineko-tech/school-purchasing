@@ -3,9 +3,10 @@
 // й описує таблиці з міграцій 20261012000000_profiles_and_roles.sql, 20261021233408_org_roles.sql і
 // 20261022000503_departments.sql, 20261022010957_approvers.sql, 20261025143511_auto_approve.sql і
 // 20261025160124_permissions.sql, 20261025185729_purchases.sql, 20261025223225_purchase_decisions.sql,
-// 20261026155141_purchase_author_names.sql, 20261106234630_purchase_number.sql (purchases, purchase_lines,
-// submit_purchase, decide_purchase і purchase_author_names — зі схеми одноразової бази,
-// supabase gen types typescript --local; purchases.number дописано вручну за міграцією).
+// 20261026155141_purchase_author_names.sql, 20261106234630_purchase_number.sql і
+// 20261109144820_purchase_history.sql (purchases, purchase_lines, submit_purchase, decide_purchase і
+// purchase_author_names — зі схеми одноразової бази, supabase gen types typescript --local; purchases.number,
+// purchase_events і purchase_history дописано вручну за міграціями).
 
 export type Json =
   | string
@@ -213,6 +214,45 @@ export type Database = {
           },
         ];
       };
+      purchase_events: {
+        Row: {
+          id: string;
+          purchase_id: string;
+          kind: string;
+          actor_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          purchase_id: string;
+          kind: string;
+          actor_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          purchase_id?: string;
+          kind?: string;
+          actor_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "purchase_events_purchase_id_fkey";
+            columns: ["purchase_id"];
+            isOneToOne: false;
+            referencedRelation: "purchases";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "purchase_events_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -229,6 +269,10 @@ export type Database = {
       purchase_author_names: {
         Args: { p_purchase_ids: string[] };
         Returns: { purchase_id: string; author_name: string }[];
+      };
+      purchase_history: {
+        Args: { p_purchase_id: string };
+        Returns: { kind: string; created_at: string; actor_name: string }[];
       };
     };
     Enums: {

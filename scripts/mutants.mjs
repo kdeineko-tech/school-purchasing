@@ -15,10 +15,14 @@
 const PURCHASES = "supabase/migrations/20261025185729_purchases.sql";
 const DECISIONS = "supabase/migrations/20261025223225_purchase_decisions.sql";
 // Перевірки рядків із 20261026100553_purchase_line_fields.sql тепер у private.insert_purchase_lines (зріз 3, задача 1).
+// private.submit_purchase (з лічильником номера) востаннє замінює 20261109144820_purchase_history.sql (задача 2) —
+// тож H1 мутує її: мутант у старій версії функції виконується лише до наступної міграції й вижив би.
 const NUMBER = "supabase/migrations/20261106234630_purchase_number.sql";
+const HISTORY = "supabase/migrations/20261109144820_purchase_history.sql";
 const PURCHASES_DB = "tests/db/purchases.test.ts";
 const DECISIONS_DB = "tests/db/decisions.test.ts";
 const NUMBERS_DB = "tests/db/numbers.test.ts";
+const HISTORY_DB = "tests/db/history.test.ts";
 
 export const mutants = [
   {
@@ -40,10 +44,22 @@ export const mutants = [
     replace: "  if false then\n",
   },
   {
-    id: "H1", kind: "sql", ac: "AC-HIST-01", file: NUMBER, tests: [NUMBERS_DB],
+    id: "H1", kind: "sql", ac: "AC-HIST-01", file: HISTORY, tests: [NUMBERS_DB],
     what: "submit_purchase: номер на 2 більший за останній виданий — після PUR-1 іде PUR-3",
     find: "set last_number = last_number + 1\n",
     replace: "set last_number = last_number + 2\n",
+  },
+  {
+    id: "H2", kind: "sql", ac: "AC-HIST-10", file: HISTORY, tests: [HISTORY_DB],
+    what: "purchase_events_select_visible: записи історії будь-якої заявки бачить будь-хто з входом (умова → true)",
+    find: "    and exists (select 1 from public.purchases as p where p.id = purchase_id)\n  );",
+    replace: "    and true\n  );",
+  },
+  {
+    id: "H3", kind: "sql", ac: "AC-HIST-10", file: HISTORY, tests: [HISTORY_DB],
+    what: "purchase_history: функція віддає історію будь-якої заявки — без перевірки видимості (умова → true)",
+    find: "    and (select private.is_active_user())\n    and (\n      p.author_id = (select auth.uid())\n      or (select private.approves_department(p.department_id))\n      or (select private.current_app_role()) = 'admin'\n    )\n  order by",
+    replace: "    and true\n  order by",
   },
   // ── Ваші мутанти: по одному на правило в SQL за кожним із ваших 3 AC ──────────────────────────────────────────
 ];
