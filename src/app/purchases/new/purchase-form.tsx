@@ -2,15 +2,13 @@
 
 // Форма закупівлі. Поля керовані: після відмови (наприклад, «Add at least one line») обрані відділ, тип і рядки
 // лишаються у формі (AC-FRM-06). Рядки йдуть у server action одним прихованим полем JSON.
-// Подаємо через onSubmit, а не `<form action>`: після дії `<form action>` React 19 скидає форму до значень першого
-// рендеру, і вибраний відділ ставав «Select a department» (знайшов UAT AC-FRM-06 на проді, WS8).
-import { startTransition, useActionState, useState, type FormEvent } from "react";
-import { Alert, Button, Input, Select } from "@/components/ui";
+// Подаємо через onSubmit (useFormSubmit): інакше React 19 скидає обраний відділ після відмови.
+import { useState } from "react";
+import { Alert, Button, Select } from "@/components/ui";
 import type { Department } from "@/lib/org/membership";
 import { PURCHASE_TYPE_LABELS, type PurchaseLineInput, type PurchaseTypeId } from "@/lib/purchases/form";
-import { submitPurchase, type SubmitState } from "../actions";
-
-const EMPTY_LINE: PurchaseLineInput = { name: "", purpose: "", quantity: "", unitPrice: "" };
+import { submitPurchase } from "../actions";
+import { LineFields, useFormSubmit } from "../line-fields";
 
 export function PurchaseForm({
   departments,
@@ -19,20 +17,10 @@ export function PurchaseForm({
   departments: Department[];
   purchaseTypes: PurchaseTypeId[];
 }) {
-  const [state, formAction, pending] = useActionState<SubmitState, FormData>(submitPurchase, {});
+  const { state, submit, pending } = useFormSubmit(submitPurchase);
   const [departmentId, setDepartmentId] = useState(departments.length === 1 ? departments[0].id : "");
   const [purchaseType, setPurchaseType] = useState<string>(purchaseTypes.length === 1 ? purchaseTypes[0] : "");
   const [lines, setLines] = useState<PurchaseLineInput[]>([]);
-
-  const updateLine = (index: number, field: keyof PurchaseLineInput, value: string) =>
-    setLines((current) => current.map((line, i) => (i === index ? { ...line, [field]: value } : line)));
-
-  // Перевірку required браузер робить до події submit; далі — та сама server action, але без автоскидання форми.
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    startTransition(() => formAction(formData));
-  };
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-5">
@@ -77,25 +65,7 @@ export function PurchaseForm({
         </label>
       </div>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-2 text-sm font-medium">Lines</legend>
-        {lines.map((line, index) => (
-          <div key={index} className="grid gap-2 rounded-lg border border-border p-3 sm:grid-cols-[2fr_2fr_1fr_1fr_auto]">
-            <Input aria-label="Item" placeholder="Item" value={line.name} onChange={(e) => updateLine(index, "name", e.target.value)} />
-            <Input aria-label="Purpose" placeholder="Purpose" value={line.purpose} onChange={(e) => updateLine(index, "purpose", e.target.value)} />
-            <Input aria-label="Quantity" placeholder="Quantity" type="number" inputMode="numeric" value={line.quantity} onChange={(e) => updateLine(index, "quantity", e.target.value)} />
-            <Input aria-label="Unit price" placeholder="Unit price" type="number" step="0.01" inputMode="decimal" value={line.unitPrice} onChange={(e) => updateLine(index, "unitPrice", e.target.value)} />
-            <Button type="button" variant="secondary" onClick={() => setLines((current) => current.filter((_, i) => i !== index))}>
-              Remove
-            </Button>
-          </div>
-        ))}
-        <Button type="button" variant="secondary" className="self-start" onClick={() => setLines((current) => [...current, EMPTY_LINE])}>
-          Add line
-        </Button>
-      </fieldset>
-
-      <input type="hidden" name="lines" value={JSON.stringify(lines)} />
+      <LineFields lines={lines} setLines={setLines} />
       {state.error ? <Alert testId="form-error">{state.error}</Alert> : null}
       <Button type="submit" disabled={pending} className="self-start">
         Submit

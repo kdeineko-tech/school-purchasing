@@ -54,7 +54,7 @@
 
 ## 4. Повернення й повторне подання
 
-- [ ] 4.1 Міграція: `purchases.return_reason` і `check` (повернена — з причиною); `decide_purchase` — `return`
+- [x] 4.1 Міграція: `purchases.return_reason` і `check` (повернена — з причиною); `decide_purchase` — `return`
   (`REASON_REQUIRED`); `resubmit_purchase` (лише активний автор, лише `returned`; ті самі перевірки відділу, типу й
   рядків, що при поданні (`admin` — будь-який наявний відділ), — через `insert_purchase_lines`; поля рішення —
   `null`; відділ, тип і номер ті самі; ще один запис `submitted` — #67, #68); `canEditReturned`; «Return for

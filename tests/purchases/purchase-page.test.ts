@@ -146,25 +146,33 @@ describe("сторінка закупівлі", () => {
     expect(html).toContain(`href="/purchases/${PURCHASE_ID}"`);
   });
 
-  // AC-LANG-09 у WS9 — лише «Partially approved» у списку й на сторінці заявки (відповідь PM на #75);
-  // «Returned for revision» з'явиться разом із поверненням на доопрацювання (задача 4).
-  it("AC-LANG-09: на сторінці заявки статус підписано текстом «Partially approved»", async () => {
-    setPurchaseDb({ visible: purchase("partially_approved") });
+  // AC-LANG-09 у WS9 — у списку й на сторінці заявки; «в історії» — поза WS9 (відповідь PM на #75).
+  const NEW_STATUSES = [
+    ["partially_approved", "Partially approved"],
+    ["returned", "Returned for revision"],
+  ] as const;
 
-    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+  it("AC-LANG-09: на сторінці заявки статуси підписано текстом «Partially approved» і «Returned for revision»", async () => {
+    for (const [status, label] of NEW_STATUSES) {
+      setPurchaseDb({ visible: purchase(status) });
 
-    expect(html).toContain(`data-testid="purchase-status">Partially approved<`);
+      const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+      expect(html).toContain(`data-testid="purchase-status">${label}<`);
+    }
   });
 
-  it("AC-LANG-09: у «Мої заявки» статус «Partially approved» підписано текстом", async () => {
-    const db = fakeDb({ departments: [PRIMARY], purchases: [{ ...purchase("partially_approved"), author_id: P1 }] });
-    vi.mocked(createClient).mockResolvedValue(withViewer(db.client) as never);
+  it("AC-LANG-09: у «Мої заявки» статуси «Partially approved» і «Returned for revision» підписано текстом", async () => {
+    for (const [status, label] of NEW_STATUSES) {
+      const db = fakeDb({ departments: [PRIMARY], purchases: [{ ...purchase(status), author_id: P1 }] });
+      vi.mocked(createClient).mockResolvedValue(withViewer(db.client) as never);
 
-    const html = renderToStaticMarkup(
-      await MyRequestsPage({ params: Promise.resolve({}), searchParams: Promise.resolve({}) } as never),
-    );
+      const html = renderToStaticMarkup(
+        await MyRequestsPage({ params: Promise.resolve({}), searchParams: Promise.resolve({}) } as never),
+      );
 
-    expect(html).toContain(`data-testid="purchase-status">Partially approved<`);
+      expect(html).toContain(`data-testid="purchase-status">${label}<`);
+    }
   });
 
   it("схвалювач відділу бачить закупівлю свого відділу", async () => {
