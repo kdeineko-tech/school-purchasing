@@ -184,8 +184,11 @@ async function readDetails(supabase: Awaited<ReturnType<typeof createClient>>, i
       data: PurchaseDetails | null;
       error: { code: string; message: string } | null;
     }>;
+  // Колонки з'являються по черзі (number — раніше, return_reason — пізніше): спершу без нової, потім без обох.
   const result = await read(`number, return_reason, ${DETAILS}`);
-  return result.error?.code === MISSING_COLUMN ? read(DETAILS) : result;
+  if (result.error?.code !== MISSING_COLUMN) return result;
+  const withNumber = await read(`number, ${DETAILS}`);
+  return withNumber.error?.code === MISSING_COLUMN ? read(DETAILS) : withNumber;
 }
 
 async function readLines(supabase: Awaited<ReturnType<typeof createClient>>, id: string) {

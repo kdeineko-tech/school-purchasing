@@ -219,7 +219,10 @@ describe("номер і суми на сторінці заявки", () => {
 
     expect(cells(html, "purchase-number")).toEqual(["—"]);
     expect(cells(html, "purchase-total")).toEqual(["91.00"]);
-    expect(selected[1]).not.toContain("number");
+    // Спершу без return_reason (номер ще може бути), потім без номера.
+    expect(selected).toHaveLength(3);
+    expect(selected[1]).not.toContain("return_reason");
+    expect(selected[2]).not.toContain("number");
   });
 
   it("AC-HIST-01: інша помилка бази на сторінці заявки не ховається за «—» — без повторного читання", async () => {

@@ -283,15 +283,17 @@ describe("повернення — сторінка заявки", () => {
     expect(await renderPage()).not.toContain('data-testid="edit-purchase"');
   });
 
-  it("поки колонки return_reason немає в базі (42703) — сторінка без причини, а не помилка", async () => {
+  it("поки колонки return_reason немає в базі (42703) — сторінка без причини, а номер заявки лишається", async () => {
     signIn(viewer(P1));
     setDb({ status: "awaiting_approval", returnReason: null, missingReturnReason: true });
 
     const html = await renderPage();
 
     expect(text(html, "purchase-status")).toEqual(["Awaiting approval"]);
+    expect(text(html, "purchase-number")).toEqual(["PUR-7"]);
     expect(purchaseColumns).toHaveLength(2);
     expect(purchaseColumns[1]).not.toContain("return_reason");
+    expect(purchaseColumns[1]).toContain("number");
   });
 });
 
