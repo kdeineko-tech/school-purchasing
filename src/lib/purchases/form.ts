@@ -20,7 +20,7 @@ export const STATUS_LABELS: Record<PurchaseStatus, string> = {
   awaiting_approval: "Awaiting approval",
   approved: "Approved",
   rejected: "Rejected",
-  partially_approved: "Partially approved", // AC-DEC-01; підпис у списку й на сторінці — AC-LANG-09 (задача 4.1)
+  partially_approved: "Partially approved", // AC-DEC-01; підпис у списку й на сторінці — AC-LANG-09
 };
 
 // Статус рядка після рішення (AC-DEC-01); до рішення (pending) рядок без позначки.

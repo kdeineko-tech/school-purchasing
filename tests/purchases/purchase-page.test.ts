@@ -146,6 +146,27 @@ describe("сторінка закупівлі", () => {
     expect(html).toContain(`href="/purchases/${PURCHASE_ID}"`);
   });
 
+  // AC-LANG-09 у WS9 — лише «Partially approved» у списку й на сторінці заявки (відповідь PM на #75);
+  // «Returned for revision» з'явиться разом із поверненням на доопрацювання (задача 4).
+  it("AC-LANG-09: на сторінці заявки статус підписано текстом «Partially approved»", async () => {
+    setPurchaseDb({ visible: purchase("partially_approved") });
+
+    const html = renderToStaticMarkup(await PurchasePage(props(PURCHASE_ID)));
+
+    expect(html).toContain(`data-testid="purchase-status">Partially approved<`);
+  });
+
+  it("AC-LANG-09: у «Мої заявки» статус «Partially approved» підписано текстом", async () => {
+    const db = fakeDb({ departments: [PRIMARY], purchases: [{ ...purchase("partially_approved"), author_id: P1 }] });
+    vi.mocked(createClient).mockResolvedValue(withViewer(db.client) as never);
+
+    const html = renderToStaticMarkup(
+      await MyRequestsPage({ params: Promise.resolve({}), searchParams: Promise.resolve({}) } as never),
+    );
+
+    expect(html).toContain(`data-testid="purchase-status">Partially approved<`);
+  });
+
   it("схвалювач відділу бачить закупівлю свого відділу", async () => {
     signIn(viewer(P2, "approver"));
     setPurchaseDb({ visible: purchase(), approves: [PRIMARY.id] });
