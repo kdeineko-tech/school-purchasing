@@ -18,18 +18,19 @@ const PURCHASES = "supabase/migrations/20261025185729_purchases.sql";
 // тож H1 мутує її: мутант у старій версії функції виконується лише до наступної міграції й вижив би.
 const NUMBER = "supabase/migrations/20261106234630_purchase_number.sql";
 const HISTORY = "supabase/migrations/20261109144820_purchase_history.sql";
-// private.decide_purchase (з p_rejected_lines) востаннє замінює 20261109171140_partial_approval.sql (задача 3) — тож A1
-// мутує її з тієї самої причини, що й H1.
-const PARTIAL = "supabase/migrations/20261109171140_partial_approval.sql";
+// private.decide_purchase (з p_rejected_lines і рішенням return) востаннє замінює 20261111155530_return_for_revision.sql
+// (задача 4) — тож A1, D1 і D2 мутують її з тієї самої причини, що й H1 (уперше — 20261109171140_partial_approval.sql).
+const RETURN = "supabase/migrations/20261111155530_return_for_revision.sql";
 const PURCHASES_DB = "tests/db/purchases.test.ts";
 const DECISIONS_DB = "tests/db/decisions.test.ts";
 const NUMBERS_DB = "tests/db/numbers.test.ts";
 const HISTORY_DB = "tests/db/history.test.ts";
 const PARTIAL_DB = "tests/db/partial-approval.test.ts";
+const RETURN_DB = "tests/db/return-for-revision.test.ts";
 
 export const mutants = [
   {
-    id: "A1", kind: "sql", ac: "AC-APR-04", file: PARTIAL, tests: [DECISIONS_DB, PARTIAL_DB],
+    id: "A1", kind: "sql", ac: "AC-APR-04", file: RETURN, tests: [DECISIONS_DB, PARTIAL_DB],
     what: "decide_purchase: вирішує будь-хто з відділу заявки, а не лише його схвалювач (прибрано `and m.approves`)",
     find: "where m.profile_id = v_uid and m.department_id = v_purchase.department_id and m.approves\n",
     replace: "where m.profile_id = v_uid and m.department_id = v_purchase.department_id\n",
@@ -66,16 +67,28 @@ export const mutants = [
   },
   // ── Ваші мутанти: по одному на правило в SQL за кожним із ваших 3 AC ──────────────────────────────────────────
   {
-    id: "D1", kind: "sql", ac: "AC-DEC-01", file: PARTIAL, tests: [PARTIAL_DB],
+    id: "D1", kind: "sql", ac: "AC-DEC-01", file: RETURN, tests: [PARTIAL_DB],
     what: "decide_purchase: позначений рядок при схваленні отримує «Схвалено», а не «Відхилено»",
     find: "    when p_decision = 'reject' or l.id = any(v_rejected) then 'rejected'\n",
     replace: "    when p_decision = 'reject' then 'rejected'\n",
   },
   {
-    id: "D2", kind: "sql", ac: "AC-DEC-01", file: PARTIAL, tests: [PARTIAL_DB],
+    id: "D2", kind: "sql", ac: "AC-DEC-01", file: RETURN, tests: [PARTIAL_DB],
     what: "decide_purchase: схвалення з відхиленими рядками дає «Схвалено», а не «Частково схвалено»",
     find: "        when cardinality(v_rejected) > 0 then 'partially_approved'\n",
     replace: "        when cardinality(v_rejected) > 0 then 'approved'\n",
+  },
+  {
+    id: "R1", kind: "sql", ac: "AC-DEC-06", file: RETURN, tests: [RETURN_DB],
+    what: "decide_purchase: повернення без причини не дає REASON_REQUIRED (причину вимагає лише відхилення)",
+    find: "  if p_decision in ('reject', 'return') then\n",
+    replace: "  if p_decision = 'reject' then\n",
+  },
+  {
+    id: "R2", kind: "sql", ac: "AC-DEC-07", file: RETURN, tests: [RETURN_DB],
+    what: "resubmit_purchase: повернену заявку подає знову будь-хто, хто її бачить, а не лише автор",
+    find: "  if v_purchase.author_id is distinct from v_uid or v_purchase.status <> 'returned' then\n",
+    replace: "  if v_purchase.status <> 'returned' then\n",
   },
 ];
 

@@ -5,13 +5,13 @@ import { redirect } from "next/navigation";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { type Decision, validateDecision } from "@/lib/purchases/decisions";
-import { linesForDatabase, parseLines, validateSubmission } from "@/lib/purchases/form";
+import { linesForDatabase, parseLines, validateLines, validateSubmission } from "@/lib/purchases/form";
 import { loadFormOptions } from "@/lib/purchases/options";
 import { createClient } from "@/lib/supabase/server";
 
 export type SubmitState = { error?: string };
 
-// Коди винятків private.submit_purchase → тексти PM (ADR 0003).
+// Коди винятків private.submit_purchase і private.resubmit_purchase → тексти PM (ADR 0003).
 const DATABASE_ERRORS: Record<string, string> = {
   FORBIDDEN: MESSAGES.forbidden,
   NO_LINES: MESSAGES.noLines,
@@ -39,17 +39,41 @@ export async function submitPurchase(_prev: SubmitState, formData: FormData): Pr
     p_purchase_type: input.purchaseType,
     p_lines: linesForDatabase(input.lines),
   });
-  if (error) {
-    const known = Object.keys(DATABASE_ERRORS).find((code) => error.message.includes(code));
-    if (known) return { error: DATABASE_ERRORS[known] };
-    throw new Error(`Failed to submit purchase: ${error.message}`);
-  }
-
-  revalidatePath("/purchases");
-  redirect("/purchases?submitted=1");
+  return afterSubmit(error, "submit");
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// AC-DEC-07: автор поверненої заявки виправляє рядки й подає знову; відділ, тип і номер ті самі. Що це автор і що
+// заявка повернена, перевіряє функція бази (сторінка редагування — лише для них, canEditReturned); рядки — ті самі
+// перевірки й повідомлення, що при першому поданні (#66).
+export async function resubmitPurchase(_prev: SubmitState, formData: FormData): Promise<SubmitState> {
+  const viewer = await getViewer();
+  if (!viewer) redirect("/login");
+
+  const id = String(formData.get("purchaseId") ?? "");
+  if (!UUID.test(id)) return { error: MESSAGES.forbidden };
+  const lines = parseLines(formData.get("lines"));
+  const check = validateLines(lines);
+  if (!check.ok) return { error: check.error };
+
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("resubmit_purchase", { p_purchase_id: id, p_lines: linesForDatabase(lines) });
+  if (!error) revalidatePath(`/purchases/${id}`);
+  return afterSubmit(error, "resubmit");
+}
+
+// Відмова бази — текст PM у формі, без переходу; невідома помилка не видається за успіх; успіх — «My requests» з
+// «Purchase submitted» (AC-FRM-11).
+function afterSubmit(error: { message: string } | null, what: string): SubmitState {
+  if (error) {
+    const known = Object.keys(DATABASE_ERRORS).find((code) => error.message.includes(code));
+    if (known) return { error: DATABASE_ERRORS[known] };
+    throw new Error(`Failed to ${what} purchase: ${error.message}`);
+  }
+  revalidatePath("/purchases");
+  redirect("/purchases?submitted=1");
+}
 
 // Коди винятків private.decide_purchase → тексти PM (ADR 0003). NOT_PENDING (заявку вже вирішено) окремого тексту не
 // має: сторінка заявки й так показує поточний статус.
@@ -62,7 +86,8 @@ const DECISION_ERRORS: Record<string, string | null> = {
 // Застосунок уже передає p_rejected_lines, а нову функцію бази ще не розгорнуто (db-deploy) — PostgREST її не знаходить.
 const MISSING_FUNCTION = "PGRST202";
 
-// decided — після успішного рішення сторінка заявки показує підтвердження «Request approved» / «Request rejected».
+// decided — після успішного рішення сторінка заявки показує підтвердження («Request approved», «Request rejected»,
+// «Request returned for revision»).
 function backToPurchase(id: string, error?: string, decided?: Decision): never {
   revalidatePath(`/purchases/${id}`);
   revalidatePath("/approvals");
@@ -71,7 +96,7 @@ function backToPurchase(id: string, error?: string, decided?: Decision): never {
   redirect(`/purchases/${id}${query}`);
 }
 
-// AC-APR-02, AC-APR-03, AC-APR-05, AC-APR-06, AC-APR-07: рішення схвалювача. Перше правило — доменна функція з
+// AC-APR-02, AC-APR-03, AC-APR-05, AC-APR-06, AC-APR-07, AC-DEC-04, AC-DEC-06: рішення схвалювача. Перше правило — доменна функція з
 // повідомленням PM; функція бази — друга лінія захисту (схвалювач відділу, не автор, статус, причина).
 export async function decidePurchase(formData: FormData) {
   const viewer = await getViewer();

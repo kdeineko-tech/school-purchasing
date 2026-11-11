@@ -4,7 +4,7 @@
 import { MESSAGES } from "@/lib/org/messages";
 
 export type DecisionPurchase = { id: string; authorId: string; departmentId: string; status: string };
-export type Decision = "approve" | "reject";
+export type Decision = "approve" | "reject" | "return";
 
 // Вирішує схвалювач відділу заявки, не автор, і лише заявку «Очікує схвалення» (AC-APR-02, AC-APR-03, AC-APR-05,
 // AC-FRM-13). Адміністратор вирішує тільки у відділах, які сам схвалює (рішення за відділ без схвалювача — WS8).
@@ -35,16 +35,23 @@ export type DecisionCheck =
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-// Відхилення лише з причиною (AC-APR-06, AC-LANG-05); схвалення причини не має. Схвалення з позначеними рядками —
-// часткове (AC-DEC-01): позначені рядки база відхиляє, решту схвалює. Відхилення заявки відхиляє всі рядки, тож
-// позначок не бере. Позначка — лише id рядка; що рядок саме цієї заявки, перевіряє база.
+// Відхилення (AC-APR-06, AC-LANG-05) і повернення на доопрацювання (AC-DEC-04, AC-DEC-06) — лише з причиною; схвалення
+// причини не має. Схвалення з позначеними рядками — часткове (AC-DEC-01): позначені рядки база відхиляє, решту схвалює.
+// Відхилення й повернення стосуються заявки цілком, тож позначок не беруть. Позначка — лише id рядка; що рядок саме
+// цієї заявки, перевіряє база.
 export function validateDecision(decision: string, reason: string, rejectedLines: readonly string[] = []): DecisionCheck {
   if (decision === "approve") {
     if (!rejectedLines.every((id) => UUID.test(id))) return { ok: false, error: MESSAGES.forbidden };
     return { ok: true, decision, reason: null, rejectedLines: [...rejectedLines] };
   }
-  if (decision !== "reject") return { ok: false, error: MESSAGES.forbidden };
+  if (decision !== "reject" && decision !== "return") return { ok: false, error: MESSAGES.forbidden };
   const trimmed = reason.trim();
   if (!trimmed) return { ok: false, error: MESSAGES.provideReason };
   return { ok: true, decision, reason: trimmed, rejectedLines: [] };
+}
+
+// Повернену заявку автор виправляє й подає знову (AC-DEC-07); відхилену, схвалену й ту, що чекає, — ні. Те саме правило
+// тримає private.resubmit_purchase.
+export function canEditReturned(viewer: { id: string }, purchase: { authorId: string; status: string }): boolean {
+  return purchase.status === "returned" && purchase.authorId === viewer.id;
 }

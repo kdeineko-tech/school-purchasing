@@ -9,7 +9,7 @@ import { allowedPurchaseTypes, type PermissionHolder, type PurchaseType } from "
 // Ідентифікатори в базі (purchases.purchase_type, purchases.status); підписи англійською — таблиця вимоги
 // ValiaBihun/2026-quitcode-dream-team#49 (AC-LANG-06).
 export type PurchaseTypeId = "purchasing_department" | "self_purchase";
-export type PurchaseStatus = "awaiting_approval" | "approved" | "rejected" | "partially_approved";
+export type PurchaseStatus = "awaiting_approval" | "approved" | "rejected" | "partially_approved" | "returned";
 
 export const PURCHASE_TYPE_LABELS: Record<PurchaseTypeId, PurchaseType> = {
   purchasing_department: "Purchasing department",
@@ -21,6 +21,7 @@ export const STATUS_LABELS: Record<PurchaseStatus, string> = {
   approved: "Approved",
   rejected: "Rejected",
   partially_approved: "Partially approved", // AC-DEC-01; підпис у списку й на сторінці — AC-LANG-09
+  returned: "Returned for revision", // AC-DEC-04; AC-LANG-09
 };
 
 // Статус рядка після рішення (AC-DEC-01); до рішення (pending) рядок без позначки.
@@ -80,9 +81,15 @@ export function validateSubmission(
 ): SubmissionCheck {
   if (!options.departments.some((d) => d.id === input.departmentId)) return { ok: false, error: MESSAGES.forbidden };
   if (!options.purchaseTypes.some((t) => t === input.purchaseType)) return { ok: false, error: MESSAGES.forbidden };
-  if (input.lines.length === 0) return { ok: false, error: MESSAGES.noLines };
+  return validateLines(input.lines);
+}
+
+// Рядки заявки — при першому поданні й при повторному (AC-DEC-07: ті самі перевірки й повідомлення, #66): хоча б один
+// рядок (AC-FRM-06), у кожному заповнено всі чотири поля (AC-FRM-15).
+export function validateLines(lines: readonly PurchaseLineInput[]): SubmissionCheck {
+  if (lines.length === 0) return { ok: false, error: MESSAGES.noLines };
   const filled = (value: string) => value.trim() !== "";
-  if (!input.lines.every((l) => filled(l.name) && filled(l.purpose) && filled(l.quantity) && filled(l.unitPrice))) {
+  if (!lines.every((l) => filled(l.name) && filled(l.purpose) && filled(l.quantity) && filled(l.unitPrice))) {
     return { ok: false, error: MESSAGES.lineFields };
   }
   return { ok: true };

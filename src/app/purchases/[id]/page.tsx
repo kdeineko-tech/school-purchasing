@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { NoAccess } from "@/app/admin/no-access";
 import { PageShell } from "@/components/page-shell";
 import { Alert, Card, Input, Notice } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
-import { canDecide } from "@/lib/purchases/decisions";
+import { canDecide, canEditReturned } from "@/lib/purchases/decisions";
 import { formatNumber } from "@/lib/purchases/amounts";
 import { loadHistory } from "@/lib/purchases/history";
 import { loadAuthorNames } from "@/lib/purchases/lists";
@@ -40,6 +41,8 @@ function backLink(viewerId: string, authorId: string) {
 // кожного рядка й сума заявки за всіма рядками (AC-HIST-02). Історія — записи «Submitted · <ім'я> · <дата, час>»
 // (AC-HIST-06); чужу заявку з історією сторінка не показує взагалі (AC-HIST-10). Часткове схвалення (AC-DEC-01):
 // схвалювач позначає «Reject line» і схвалює; після рішення кожен рядок має статус «Approved» / «Rejected».
+// Повернення (AC-DEC-04, AC-DEC-06): «Return for revision» з причиною; причину видно поруч зі статусом «Returned for
+// revision», а автор бачить «Edit» — сторінку повторного подання (AC-DEC-07).
 type PurchaseDetails = {
   id: string;
   author_id: string;
@@ -49,9 +52,11 @@ type PurchaseDetails = {
   rejection_reason: string | null;
   created_at: string;
   number?: number | null;
+  return_reason?: string | null;
 };
 const DETAILS = "id, author_id, department_id, purchase_type, status, rejection_reason, created_at";
-// Поки міграцію номера чи статусу рядка не застосовано (Postgres — 42703), читаємо без цієї колонки: «—» замість помилки.
+// Поки міграцію номера, статусу рядка чи причини повернення не застосовано (Postgres — 42703), читаємо без цих колонок:
+// «—» замість помилки.
 const MISSING_COLUMN = "42703";
 const DECISION_FORM = "decision-form";
 const LINE_COLUMNS = "id, position, name, purpose, quantity, unit_price";
@@ -99,6 +104,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
   const DECIDED: Record<string, Record<string, string>> = {
     approve: { approved: "Request approved", partially_approved: "Request partially approved" },
     reject: { rejected: "Request rejected" },
+    return: { returned: "Request returned for revision" },
   };
   const decidedNotice = (typeof decided === "string" && DECIDED[decided]?.[purchase.status]) || null;
 
@@ -107,6 +113,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
     { authorId: purchase.author_id, departmentId: purchase.department_id, status: purchase.status },
     approvedDepartmentIds,
   );
+  const editable = canEditReturned(viewer, { authorId: purchase.author_id, status: purchase.status });
 
   return (
     <PageShell viewer={viewer} title="Purchase" back={backLink(viewer.id, purchase.author_id)}>
@@ -128,6 +135,12 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
               <dd data-testid="rejection-reason">{purchase.rejection_reason}</dd>
             </>
           )}
+          {purchase.status === "returned" && purchase.return_reason && (
+            <>
+              <dt className="text-muted-foreground">Reason</dt>
+              <dd data-testid="return-reason">{purchase.return_reason}</dd>
+            </>
+          )}
           <dt className="text-muted-foreground">Author</dt>
           <dd data-testid="purchase-author">{authorName.get(purchase.id) ?? "—"}</dd>
           <dt className="text-muted-foreground">Department</dt>
@@ -137,6 +150,15 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
           <dt className="text-muted-foreground">Submitted</dt>
           <dd>{formatSubmittedAt(purchase.created_at)}</dd>
         </dl>
+        {editable && (
+          <Link
+            href={`/purchases/${purchase.id}/edit`}
+            className="mt-4 inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            data-testid="edit-purchase"
+          >
+            Edit
+          </Link>
+        )}
       </Card>
       <LinesCard lines={lines ?? []} decisionFormId={decidable ? DECISION_FORM : undefined} />
       <HistoryCard history={history} />
@@ -145,7 +167,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
           <form id={DECISION_FORM} action={decidePurchase} className="flex flex-col gap-3 text-sm" data-testid="decision-form">
             <input type="hidden" name="purchaseId" value={purchase.id} />
             <label className="flex flex-col gap-1.5 font-medium">
-              Reason (required to reject)
+              Reason (required to reject or return for revision)
               <Input name="reason" maxLength={500} />
             </label>
             <DecisionButtons formId={DECISION_FORM} />
@@ -162,7 +184,7 @@ async function readDetails(supabase: Awaited<ReturnType<typeof createClient>>, i
       data: PurchaseDetails | null;
       error: { code: string; message: string } | null;
     }>;
-  const result = await read(`number, ${DETAILS}`);
+  const result = await read(`number, return_reason, ${DETAILS}`);
   return result.error?.code === MISSING_COLUMN ? read(DETAILS) : result;
 }
 
