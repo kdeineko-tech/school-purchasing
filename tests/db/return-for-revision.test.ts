@@ -206,11 +206,13 @@ describe("повернення на доопрацювання в базі", () 
     const rejected = await submit(t, member1, PRIMARY);
     await decide(t, member2, rejected, "reject", "Немає бюджету");
 
-    for (const id of [awaiting, approved, rejected, "00000000-0000-4000-8000-0000000000ff"]) {
-      const before = id.endsWith("ff") ? null : await stateOf(t, id);
+    for (const id of [awaiting, approved, rejected]) {
+      const before = await stateOf(t, id);
       await expect(resubmit(t, member1, id)).rejects.toThrow(/FORBIDDEN/);
-      if (before) expect(await stateOf(t, id)).toEqual(before);
+      expect(await stateOf(t, id)).toEqual(before);
     }
+    // Заявки, якої немає, — та сама відмова.
+    await expect(resubmit(t, member1, "00000000-0000-4000-8000-0000000000ff")).rejects.toThrow(/FORBIDDEN/);
   });
 
   it("AC-DEC-07: деактивований автор не подає знову — FORBIDDEN, без змін", async () => {

@@ -54,7 +54,7 @@ function setDb({
   status = "returned",
   returnReason = REASON as string | null,
   visible = true,
-  approves = [] as string[],
+  approves = [] as readonly string[],
   missingReturnReason = false,
   rpcError = null as { code?: string; message: string } | null,
 } = {}) {
@@ -99,6 +99,9 @@ const props = (searchParams: Record<string, string> = {}) =>
 const renderPage = async (searchParams: Record<string, string> = {}) =>
   renderToStaticMarkup(await PurchasePage(props(searchParams)));
 const renderEdit = async () => renderToStaticMarkup(await EditPurchasePage(props()));
+// Тег із атрибутами в будь-якому порядку: React сам обирає порядок атрибутів.
+const tag = (html: string, name: string, attribute: string) =>
+  [...html.matchAll(new RegExp(`<${name}\\b[^>]*>`, "g"))].map((m) => m[0]).find((t) => t.includes(attribute)) ?? "";
 const text = (html: string, testId: string) =>
   [...html.matchAll(new RegExp(`data-testid="${testId}"[^>]*>([^<]*)<`, "g"))].map((m) => m[1]);
 
@@ -136,6 +139,8 @@ describe("повернення — доменні правила", () => {
     expect(validateLines([paper])).toEqual({ ok: true });
     expect(validateLines([])).toEqual({ ok: false, error: MESSAGES.noLines });
     expect(validateLines([{ ...paper, purpose: " " }])).toEqual({ ok: false, error: MESSAGES.lineFields });
+    // Кожен рядок, а не хоча б один.
+    expect(validateLines([paper, { ...paper, unitPrice: "" }])).toEqual({ ok: false, error: MESSAGES.lineFields });
   });
 
   it("AC-LANG-09: статус «Повернено на доопрацювання» підписано текстом «Returned for revision»", () => {
@@ -236,7 +241,7 @@ describe("повернення — сторінка заявки", () => {
 
     expect(text(html, "purchase-status")).toEqual(["Returned for revision"]);
     expect(text(html, "return-reason")).toEqual([REASON]);
-    expect(html).toMatch(new RegExp(`<a[^>]*href="/purchases/${ID}/edit"[^>]*data-testid="edit-purchase"`));
+    expect(tag(html, "a", 'data-testid="edit-purchase"')).toContain(`href="/purchases/${ID}/edit"`);
   });
 
   it("AC-LANG-09: на сторінці заявки статус підписано текстом «Returned for revision»", async () => {
@@ -258,7 +263,9 @@ describe("повернення — сторінка заявки", () => {
 
     const html = await renderPage();
 
-    expect(html).toMatch(/<button[^>]*name="decision"[^>]*value="return"[^>]*>Return for revision</);
+    const button = tag(html, "button", 'value="return"');
+    expect(button).toContain('name="decision"');
+    expect(html).toContain(`${button}Return for revision</button>`);
     expect(text(html, "return-reason")).toEqual([]);
   });
 
