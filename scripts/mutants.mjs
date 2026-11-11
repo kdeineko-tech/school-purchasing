@@ -13,20 +13,23 @@
 // його доводить Stryker). Гарнес — наш tests/db/supabase-pglite.ts; P1/P2 з матеріалів не беремо: їхній
 // tests/db/profiles-db.test.ts перевіряв гарнес шаблону, а наш гарнес уже перевіряють тести бази зрізів 1–2.
 const PURCHASES = "supabase/migrations/20261025185729_purchases.sql";
-const DECISIONS = "supabase/migrations/20261025223225_purchase_decisions.sql";
 // Перевірки рядків із 20261026100553_purchase_line_fields.sql тепер у private.insert_purchase_lines (зріз 3, задача 1).
 // private.submit_purchase (з лічильником номера) востаннє замінює 20261109144820_purchase_history.sql (задача 2) —
 // тож H1 мутує її: мутант у старій версії функції виконується лише до наступної міграції й вижив би.
 const NUMBER = "supabase/migrations/20261106234630_purchase_number.sql";
 const HISTORY = "supabase/migrations/20261109144820_purchase_history.sql";
+// private.decide_purchase (з p_rejected_lines) востаннє замінює 20261109171140_partial_approval.sql (задача 3) — тож A1
+// мутує її з тієї самої причини, що й H1.
+const PARTIAL = "supabase/migrations/20261109171140_partial_approval.sql";
 const PURCHASES_DB = "tests/db/purchases.test.ts";
 const DECISIONS_DB = "tests/db/decisions.test.ts";
 const NUMBERS_DB = "tests/db/numbers.test.ts";
 const HISTORY_DB = "tests/db/history.test.ts";
+const PARTIAL_DB = "tests/db/partial-approval.test.ts";
 
 export const mutants = [
   {
-    id: "A1", kind: "sql", ac: "AC-APR-04", file: DECISIONS, tests: [DECISIONS_DB],
+    id: "A1", kind: "sql", ac: "AC-APR-04", file: PARTIAL, tests: [DECISIONS_DB, PARTIAL_DB],
     what: "decide_purchase: вирішує будь-хто з відділу заявки, а не лише його схвалювач (прибрано `and m.approves`)",
     find: "where m.profile_id = v_uid and m.department_id = v_purchase.department_id and m.approves\n",
     replace: "where m.profile_id = v_uid and m.department_id = v_purchase.department_id\n",
@@ -62,6 +65,18 @@ export const mutants = [
     replace: "    and true\n  order by",
   },
   // ── Ваші мутанти: по одному на правило в SQL за кожним із ваших 3 AC ──────────────────────────────────────────
+  {
+    id: "D1", kind: "sql", ac: "AC-DEC-01", file: PARTIAL, tests: [PARTIAL_DB],
+    what: "decide_purchase: позначений рядок при схваленні отримує «Схвалено», а не «Відхилено»",
+    find: "    when p_decision = 'reject' or l.id = any(v_rejected) then 'rejected'\n",
+    replace: "    when p_decision = 'reject' then 'rejected'\n",
+  },
+  {
+    id: "D2", kind: "sql", ac: "AC-DEC-01", file: PARTIAL, tests: [PARTIAL_DB],
+    what: "decide_purchase: схвалення з відхиленими рядками дає «Схвалено», а не «Частково схвалено»",
+    find: "        when cardinality(v_rejected) > 0 then 'partially_approved'\n",
+    replace: "        when cardinality(v_rejected) > 0 then 'approved'\n",
+  },
 ];
 
 // Приклади з демо (інша схема — у вашому репо цих файлів немає, тож не розкоментовуйте як є):

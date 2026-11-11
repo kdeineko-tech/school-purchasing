@@ -5,6 +5,7 @@ export type Line = { item: string; purpose: string; quantity: string; unitPrice:
 
 export const PAPER: Line = { item: "Paper A4", purpose: "Printing", quantity: "3", unitPrice: "20.00" };
 export const PENS: Line = { item: "Pens", purpose: "Classes", quantity: "2", unitPrice: "15.50" };
+export const MARKERS: Line = { item: "Markers", purpose: "Classes", quantity: "4", unitPrice: "2.25" };
 
 /** Подає закупівлю через форму у відділ department з типом «Purchasing department» і чекає «My requests». */
 export async function submitPurchase(page: Page, lines: Line[], department: "UAT" | "UAT-2" = "UAT") {

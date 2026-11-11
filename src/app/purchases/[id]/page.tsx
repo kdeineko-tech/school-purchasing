@@ -6,7 +6,7 @@ import { Alert, Card, Input, Notice } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import { getViewer } from "@/lib/org/viewer";
 import { canDecide } from "@/lib/purchases/decisions";
-import { formatCents, formatNumber, lineTotal, purchaseTotal } from "@/lib/purchases/amounts";
+import { formatNumber } from "@/lib/purchases/amounts";
 import { loadHistory } from "@/lib/purchases/history";
 import { loadAuthorNames } from "@/lib/purchases/lists";
 import {
@@ -19,13 +19,12 @@ import { createClient } from "@/lib/supabase/server";
 import { decidePurchase } from "../actions";
 import { DecisionButtons } from "./decision-buttons";
 import { HistoryCard } from "./history-card";
+import { LinesCard, type PurchaseLine } from "./lines-card";
 import { StatusBadge } from "../status-badge";
 
 export const metadata: Metadata = { title: "Purchase" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const price = (value: number | null) => (value === null ? "—" : Number(value).toFixed(2));
 
 // Куди «назад»: автор відкриває свою заявку з «My requests», а схвалювач чи адміністратор чужу — зі списку для
 // рішення (сторінка Approvals чи картка на головній).
@@ -39,7 +38,8 @@ function backLink(viewerId: string, authorId: string) {
 // (AC-APR-02, AC-APR-05, AC-APR-06); причину відхилення видно поруч зі статусом «Rejected» (AC-APR-07). Автор — ім'я,
 // без імені — email, без інших даних профілю (AC-APR-08, AC-APR-09, AC-APR-10). Номер «PUR-…» (AC-HIST-01), сума
 // кожного рядка й сума заявки за всіма рядками (AC-HIST-02). Історія — записи «Submitted · <ім'я> · <дата, час>»
-// (AC-HIST-06); чужу заявку з історією сторінка не показує взагалі (AC-HIST-10).
+// (AC-HIST-06); чужу заявку з історією сторінка не показує взагалі (AC-HIST-10). Часткове схвалення (AC-DEC-01):
+// схвалювач позначає «Reject line» і схвалює; після рішення кожен рядок має статус «Approved» / «Rejected».
 type PurchaseDetails = {
   id: string;
   author_id: string;
@@ -51,8 +51,10 @@ type PurchaseDetails = {
   number?: number | null;
 };
 const DETAILS = "id, author_id, department_id, purchase_type, status, rejection_reason, created_at";
-// Поки міграцію номера не застосовано (Postgres — 42703), читаємо заявку без номера: «—» замість помилки.
+// Поки міграцію номера чи статусу рядка не застосовано (Postgres — 42703), читаємо без цієї колонки: «—» замість помилки.
 const MISSING_COLUMN = "42703";
+const DECISION_FORM = "decision-form";
+const LINE_COLUMNS = "id, position, name, purpose, quantity, unit_price";
 
 export default async function PurchasePage({ params, searchParams }: PageProps<"/purchases/[id]">) {
   const viewer = await getViewer();
@@ -71,11 +73,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
     { data: approved, error: approvedError },
   ] = await Promise.all([
     readDetails(supabase, id),
-    supabase
-      .from("purchase_lines")
-      .select("position, name, purpose, quantity, unit_price")
-      .eq("purchase_id", id)
-      .order("position"),
+    readLines(supabase, id),
     supabase.from("department_members").select("department_id").eq("profile_id", viewer.id).eq("approves", true),
   ]);
   const readError = purchaseError ?? linesError ?? approvedError;
@@ -98,12 +96,11 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
   if (departmentError) throw new Error(`Failed to read department: ${departmentError.message}`);
 
   // Підтвердження після рішення — лише якщо заявка справді в цьому статусі (не довіряємо самій адресі).
-  const DECIDED: Record<string, { status: string; text: string }> = {
-    approve: { status: "approved", text: "Request approved" },
-    reject: { status: "rejected", text: "Request rejected" },
+  const DECIDED: Record<string, Record<string, string>> = {
+    approve: { approved: "Request approved", partially_approved: "Request partially approved" },
+    reject: { rejected: "Request rejected" },
   };
-  const done = typeof decided === "string" ? DECIDED[decided] : undefined;
-  const decidedNotice = done && done.status === purchase.status ? done.text : null;
+  const decidedNotice = (typeof decided === "string" && DECIDED[decided]?.[purchase.status]) || null;
 
   const decidable = canDecide(
     viewer,
@@ -141,52 +138,17 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
           <dd>{formatSubmittedAt(purchase.created_at)}</dd>
         </dl>
       </Card>
-      <Card title="Lines">
-        <table aria-label="Lines" className="w-full text-left text-sm" data-testid="purchase-lines">
-          <thead className="text-muted-foreground">
-            <tr>
-              <th className="py-2 font-medium">Item</th>
-              <th className="py-2 font-medium">Purpose</th>
-              <th className="py-2 text-right font-medium">Quantity</th>
-              <th className="py-2 text-right font-medium">Unit price</th>
-              <th className="py-2 text-right font-medium">Line total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {(lines ?? []).map((line) => (
-              <tr key={line.position}>
-                <td className="py-2">{line.name ?? "—"}</td>
-                <td className="py-2">{line.purpose ?? "—"}</td>
-                <td className="py-2 text-right">{line.quantity ?? "—"}</td>
-                <td className="py-2 text-right">{price(line.unit_price)}</td>
-                <td className="py-2 text-right tabular-nums" data-testid="line-total">
-                  {formatCents(lineTotal(line.quantity, line.unit_price))}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-          <tfoot>
-            <tr className="border-t border-border font-medium">
-              <td className="py-2" colSpan={4}>
-                Total
-              </td>
-              <td className="py-2 text-right tabular-nums" data-testid="purchase-total">
-                {formatCents(purchaseTotal(lines ?? []))}
-              </td>
-            </tr>
-          </tfoot>
-        </table>
-      </Card>
+      <LinesCard lines={lines ?? []} decisionFormId={decidable ? DECISION_FORM : undefined} />
       <HistoryCard history={history} />
       {decidable && (
         <Card title="Decision">
-          <form id="decision-form" action={decidePurchase} className="flex flex-col gap-3 text-sm" data-testid="decision-form">
+          <form id={DECISION_FORM} action={decidePurchase} className="flex flex-col gap-3 text-sm" data-testid="decision-form">
             <input type="hidden" name="purchaseId" value={purchase.id} />
             <label className="flex flex-col gap-1.5 font-medium">
               Reason (required to reject)
               <Input name="reason" maxLength={500} />
             </label>
-            <DecisionButtons formId="decision-form" />
+            <DecisionButtons formId={DECISION_FORM} />
           </form>
         </Card>
       )}
@@ -202,4 +164,14 @@ async function readDetails(supabase: Awaited<ReturnType<typeof createClient>>, i
     }>;
   const result = await read(`number, ${DETAILS}`);
   return result.error?.code === MISSING_COLUMN ? read(DETAILS) : result;
+}
+
+async function readLines(supabase: Awaited<ReturnType<typeof createClient>>, id: string) {
+  const read = (columns: string) =>
+    supabase.from("purchase_lines").select(columns).eq("purchase_id", id).order("position") as unknown as PromiseLike<{
+      data: PurchaseLine[] | null;
+      error: { code: string; message: string } | null;
+    }>;
+  const result = await read(`${LINE_COLUMNS}, status`);
+  return result.error?.code === MISSING_COLUMN ? read(LINE_COLUMNS) : result;
 }

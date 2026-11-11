@@ -9,7 +9,7 @@ import { allowedPurchaseTypes, type PermissionHolder, type PurchaseType } from "
 // Ідентифікатори в базі (purchases.purchase_type, purchases.status); підписи англійською — таблиця вимоги
 // ValiaBihun/2026-quitcode-dream-team#49 (AC-LANG-06).
 export type PurchaseTypeId = "purchasing_department" | "self_purchase";
-export type PurchaseStatus = "awaiting_approval" | "approved" | "rejected";
+export type PurchaseStatus = "awaiting_approval" | "approved" | "rejected" | "partially_approved";
 
 export const PURCHASE_TYPE_LABELS: Record<PurchaseTypeId, PurchaseType> = {
   purchasing_department: "Purchasing department",
@@ -18,6 +18,13 @@ export const PURCHASE_TYPE_LABELS: Record<PurchaseTypeId, PurchaseType> = {
 
 export const STATUS_LABELS: Record<PurchaseStatus, string> = {
   awaiting_approval: "Awaiting approval",
+  approved: "Approved",
+  rejected: "Rejected",
+  partially_approved: "Partially approved", // AC-DEC-01; підпис у списку й на сторінці — AC-LANG-09
+};
+
+// Статус рядка після рішення (AC-DEC-01); до рішення (pending) рядок без позначки.
+export const LINE_STATUS_LABELS: Record<string, string> = {
   approved: "Approved",
   rejected: "Rejected",
 };

@@ -29,13 +29,22 @@ export function decisionList<T extends DecisionPurchase>(
   return purchases.filter((p) => canDecide({ id: viewerId }, p, approvedDepartmentIds));
 }
 
-export type DecisionCheck = { ok: true; decision: Decision; reason: string | null } | { ok: false; error: string };
+export type DecisionCheck =
+  | { ok: true; decision: Decision; reason: string | null; rejectedLines: string[] }
+  | { ok: false; error: string };
 
-// Відхилення лише з причиною (AC-APR-06, AC-LANG-05); схвалення причини не має.
-export function validateDecision(decision: string, reason: string): DecisionCheck {
-  if (decision === "approve") return { ok: true, decision, reason: null };
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Відхилення лише з причиною (AC-APR-06, AC-LANG-05); схвалення причини не має. Схвалення з позначеними рядками —
+// часткове (AC-DEC-01): позначені рядки база відхиляє, решту схвалює. Відхилення заявки відхиляє всі рядки, тож
+// позначок не бере. Позначка — лише id рядка; що рядок саме цієї заявки, перевіряє база.
+export function validateDecision(decision: string, reason: string, rejectedLines: readonly string[] = []): DecisionCheck {
+  if (decision === "approve") {
+    if (!rejectedLines.every((id) => UUID.test(id))) return { ok: false, error: MESSAGES.forbidden };
+    return { ok: true, decision, reason: null, rejectedLines: [...rejectedLines] };
+  }
   if (decision !== "reject") return { ok: false, error: MESSAGES.forbidden };
   const trimmed = reason.trim();
   if (!trimmed) return { ok: false, error: MESSAGES.provideReason };
-  return { ok: true, decision, reason: trimmed };
+  return { ok: true, decision, reason: trimmed, rejectedLines: [] };
 }

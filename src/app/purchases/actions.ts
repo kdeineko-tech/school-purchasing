@@ -56,8 +56,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DECISION_ERRORS: Record<string, string | null> = {
   FORBIDDEN: MESSAGES.forbidden,
   REASON_REQUIRED: MESSAGES.provideReason,
+  ALL_LINES_REJECTED: MESSAGES.allLinesRejected,
   NOT_PENDING: null,
 };
+// Застосунок уже передає p_rejected_lines, а нову функцію бази ще не розгорнуто (db-deploy) — PostgREST її не знаходить.
+const MISSING_FUNCTION = "PGRST202";
 
 // decided — після успішного рішення сторінка заявки показує підтвердження «Request approved» / «Request rejected».
 function backToPurchase(id: string, error?: string, decided?: Decision): never {
@@ -76,15 +79,23 @@ export async function decidePurchase(formData: FormData) {
 
   const id = String(formData.get("purchaseId") ?? "");
   if (!UUID.test(id)) redirect("/purchases");
-  const check = validateDecision(String(formData.get("decision") ?? ""), String(formData.get("reason") ?? ""));
+  const check = validateDecision(
+    String(formData.get("decision") ?? ""),
+    String(formData.get("reason") ?? ""),
+    formData.getAll("rejectedLines").map(String),
+  );
   if (!check.ok) backToPurchase(id, check.error);
 
+  // Позначені рядки (AC-DEC-01) передаємо лише тоді, коли вони є: виклик із трьома аргументами працює і зі старою
+  // функцією бази, тож звичайне рішення не залежить від db-deploy.
   const supabase = await createClient();
   const { error } = await supabase.rpc("decide_purchase", {
     p_purchase_id: id,
     p_decision: check.decision,
     p_reason: check.reason,
+    ...(check.rejectedLines.length > 0 && { p_rejected_lines: check.rejectedLines }),
   });
+  if (error?.code === MISSING_FUNCTION) backToPurchase(id, MESSAGES.decisionUnavailable);
   if (error) {
     const known = Object.keys(DECISION_ERRORS).find((code) => error.message.includes(code));
     if (known) backToPurchase(id, DECISION_ERRORS[known] ?? undefined);
