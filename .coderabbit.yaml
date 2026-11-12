@@ -148,6 +148,7 @@ reviews:
           IDs deleted) and docs/spec-reading.md; the only allowed extra is one separate commit that strips AC
           IDs removed from the spec from test titles. Implementation (branch task/* or setup/*): src/**,
           supabase/**, tests/**, docs/conformance.md rows, docs/decisions/**, docs/bootstrap.md, docs/img/**,
+          docs/qa/** (UAT reports, proof pack, retro),
           supabase/demo-users.json, and checkboxes or the archive of openspec/changes/impl-*; NOT requirements/**
           and NOT openspec/specs/**. Template update (branch template/*): cherry-picked course-template commits;
           any path except requirements/** and openspec/specs/**. FAIL if any PR other than a Requirements sync
