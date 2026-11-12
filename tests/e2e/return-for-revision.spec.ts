@@ -102,17 +102,34 @@ test(
       await page.waitForURL((url) => url.searchParams.get("decided") === "return");
     });
 
+    // Два кадри: у Марії одразу після рішення й у автора. Один кадр (лише автор) рецензент не прийняв: «у Марії» —
+    // не видно (UAT 2026-11-12, R3).
     await thenStep(
       page,
       {
         clause: "статус заявки «Повернено на доопрацювання»",
-        visible: ["статус «Returned for revision» у Марії й у автора", "автор бачить причину «Уточніть кількість»"],
-        hidden: ["статус у базі: returned, причина «Уточніть кількість»"],
+        visible: ["у Марії на сторінці заявки статус «Returned for revision»"],
+        hidden: ["статус у базі: returned"],
       },
       async () => {
         await expect(page.getByTestId("purchase-status")).toHaveText("Returned for revision");
-        await signInAs(page, requester!);
-        await page.goto(`/purchases/${id}`);
+        expect((await stored(id)).status).toBe("returned");
+      },
+    );
+
+    await when("автор відкриває свою заявку", async () => {
+      await signInAs(page, requester!);
+      await page.goto(`/purchases/${id}`);
+    });
+
+    await thenStep(
+      page,
+      {
+        clause: "статус заявки «Повернено на доопрацювання»",
+        visible: ["у автора на сторінці заявки статус «Returned for revision»", "причина «Уточніть кількість»"],
+        hidden: ["у базі: returned, причина «Уточніть кількість»"],
+      },
+      async () => {
         await expect(page.getByTestId("purchase-status")).toHaveText("Returned for revision");
         await expect(page.getByTestId("return-reason")).toHaveText(REASON);
         expect(await stored(id)).toMatchObject({ status: "returned", return_reason: REASON });
@@ -142,16 +159,35 @@ test(
       await page.waitForURL((url) => url.pathname === "/purchases");
     });
 
+    // Два кадри: «My requests» з повідомленням про подання, далі сторінка заявки. Один кадр (лише сторінка заявки)
+    // не показував повідомлення — рецензент сказав FAIL (UAT 2026-11-12, R3).
     await thenStep(
       page,
       {
         clause: "статус заявки «Очікує схвалення», відділ той самий",
-        visible: ["повідомлення «Purchase submitted»", "на сторінці заявки статус «Awaiting approval», відділ «UAT»"],
-        hidden: ["у базі: awaiting_approval, той самий відділ і номер, рядок 1 — кількість 5"],
+        visible: ["повідомлення «Purchase submitted»", "у списку «My requests» заявка зі статусом «Awaiting approval»"],
+        hidden: [],
       },
       async () => {
         await expect(page.getByTestId("submitted")).toHaveText("Purchase submitted");
-        await page.goto(`/purchases/${id}`);
+        await expect(
+          page.getByTestId("my-requests").locator(`a[href="/purchases/${id}"]`).getByTestId("purchase-status"),
+        ).toHaveText("Awaiting approval");
+      },
+    );
+
+    await when("автор відкриває заявку", async () => {
+      await page.goto(`/purchases/${id}`);
+    });
+
+    await thenStep(
+      page,
+      {
+        clause: "статус заявки «Очікує схвалення», відділ той самий",
+        visible: ["на сторінці заявки статус «Awaiting approval», відділ «UAT»"],
+        hidden: ["у базі: awaiting_approval, той самий відділ і номер, рядок 1 — кількість 5"],
+      },
+      async () => {
         await expect(page.getByTestId("purchase-status")).toHaveText("Awaiting approval");
         await expect(page.getByTestId("purchase-department")).toHaveText("UAT");
         const after = await stored(id);
