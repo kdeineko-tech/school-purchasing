@@ -13,14 +13,16 @@
 // його доводить Stryker). Гарнес — наш tests/db/supabase-pglite.ts; P1/P2 з матеріалів не беремо: їхній
 // tests/db/profiles-db.test.ts перевіряв гарнес шаблону, а наш гарнес уже перевіряють тести бази зрізів 1–2.
 const PURCHASES = "supabase/migrations/20261025185729_purchases.sql";
-// Перевірки рядків із 20261026100553_purchase_line_fields.sql тепер у private.insert_purchase_lines (зріз 3, задача 1).
+// Перевірки рядків із 20261026100553_purchase_line_fields.sql тепер у private.insert_purchase_lines (зріз 3, задача 1);
+// востаннє її замінює 20261113115937_server_limits.sql (серверні ліміти) — тож F1, L1 і L2 мутують її.
 // private.submit_purchase (з лічильником номера) востаннє замінює 20261109144820_purchase_history.sql (задача 2) —
 // тож H1 мутує її: мутант у старій версії функції виконується лише до наступної міграції й вижив би.
-const NUMBER = "supabase/migrations/20261106234630_purchase_number.sql";
 const HISTORY = "supabase/migrations/20261109144820_purchase_history.sql";
 // private.decide_purchase (з p_rejected_lines і рішенням return) востаннє замінює 20261111155530_return_for_revision.sql
 // (задача 4) — тож A1, D1 і D2 мутують її з тієї самої причини, що й H1 (уперше — 20261109171140_partial_approval.sql).
 const RETURN = "supabase/migrations/20261111155530_return_for_revision.sql";
+const LIMITS = "supabase/migrations/20261113115937_server_limits.sql";
+const LIMITS_DB = "tests/db/server-limits.test.ts";
 const PURCHASES_DB = "tests/db/purchases.test.ts";
 const DECISIONS_DB = "tests/db/decisions.test.ts";
 const NUMBERS_DB = "tests/db/numbers.test.ts";
@@ -42,7 +44,7 @@ export const mutants = [
     replace: "create policy purchases_select_visible\n  on public.purchases\n  for select\n  to authenticated\n  using (\n    (select private.is_active_user())\n    and (\n      author_id = (select auth.uid())\n      or true",
   },
   {
-    id: "F1", kind: "sql", ac: "AC-FRM-06", file: NUMBER, tests: [PURCHASES_DB],
+    id: "F1", kind: "sql", ac: "AC-FRM-06", file: LIMITS, tests: [PURCHASES_DB],
     what: "insert_purchase_lines: порожній масив рядків більше не дає NO_LINES",
     find: "  if jsonb_array_length(p_lines) = 0 then\n",
     replace: "  if false then\n",
@@ -64,6 +66,18 @@ export const mutants = [
     what: "purchase_history: функція віддає історію будь-якої заявки — без перевірки видимості (умова → true)",
     find: "    and (select private.is_active_user())\n    and (\n      p.author_id = (select auth.uid())\n      or (select private.approves_department(p.department_id))\n      or (select private.current_app_role()) = 'admin'\n    )\n  order by",
     replace: "    and true\n  order by",
+  },
+  {
+    id: "L1", kind: "sql", ac: "серверні ліміти (зауваження PM 5)", file: LIMITS, tests: [LIMITS_DB],
+    what: "insert_purchase_lines: понад 100 рядків більше не дає TOO_MANY_LINES",
+    find: "  if jsonb_array_length(p_lines) > 100 then\n",
+    replace: "  if false then\n",
+  },
+  {
+    id: "L2", kind: "sql", ac: "серверні ліміти (зауваження PM 5)", file: LIMITS, tests: [LIMITS_DB],
+    what: "insert_purchase_lines: мета рядка без межі довжини — лише назва",
+    find: "       or char_length(btrim(line.value ->> 'purpose', v_blank)) > 500\n",
+    replace: "",
   },
   // ── Ваші мутанти: по одному на правило в SQL за кожним із ваших 3 AC ──────────────────────────────────────────
   {
