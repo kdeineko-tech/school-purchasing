@@ -92,8 +92,9 @@ OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версі
     `impl-<зріз>`), рядки `docs/conformance.md`, `docs/spec-reading.md`; плюс окремий коміт, що прибирає з назв тестів
     ID AC, прибраних зі специфікації (інакше ORPHAN);
   - «Реалізація» (`task/<коротко>`, у день 0 — `setup/bootstrap`) — `src/`, `supabase/`, `tests/`, рядки
-    `docs/conformance.md`, `docs/decisions/`, `docs/bootstrap.md`, `docs/img/`, `supabase/demo-users.json`, галочки в
-    `openspec/changes/impl-<зріз>/tasks.md` і archive `impl-<зріз>`; без `requirements/` і `openspec/specs/`;
+    `docs/conformance.md`, `docs/decisions/`, `docs/bootstrap.md`, `docs/img/`, `docs/qa/` (звіти UAT, proof pack,
+    ретро), `supabase/demo-users.json`, галочки в `openspec/changes/impl-<зріз>/tasks.md` і archive `impl-<зріз>`; без
+    `requirements/` і `openspec/specs/`;
   - «Оновлення шаблону» (`template/<коротко>`, `git cherry-pick`).
 - Зміна `impl-<зріз>` (після злитої специфікації зрізу; PR «Специфікація»): `npx openspec new change impl-<зріз>` →
   `skip_specs: true` у `.openspec.yaml` → `design.md` (рішення з AC ID) і `tasks.md` (вертикальні задачі з

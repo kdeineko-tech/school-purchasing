@@ -8,8 +8,9 @@
   «відкладено (чекає реалізації)», прибрані — видалено), `docs/spec-reading.md`. Виняток — окремий коміт, що прибирає з
   назв тестів ID AC, прибраних зі специфікації (інакше ORPHAN). Без `requirements/`.
 - [ ] **Реалізація** — гілка `task/<коротко>` (у день 0 — `setup/bootstrap`): `src/`, `supabase/`, `tests/`, рядки
-  `docs/conformance.md`, `docs/decisions/`, `docs/bootstrap.md`, `docs/img/`, `supabase/demo-users.json`, галочки в
-  `openspec/changes/impl-<зріз>/tasks.md` і його archive. Без `requirements/` і `openspec/specs/`.
+  `docs/conformance.md`, `docs/decisions/`, `docs/bootstrap.md`, `docs/img/`, `docs/qa/` (звіти UAT, proof pack,
+  ретро), `supabase/demo-users.json`, галочки в `openspec/changes/impl-<зріз>/tasks.md` і його archive. Без
+  `requirements/` і `openspec/specs/`.
 - [ ] **Оновлення шаблону** — гілка `template/<коротко>`: `git cherry-pick` коміту шаблону курсу (README, «Оновлення шаблону»).
 
 ## Вимоги
