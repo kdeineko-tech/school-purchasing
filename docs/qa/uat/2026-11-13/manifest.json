@@ -1,0 +1,440 @@
+{
+  "kind": "uat",
+  "generatedAt": "2026-11-13T11:32:33.616Z",
+  "baseURL": "https://school-purchasing-lemon.vercel.app",
+  "deployedSha": "aa44892788d4206313a20d0be378926c91347164",
+  "testsCommit": "d5799e172e9e49ee635b7e266903c6457a02af6f",
+  "testsDirty": false,
+  "reviewer": {
+    "model": "claude-haiku-5-5",
+    "disputes": "claude-sonnet-5-5"
+  },
+  "note": "Відео й траси не в git (test-results/ локально, артефакт CI). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "results": [
+    {
+      "id": "AC-DEC-01",
+      "proof": "AC-DEC-01",
+      "title": "AC-DEC-01: Марія відхиляє рядок 2 і схвалює заявку — «Partially approved», автор бачить рядок 2 «Rejected», рядки 1 і 3 «Approved»",
+      "screenshot": "docs/qa/uat/2026-11-13/frames/AC-DEC-01-then-1.png",
+      "video": "test-results/artifacts/partial-approval-AC-DEC-01-e44c1-ted»-рядки-1-і-3-«Approved»-chromium/video.webm",
+      "trace": "test-results/artifacts/partial-approval-AC-DEC-01-e44c1-ted»-рядки-1-і-3-«Approved»-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі сторінка заявки PUR-45 зі статусом «Partially approved». Рядки: Paper A4 — Approved, Pens — Rejected, Markers — Approved. Відділ на кадрі «UAT», не «Початкова школа»."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "NEEDS-HUMAN",
+        "claude-sonnet-5-5": "PASS"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "Status",
+          "onPage": true
+        },
+        {
+          "quote": "Partially approved",
+          "onPage": true
+        },
+        {
+          "quote": "Paper A4",
+          "onPage": true
+        },
+        {
+          "quote": "Approved",
+          "onPage": true
+        },
+        {
+          "quote": "Pens",
+          "onPage": true
+        },
+        {
+          "quote": "Rejected",
+          "onPage": true
+        },
+        {
+          "quote": "Markers",
+          "onPage": true
+        },
+        {
+          "quote": "Approved",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 49393,
+      "reviewCostUsd": 0.20995,
+      "reviewWallMs": 22096
+    },
+    {
+      "id": "AC-DEC-04",
+      "proof": "AC-DEC-04",
+      "title": "AC-DEC-04: Марія повертає заявку з причиною «Уточніть кількість» — статус «Returned for revision»",
+      "screenshot": "docs/qa/uat/2026-11-13/frames/AC-DEC-04-then-1.png",
+      "video": "test-results/artifacts/return-for-revision-AC-DEC-3dfa6-тус-«Returned-for-revision»-chromium/video.webm",
+      "trace": "test-results/artifacts/return-for-revision-AC-DEC-3dfa6-тус-«Returned-for-revision»-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі 1 (сторінка схвалювача, навігація Approvals) статус «Returned for revision» і банер про повернення. На кадрі 2 (сторінка автора, кнопка Edit) той самий статус і причина «Уточніть кількість». Відділ на кадрах «UAT», а не «Початкова школа», але це частина «Дано», а не видима частина «Тоді»."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "NEEDS-HUMAN",
+        "claude-sonnet-5-5": "PASS"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "Status",
+          "onPage": true
+        },
+        {
+          "quote": "Returned for revision",
+          "onPage": true
+        },
+        {
+          "quote": "Status",
+          "onPage": true
+        },
+        {
+          "quote": "Returned for revision",
+          "onPage": true
+        },
+        {
+          "quote": "Reason",
+          "onPage": true
+        },
+        {
+          "quote": "Уточніть кількість",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 26076,
+      "reviewCostUsd": 0.25003,
+      "reviewWallMs": 24717
+    },
+    {
+      "id": "AC-DEC-06",
+      "proof": "AC-DEC-06",
+      "title": "AC-DEC-06: Марія повертає заявку на доопрацювання без причини — «Provide a reason», статус лишається «Awaiting approval»",
+      "screenshot": "docs/qa/uat/2026-11-13/frames/AC-DEC-06-then-1.png",
+      "video": "test-results/artifacts/return-for-revision-AC-DEC-68c27-шається-«Awaiting-approval»-chromium/video.webm",
+      "trace": "test-results/artifacts/return-for-revision-AC-DEC-68c27-шається-«Awaiting-approval»-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі сторінки заявки PUR-46 угорі червона рамка з текстом «Provide a reason», а в полі Status — позначка «Awaiting approval». Відділ у journey — «UAT» замість «Початкової школи», це підміна даних тесту, а не вада кадру."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "FAIL",
+        "claude-sonnet-5-5": "PASS"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "Provide a reason",
+          "onPage": true
+        },
+        {
+          "quote": "Awaiting approval",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 35851,
+      "reviewCostUsd": 0.19236,
+      "reviewWallMs": 17865
+    },
+    {
+      "id": "AC-DEC-07",
+      "proof": "AC-DEC-07",
+      "title": "AC-DEC-07: автор виправив рядок 1 і подає заявку знову — статус «Awaiting approval», відділ той самий",
+      "screenshot": "docs/qa/uat/2026-11-13/frames/AC-DEC-07-then-1.png",
+      "video": "test-results/artifacts/return-for-revision-AC-DEC-e66f9--approval»-відділ-той-самий-chromium/video.webm",
+      "trace": "test-results/artifacts/return-for-revision-AC-DEC-e66f9--approval»-відділ-той-самий-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На frame-then-1 видно повідомлення «Purchase submitted» і заявку PUR-46 з відділом UAT та статусом «Awaiting approval» у списку «My requests». На frame-then-2 сторінка заявки PUR-46 показує статус «Awaiting approval» і відділ UAT; рядок Paper A4 з кількістю 5 також видно, але це не частина «Тоді» з кадрів. Попереднього відділу на кадрах немає, тому «той самий відділ» перевірено лише як видимий UAT."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Purchase submitted",
+          "onPage": true
+        },
+        {
+          "quote": "Awaiting approval",
+          "onPage": true
+        },
+        {
+          "quote": "Awaiting approval",
+          "onPage": true
+        },
+        {
+          "quote": "UAT",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 18481,
+      "reviewCostUsd": 0.11986,
+      "reviewWallMs": 8891
+    },
+    {
+      "id": "AC-HIST-01",
+      "proof": "AC-HIST-01",
+      "title": "AC-HIST-01: працівник 1 подає першу закупівлю, а потім другу — у «My requests» вони мають номери підряд",
+      "screenshot": "docs/qa/uat/2026-11-13/frames/AC-HIST-01-then-1.png",
+      "video": "test-results/artifacts/numbers-AC-HIST-01-працівн-1c8c5-s»-вони-мають-номери-підряд-chromium/video.webm",
+      "trace": "test-results/artifacts/numbers-AC-HIST-01-працівн-1c8c5-s»-вони-мають-номери-підряд-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі в списку «My requests» два рядки: PUR-43 (зверху) і PUR-42, тобто номери послідовні, а новіша заявка перша. Обидва рядки подано в один і той самий момент, тож пара відповідає формі «PUR-n і PUR-(n+1)» з відповіді PM #73. Номери «PUR-1» і «PUR-2» та порядок подання перевіряють автотести, їх я не оцінював."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "My requests",
+          "onPage": true
+        },
+        {
+          "quote": "PUR-43",
+          "onPage": true
+        },
+        {
+          "quote": "PUR-42",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 26178,
+      "reviewCostUsd": 0.10618,
+      "reviewWallMs": 9222
+    },
+    {
+      "id": "AC-HIST-02",
+      "proof": "AC-HIST-02",
+      "title": "AC-HIST-02: автор відкриває заявку з рядками 3 × 20.00 і 2 × 15.50 — суми рядків 60.00 і 31.00, сума заявки 91.00",
+      "screenshot": "docs/qa/uat/2026-11-13/frames/AC-HIST-02-then-1.png",
+      "video": "test-results/artifacts/numbers-AC-HIST-02-автор-в-b29c2-0-і-31-00-сума-заявки-91-00-chromium/video.webm",
+      "trace": "test-results/artifacts/numbers-AC-HIST-02-автор-в-b29c2-0-і-31-00-сума-заявки-91-00-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі в таблиці «LINES» рядок Paper A4 (3 × 20.00) має Line total 60.00, рядок Pens (2 × 15.50) має Line total 31.00. Рядок «Total» показує 91.00, тож усі три видимі частини «Тоді» підтверджено."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Paper A4",
+          "onPage": true
+        },
+        {
+          "quote": "60.00",
+          "onPage": true
+        },
+        {
+          "quote": "Pens",
+          "onPage": true
+        },
+        {
+          "quote": "31.00",
+          "onPage": true
+        },
+        {
+          "quote": "Total",
+          "onPage": true
+        },
+        {
+          "quote": "91.00",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 23518,
+      "reviewCostUsd": 0.09277,
+      "reviewWallMs": 6016
+    },
+    {
+      "id": "AC-HIST-06",
+      "proof": "AC-HIST-06",
+      "title": "AC-HIST-06: працівник 1 подав закупівлю й відкриває історію цієї заявки — запис «Submitted» з його іменем, датою й часом",
+      "screenshot": "docs/qa/uat/2026-11-13/frames/AC-HIST-06-then-1.png",
+      "video": "test-results/artifacts/history-AC-HIST-06-працівн-9cbc5-з-його-іменем-датою-й-часом-chromium/video.webm",
+      "trace": "test-results/artifacts/history-AC-HIST-06-працівн-9cbc5-з-його-іменем-датою-й-часом-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": false,
+        "readable": false,
+        "notes": "На кадрі в блоці HISTORY є один рядок «Submitted · UAT History Requester · 13.11.2026, 06:26», що збігається з очікуваним. Проте картка заявки показує відділ «UAT», а не «Початкова школа», тож «Дано» підмінено; потрібне рішення людини, чи це прийнятно."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "FAIL",
+        "claude-sonnet-5-5": "NEEDS-HUMAN"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "Submitted · UAT History Requester · 13.11.2026, 06:26",
+          "onPage": true
+        }
+      ],
+      "verdict": "NEEDS-HUMAN",
+      "factoryGate": "NOT-EARNED",
+      "rule": "R3: перевірки пройшли, агент не погоджується — вирішує людина",
+      "playwrightMs": 20445,
+      "reviewCostUsd": 0.19464,
+      "reviewWallMs": 18252
+    },
+    {
+      "id": "AC-HIST-10",
+      "proof": "AC-HIST-10",
+      "title": "AC-HIST-10: Петро схвалює лише інший відділ і відкриває історію заявки за прямим посиланням — «Not enough permissions», історії немає, статус той самий",
+      "screenshot": "docs/qa/uat/2026-11-13/frames/AC-HIST-10-then-1.png",
+      "video": "test-results/artifacts/history-AC-HIST-10-Петро-с-ae774-орії-немає-статус-той-самий-chromium/video.webm",
+      "trace": "test-results/artifacts/history-AC-HIST-10-Петро-с-ae774-орії-немає-статус-той-самий-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На кадрі видно сторінку з текстом «Not enough permissions» і посиланням «Back to home», історії заявки немає. Частини «історії не показано» і «статус не змінився» не з кадрів, тому їх не оцінюю. У journey.md назви відділів підмінені («UAT-2», «UAT»), це налаштування тесту, а не вада кадру."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Not enough permissions",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 32618,
+      "reviewCostUsd": 0.09158,
+      "reviewWallMs": 6118
+    },
+    {
+      "id": "AC-LANG-09",
+      "proof": "AC-LANG-09",
+      "title": "AC-LANG-09: заявки «Частково схвалено» і «Повернено на доопрацювання» — у «My requests» і на сторінці заявки текст «Partially approved» і «Returned for revision»",
+      "screenshot": "docs/qa/uat/2026-11-13/frames/AC-LANG-09-then-1.png",
+      "video": "test-results/artifacts/status-labels-AC-LANG-09-з-f73fa-»-і-«Returned-for-revision»-chromium/video.webm",
+      "trace": "test-results/artifacts/status-labels-AC-LANG-09-з-f73fa-»-і-«Returned-for-revision»-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "У списку PUR-47 має мітку «Partially approved», PUR-48 — «Returned for revision»; тексти збігаються з критерієм. У списку новіша PUR-48 стоїть вище, але «перша» заявка (PUR-47, кадр 2) має статус «Partially approved», а «друга» (PUR-48, кадр 3) — «Returned for revision», тож відповідність збережена. Сторінки обох заявок також показують статус текстом."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "NEEDS-HUMAN",
+        "claude-sonnet-5-5": "PASS"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "PUR-48",
+          "onPage": true
+        },
+        {
+          "quote": "Returned for revision",
+          "onPage": true
+        },
+        {
+          "quote": "PUR-47",
+          "onPage": true
+        },
+        {
+          "quote": "Partially approved",
+          "onPage": true
+        },
+        {
+          "quote": "Status",
+          "onPage": true
+        },
+        {
+          "quote": "Partially approved",
+          "onPage": true
+        },
+        {
+          "quote": "Status",
+          "onPage": true
+        },
+        {
+          "quote": "Returned for revision",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 59073,
+      "reviewCostUsd": 0.27743,
+      "reviewWallMs": 23856
+    }
+  ],
+  "negativeControls": [],
+  "cleanup": {
+    "at": "2026-11-13T11:31:36.022Z",
+    "deleted": [
+      "uat-261113112610-history@example.test",
+      "uat-261113112610-petro@example.test",
+      "uat-261113112610-number@example.test",
+      "uat-261113112610-partial@example.test",
+      "uat-261113112610-maria@example.test",
+      "uat-261113112610-return@example.test",
+      "uat-261113112610-maria-return@example.test",
+      "uat-261113112610-labels@example.test",
+      "uat-261113112610-maria-labels@example.test"
+    ],
+    "remaining": [],
+    "leftoverRequests": 0
+  }
+}

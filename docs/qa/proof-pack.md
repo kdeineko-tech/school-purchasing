@@ -13,7 +13,7 @@ Proof pack WS8 — docs/qa/proof-pack-ws8.md. Посилання — на ком
 - Спека: https://github.com/kdeineko-tech/school-purchasing/blob/e860116/openspec/specs/purchase-history/spec.md,
   https://github.com/kdeineko-tech/school-purchasing/blob/e860116/openspec/specs/revision-decisions/spec.md,
   https://github.com/kdeineko-tech/school-purchasing/blob/e860116/openspec/specs/english-interface/spec.md (AC-LANG-09)
-- `/api/health` на момент UAT: sha `aa44892`, env production, db ok, 13.11.2026 12:58 (Київ)
+- `/api/health` на момент UAT: sha `aa44892`, env production, db ok, 13.11.2026 13:26 (Київ)
 
 ## Доказ на кожен AC зрізу 3
 
@@ -76,10 +76,11 @@ FAIL немає. NEEDS-HUMAN — AC-HIST-06, у таблиці вище; PM пр
 ## C. UAT на проді
 
 - Звіт: [`docs/qa/uat/2026-11-13/report.md`](uat/2026-11-13/report.md) — 9 AC: 8 PASS, 1 NEEDS-HUMAN (AC-HIST-06), 0 FAIL;
-  тести `20b3c64` з чистого дерева (`testsDirty: false`), «Тоді» в AC-DEC-01 і AC-HIST-10 — повністю (зауваження PM 3 і 10)
+  тести `d5799e1` з чистого дерева (`testsDirty: false`), «Тоді» в AC-DEC-01 і AC-HIST-10 — повністю (зауваження PM 3 і 10)
 - Відео: вкладення в описі PR цього прогону
-- Рецензент: `claude-haiku-5-5`, суперечки — `claude-sonnet-5-5`; $1,70 за прогін (ціни API)
-- Попередні прогони: [`docs/qa/uat/2026-11-12/report.md`](uat/2026-11-12/report.md) (тести `e55d6ae`, у робочій теці лежав
+- Рецензент: `claude-haiku-5-5`, суперечки — `claude-sonnet-5-5`; $1,53 за прогін (ціни API)
+- Попередні прогони: того ж дня о 12:58 (тести `20b3c64`) — ті самі вердикти, але відео не збереглися (`uat:nc` після
+  нього очистив `test-results/`), тож прогін повторено; [`docs/qa/uat/2026-11-12/report.md`](uat/2026-11-12/report.md) (тести `e55d6ae`, у робочій теці лежав
   незакомічений звіт першого прогону — `testsDirty: true`; ті самі вердикти), а ще раніше того ж дня (тести `14c006c`)
   6 PASS і 3 NEEDS-HUMAN — слабкі кадри в AC-DEC-04 і AC-DEC-07, виправлено в `e55d6ae`; розбір в описі
   [#70](https://github.com/kdeineko-tech/school-purchasing/pull/70)
@@ -87,7 +88,7 @@ FAIL немає. NEEDS-HUMAN — AC-HIST-06, у таблиці вище; PM пр
   повідомлення; перевірка впала, Haiku сказав PASS, підсумок **FAIL** (R1). У шапці звіту NC «+ незакомічені зміни» — це
   лише щойно створений звіт `docs/qa/uat/2026-11-13/`; тести ті самі. Звіт NC у git не комітимо (`test-results/`), тож
   результат записано тут
-- Дані: `@writes` — 9 синтетичних `uat-261113105851-…@example.test`; прибирання: видалено 9, лишилось 0, їхніх рядків — 0
+- Дані: `@writes` — 9 синтетичних `uat-261113112610-…@example.test`; прибирання: видалено 9, лишилось 0, їхніх рядків — 0
 
 ### Приймання PM
 
