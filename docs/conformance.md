@@ -106,3 +106,9 @@
 | AC-HIST-02 | Суми двох рядків | `src/lib/purchases/amounts.ts` (lineTotal, purchaseTotal, formatCents), `src/app/purchases/[id]/page.tsx` | `tests/purchases/numbers.test.ts`, `tests/e2e/numbers.spec.ts` (UAT на проді, `docs/qa/uat/2026-11-13/report.md`) | реалізовано |
 | AC-HIST-06 | Запис «Подано» | `supabase/migrations/20261109144820_purchase_history.sql` (purchase_events, submit_purchase, purchase_history), `src/lib/purchases/history.ts` (formatHistoryEntry, loadHistory), `src/app/purchases/[id]/page.tsx` (History), `docs/decisions/0005-purchase-history-events.md` | `tests/db/history.test.ts`, `tests/purchases/history.test.ts`, `tests/purchases/purchase-page.test.ts`, `tests/e2e/history.spec.ts` (UAT на проді, `docs/qa/uat/2026-11-13/report.md`) | реалізовано |
 | AC-HIST-10 | Схвалювач чужого відділу | `supabase/migrations/20261109144820_purchase_history.sql` (purchase_events_select_visible, purchase_history), `src/app/purchases/[id]/page.tsx` (NoAccess без History) | `tests/db/history.test.ts`, `tests/purchases/purchase-page.test.ts`, `tests/e2e/history.spec.ts` (UAT на проді, `docs/qa/uat/2026-11-13/report.md`) | реалізовано |
+| AC-AI-01 | Опис з усіма чотирма полями | — | — | відкладено (чекає реалізації) |
+| AC-AI-02 | Опис не про закупівлю | — | — | відкладено (чекає реалізації) |
+| AC-AI-03 | Відповідь ще не прийшла | — | — | відкладено (чекає реалізації) |
+| AC-AI-04 | Немає відповіді 15 секунд | — | — | відкладено (чекає реалізації) |
+| AC-AI-05 | Денний ліміт вичерпано | — | — | відкладено (чекає реалізації) |
+| AC-AI-06 | Ін'єкція в описі | — | — | відкладено (чекає реалізації) |
