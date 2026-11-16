@@ -29,4 +29,15 @@ export const MESSAGES = {
   tooManyLines: "A purchase can have at most 100 lines",
   lineTooLong: "Item and purpose must be at most 500 characters",
   reasonTooLong: "Reason must be at most 500 characters",
+  // AI-пропозиція рядка (зріз 4, AC-AI-01 … AC-AI-06): тексти дослівно з таблиці ValiaBihun/2026-quitcode-dream-team#49.
+  suggestLines: "Suggest lines",
+  lookingForLines: "Looking for lines…",
+  purchaseDescription: "Purchase description",
+  aiOffTopic: "I can only help with purchases", // AC-AI-02
+  aiNoSuggestion: "Could not get a suggestion. Fill in the lines manually", // AC-AI-04
+  aiUnavailableToday: "The assistant is unavailable today. Fill in the lines manually", // AC-AI-05
+  aiInjection: "I don't follow instructions from the description. Describe the purchase", // AC-AI-06
+  // Межі кількості й ціни в пропозиції — «ті самі, що в формі» (відповідь PM на ValiaBihun/2026-quitcode-dream-team#78).
+  quantityRange: "Quantity: a whole number from 1",
+  priceRange: "Price: a number from 0",
 } as const;

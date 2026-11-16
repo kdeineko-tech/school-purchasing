@@ -9,6 +9,8 @@ import type { Department } from "@/lib/org/membership";
 import { PURCHASE_TYPE_LABELS, type PurchaseLineInput, type PurchaseTypeId } from "@/lib/purchases/form";
 import { submitPurchase } from "../actions";
 import { LineFields, useFormSubmit } from "../line-fields";
+import { placeLine } from "@/lib/ai/suggest";
+import { LineSuggestion } from "./line-suggestion";
 
 export function PurchaseForm({
   departments,
@@ -23,53 +25,57 @@ export function PurchaseForm({
   const [lines, setLines] = useState<PurchaseLineInput[]>([]);
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-5">
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
-          Department
-          <Select
-            name="departmentId"
-            required
-            value={departmentId}
-            onChange={(e) => setDepartmentId(e.target.value)}
-            data-testid="department-select"
-          >
-            <option value="" disabled>
-              Select a department
-            </option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
+    <div className="flex flex-col gap-5">
+      {/* AI лише заповнює рядок; подає закупівлю працівник кнопкою «Submit» (AC-AI-01). */}
+      <LineSuggestion onLine={(line) => setLines((current) => placeLine(current, line))} />
+      <form onSubmit={submit} className="flex flex-col gap-5">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            Department
+            <Select
+              name="departmentId"
+              required
+              value={departmentId}
+              onChange={(e) => setDepartmentId(e.target.value)}
+              data-testid="department-select"
+            >
+              <option value="" disabled>
+                Select a department
               </option>
-            ))}
-          </Select>
-        </label>
-        <label className="flex flex-col gap-1.5 text-sm font-medium">
-          Purchase type
-          <Select
-            name="purchaseType"
-            required
-            value={purchaseType}
-            onChange={(e) => setPurchaseType(e.target.value)}
-            data-testid="purchase-type-select"
-          >
-            <option value="" disabled>
-              Select a purchase type
-            </option>
-            {purchaseTypes.map((t) => (
-              <option key={t} value={t}>
-                {PURCHASE_TYPE_LABELS[t]}
+              {departments.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </Select>
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            Purchase type
+            <Select
+              name="purchaseType"
+              required
+              value={purchaseType}
+              onChange={(e) => setPurchaseType(e.target.value)}
+              data-testid="purchase-type-select"
+            >
+              <option value="" disabled>
+                Select a purchase type
               </option>
-            ))}
-          </Select>
-        </label>
-      </div>
+              {purchaseTypes.map((t) => (
+                <option key={t} value={t}>
+                  {PURCHASE_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </Select>
+          </label>
+        </div>
 
-      <LineFields lines={lines} setLines={setLines} />
-      {state.error ? <Alert testId="form-error">{state.error}</Alert> : null}
-      <Button type="submit" disabled={pending} className="self-start">
-        Submit
-      </Button>
-    </form>
+        <LineFields lines={lines} setLines={setLines} />
+        {state.error ? <Alert testId="form-error">{state.error}</Alert> : null}
+        <Button type="submit" disabled={pending} className="self-start">
+          Submit
+        </Button>
+      </form>
+    </div>
   );
 }
