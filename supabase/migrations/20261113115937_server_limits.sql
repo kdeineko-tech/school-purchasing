@@ -5,10 +5,14 @@
 --
 -- 1. Перша лінія — private.insert_purchase_lines (її викликають submit_purchase і resubmit_purchase): зрозумілі коди
 --    TOO_MANY_LINES і LINE_TOO_LONG, які застосунок перекладає в повідомлення форми.
--- 2. Друга лінія — check у таблицях: тримає й service_role, і будь-яку майбутню функцію. Причини рішень (rejection_reason,
---    return_reason) записує decide_purchase; її не змінюємо — порушення check ловить застосунок за назвою обмеження,
---    а validateDecision відмовляє ще до виклику бази.
---    NOT VALID: наявні рядки на проді не перевіряємо (їх могли ввести до лімітів), нові й змінені — так.
+-- 2. Друга лінія — у таблицях: тримає й service_role, і будь-яку майбутню функцію.
+--    purchase_lines — тригер лише на запис name чи purpose, а не check: decide_purchase для approve і reject оновлює
+--    status кожного рядка заявки, і check перевірив би весь рядок — тоді заявку зі старим рядком понад 500 символів
+--    (введеним до лімітів) не можна було б ні схвалити, ні відхилити. `update of name, purpose` на оновлення status
+--    не спрацьовує.
+--    purchases — check NOT VALID на причини: наявні рядки не перевіряємо, а decide_purchase і resubmit_purchase щоразу
+--    переписують обидві причини (нова причина або null), тож стара довга причина рішенню не заважає. decide_purchase
+--    не змінюємо: порушення check застосунок упізнає за назвою обмеження, а validateDecision відмовляє ще до бази.
 
 -- 1. Рядки: перевірки з 20261106234630_purchase_number.sql без змін, плюс кількість і довжина.
 create or replace function private.insert_purchase_lines(p_purchase_id uuid, p_lines jsonb)
@@ -81,9 +85,23 @@ $$;
 revoke execute on function private.insert_purchase_lines(uuid, jsonb) from public, anon, authenticated;
 
 -- 2. Друга лінія в таблицях.
-alter table public.purchase_lines
-  add constraint purchase_lines_name_length check (char_length(name) <= 500) not valid,
-  add constraint purchase_lines_purpose_length check (char_length(purpose) <= 500) not valid;
+create function private.check_purchase_line_lengths()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if char_length(new.name) > 500 or char_length(new.purpose) > 500 then
+    raise exception 'LINE_TOO_LONG';
+  end if;
+  return new;
+end;
+$$;
+revoke execute on function private.check_purchase_line_lengths() from public, anon, authenticated;
+
+create trigger purchase_lines_text_length
+  before insert or update of name, purpose on public.purchase_lines
+  for each row execute function private.check_purchase_line_lengths();
 
 alter table public.purchases
   add constraint purchases_rejection_reason_length check (char_length(rejection_reason) <= 500) not valid,

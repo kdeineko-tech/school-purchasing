@@ -79,6 +79,12 @@ export const mutants = [
     find: "       or char_length(btrim(line.value ->> 'purpose', v_blank)) > 500\n",
     replace: "",
   },
+  {
+    id: "L3", kind: "sql", ac: "серверні ліміти (зауваження PM 5)", file: LIMITS, tests: [LIMITS_DB],
+    what: "тригер рядків на будь-яке оновлення — старий довгий рядок блокує схвалення й відхилення",
+    find: "before insert or update of name, purpose on public.purchase_lines",
+    replace: "before insert or update on public.purchase_lines",
+  },
   // ── Ваші мутанти: по одному на правило в SQL за кожним із ваших 3 AC ──────────────────────────────────────────
   {
     id: "D1", kind: "sql", ac: "AC-DEC-01", file: RETURN, tests: [PARTIAL_DB],

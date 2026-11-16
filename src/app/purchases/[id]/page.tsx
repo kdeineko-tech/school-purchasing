@@ -13,7 +13,6 @@ import { loadAuthorNames } from "@/lib/purchases/lists";
 import {
   canSeePurchase,
   formatSubmittedAt,
-  MAX_TEXT_LENGTH,
   PURCHASE_TYPE_LABELS,
   type PurchaseTypeId,
 } from "@/lib/purchases/form";
@@ -169,7 +168,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
             <input type="hidden" name="purchaseId" value={purchase.id} />
             <label className="flex flex-col gap-1.5 font-medium">
               Reason (required to reject or return for revision)
-              <Input name="reason" maxLength={MAX_TEXT_LENGTH} />
+              <Input name="reason" />
             </label>
             <DecisionButtons formId={DECISION_FORM} />
           </form>
