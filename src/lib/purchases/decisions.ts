@@ -2,6 +2,7 @@
 // (impl-add-purchase-flow, design.md, «UI і компоненти»). Ті самі правила тримає функція бази
 // private.decide_purchase — друга лінія захисту (ADR docs/decisions/0003-purchase-submission-rpc.md).
 import { MESSAGES } from "@/lib/org/messages";
+import { MAX_TEXT_LENGTH, textLength } from "@/lib/purchases/form";
 
 export type DecisionPurchase = { id: string; authorId: string; departmentId: string; status: string };
 export type Decision = "approve" | "reject" | "return";
@@ -47,6 +48,7 @@ export function validateDecision(decision: string, reason: string, rejectedLines
   if (decision !== "reject" && decision !== "return") return { ok: false, error: MESSAGES.forbidden };
   const trimmed = reason.trim();
   if (!trimmed) return { ok: false, error: MESSAGES.provideReason };
+  if (textLength(trimmed) > MAX_TEXT_LENGTH) return { ok: false, error: MESSAGES.reasonTooLong };
   return { ok: true, decision, reason: trimmed, rejectedLines: [] };
 }
 

@@ -41,6 +41,13 @@ export function formatSubmittedAt(isoTimestamp: string): string {
   return SUBMITTED_AT.format(new Date(isoTimestamp));
 }
 
+// Серверні ліміти (зауваження PM 5): ті самі числа тримає база — private.insert_purchase_lines і check у таблицях
+// (20261113115937_server_limits.sql). Довжину рахуємо в символах Unicode, як char_length у Postgres, а не в одиницях
+// UTF-16 (.length): інакше емодзі рахувалися б за два.
+export const MAX_LINES = 100;
+export const MAX_TEXT_LENGTH = 500;
+export const textLength = (value: string) => [...value.trim()].length;
+
 export type PurchaseLineInput = {
   name: string;
   purpose: string;
@@ -88,9 +95,13 @@ export function validateSubmission(
 // рядок (AC-FRM-06), у кожному заповнено всі чотири поля (AC-FRM-15).
 export function validateLines(lines: readonly PurchaseLineInput[]): SubmissionCheck {
   if (lines.length === 0) return { ok: false, error: MESSAGES.noLines };
+  if (lines.length > MAX_LINES) return { ok: false, error: MESSAGES.tooManyLines };
   const filled = (value: string) => value.trim() !== "";
   if (!lines.every((l) => filled(l.name) && filled(l.purpose) && filled(l.quantity) && filled(l.unitPrice))) {
     return { ok: false, error: MESSAGES.lineFields };
+  }
+  if (lines.some((l) => textLength(l.name) > MAX_TEXT_LENGTH || textLength(l.purpose) > MAX_TEXT_LENGTH)) {
+    return { ok: false, error: MESSAGES.lineTooLong };
   }
   return { ok: true };
 }

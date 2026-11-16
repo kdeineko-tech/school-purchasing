@@ -168,7 +168,7 @@ export default async function PurchasePage({ params, searchParams }: PageProps<"
             <input type="hidden" name="purchaseId" value={purchase.id} />
             <label className="flex flex-col gap-1.5 font-medium">
               Reason (required to reject or return for revision)
-              <Input name="reason" maxLength={500} />
+              <Input name="reason" />
             </label>
             <DecisionButtons formId={DECISION_FORM} />
           </form>

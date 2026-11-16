@@ -17,6 +17,8 @@ const DATABASE_ERRORS: Record<string, string> = {
   NO_LINES: MESSAGES.noLines,
   LINE_FIELDS: MESSAGES.lineFields,
   INVALID_LINE: MESSAGES.invalidLine,
+  TOO_MANY_LINES: MESSAGES.tooManyLines,
+  LINE_TOO_LONG: MESSAGES.lineTooLong,
 };
 
 // AC-FRM-02, AC-FRM-04, AC-FRM-06, AC-FRM-07, AC-FRM-11, AC-FRM-12, AC-FRM-15: подання закупівлі. Перше правило — доменна
@@ -82,6 +84,8 @@ const DECISION_ERRORS: Record<string, string | null> = {
   REASON_REQUIRED: MESSAGES.provideReason,
   ALL_LINES_REJECTED: MESSAGES.allLinesRejected,
   NOT_PENDING: null,
+  // Порушення check purchases_rejection_reason_length чи purchases_return_reason_length (серверні ліміти).
+  _reason_length: MESSAGES.reasonTooLong,
 };
 // Застосунок уже передає p_rejected_lines, а нову функцію бази ще не розгорнуто (db-deploy) — PostgREST її не знаходить.
 const MISSING_FUNCTION = "PGRST202";

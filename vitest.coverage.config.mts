@@ -22,8 +22,10 @@ const FLOORED: string[] = [
   "org/messages",
   "org/permissions",
   "org/roles",
+  "purchases/amounts",
   "purchases/decisions",
   "purchases/form",
+  "purchases/history",
 ];
 // Фігурні дужки glob розкриваються лише з комою всередині, тож один файл пишемо без них.
 const FLOORED_GLOB = FLOORED.length === 1 ? `src/lib/${FLOORED[0]}.ts` : `src/lib/{${FLOORED.join(",")}}.ts`;

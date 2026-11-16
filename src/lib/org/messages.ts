@@ -24,4 +24,9 @@ export const MESSAGES = {
   // Не з тексту PM: порожня чи задовга назва (власне припущення, docs/spec-reading.md; межа 100 — «Припущення» PM);
   // англійською в термінах таблиці #49.
   departmentNameInvalid: "Enter a department name of up to 100 characters",
+  // Не з тексту PM: серверні ліміти (зауваження PM 5, kdeineko-tech/school-purchasing#70; чисел PM не задавав —
+  // 500 символів, як поле причини у формі, і 100 рядків; міграція 20261113115937_server_limits.sql).
+  tooManyLines: "A purchase can have at most 100 lines",
+  lineTooLong: "Item and purpose must be at most 500 characters",
+  reasonTooLong: "Reason must be at most 500 characters",
 } as const;
