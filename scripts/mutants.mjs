@@ -75,9 +75,9 @@ export const mutants = [
   },
   {
     id: "L2", kind: "sql", ac: "серверні ліміти (зауваження PM 5)", file: LIMITS, tests: [LIMITS_DB],
-    what: "insert_purchase_lines: мета рядка без межі довжини — лише назва",
-    find: "       or char_length(btrim(line.value ->> 'purpose', v_blank)) > 500\n",
-    replace: "",
+    what: "тригер рядків: мета без межі довжини — лише назва",
+    find: "if char_length(new.name) > 500 or char_length(new.purpose) > 500 then",
+    replace: "if char_length(new.name) > 500 then",
   },
   {
     id: "L3", kind: "sql", ac: "серверні ліміти (зауваження PM 5)", file: LIMITS, tests: [LIMITS_DB],

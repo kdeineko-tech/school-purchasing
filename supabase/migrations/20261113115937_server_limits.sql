@@ -3,18 +3,18 @@
 -- прямий виклик rpc це обходить. Чисел PM не задавав, тож беремо 500 символів (як уже має поле причини у формі) і
 -- 100 рядків на заявку — з запасом для справжніх заявок; поведінку, описану в AC, це не змінює.
 --
--- 1. Перша лінія — private.insert_purchase_lines (її викликають submit_purchase і resubmit_purchase): зрозумілі коди
---    TOO_MANY_LINES і LINE_TOO_LONG, які застосунок перекладає в повідомлення форми.
--- 2. Друга лінія — у таблицях: тримає й service_role, і будь-яку майбутню функцію.
---    purchase_lines — тригер лише на запис name чи purpose, а не check: decide_purchase для approve і reject оновлює
---    status кожного рядка заявки, і check перевірив би весь рядок — тоді заявку зі старим рядком понад 500 символів
---    (введеним до лімітів) не можна було б ні схвалити, ні відхилити. `update of name, purpose` на оновлення status
---    не спрацьовує.
+-- 1. private.insert_purchase_lines (її викликають submit_purchase і resubmit_purchase): TOO_MANY_LINES — понад 100
+--    рядків. Довжину назви й мети перевіряє тригер (п. 2) — і для цієї функції, і для будь-якого іншого запису.
+-- 2. У таблицях — тримає й service_role, і будь-яку майбутню функцію.
+--    purchase_lines — тригер LINE_TOO_LONG (застосунок перекладає його в повідомлення форми) лише на запис name чи
+--    purpose, а не check: decide_purchase для approve і reject оновлює status кожного рядка заявки, і check перевірив
+--    би весь рядок — тоді заявку зі старим рядком понад 500 символів (введеним до лімітів) не можна було б ні схвалити,
+--    ні відхилити. `update of name, purpose` на оновлення status не спрацьовує.
 --    purchases — check NOT VALID на причини: наявні рядки не перевіряємо, а decide_purchase і resubmit_purchase щоразу
 --    переписують обидві причини (нова причина або null), тож стара довга причина рішенню не заважає. decide_purchase
 --    не змінюємо: порушення check застосунок упізнає за назвою обмеження, а validateDecision відмовляє ще до бази.
 
--- 1. Рядки: перевірки з 20261106234630_purchase_number.sql без змін, плюс кількість і довжина.
+-- 1. Рядки: перевірки з 20261106234630_purchase_number.sql без змін, плюс кількість.
 create or replace function private.insert_purchase_lines(p_purchase_id uuid, p_lines jsonb)
 returns void
 language plpgsql
@@ -56,16 +56,8 @@ begin
     raise exception 'LINE_FIELDS';
   end if;
 
-  -- Назва й мета — не довші за 500 символів після обрізання (char_length — символи, не байти).
-  if exists (
-    select 1 from jsonb_array_elements(p_lines) as line(value)
-    where char_length(btrim(line.value ->> 'name', v_blank)) > 500
-       or char_length(btrim(line.value ->> 'purpose', v_blank)) > 500
-  ) then
-    raise exception 'LINE_TOO_LONG';
-  end if;
-
-  -- Значення, що не приводяться до типу колонки, — помилка форми INVALID_LINE, а не помилка бази.
+  -- Значення, що не приводяться до типу колонки, — помилка форми INVALID_LINE, а не помилка бази. Назву й мету довші
+  -- за 500 символів (уже обрізані) відхиляє тригер purchase_lines_text_length нижче — LINE_TOO_LONG.
   begin
     insert into public.purchase_lines (purchase_id, position, name, purpose, quantity, unit_price)
     select
@@ -84,7 +76,7 @@ end;
 $$;
 revoke execute on function private.insert_purchase_lines(uuid, jsonb) from public, anon, authenticated;
 
--- 2. Друга лінія в таблицях.
+-- 2. Довжина назви й мети рядка; причини рішень.
 create function private.check_purchase_line_lengths()
 returns trigger
 language plpgsql
