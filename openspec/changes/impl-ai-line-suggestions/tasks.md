@@ -1,6 +1,6 @@
 ## 1. AI-пропозиція рядка (функція, офлайн golden cases, живий eval)
 
-- [ ] 1.1 ADR `docs/decisions/0006-ai-line-suggestions-openrouter.md` і залежності (`ai`, `@openrouter/ai-sdk-provider`,
+- [x] 1.1 ADR `docs/decisions/0006-ai-line-suggestions-openrouter.md` і залежності (`ai`, `@openrouter/ai-sdk-provider`,
   `zod`, `server-only` — точні версії з набору курсу); `src/lib/ai/` (схема, промпт з версією, `suggestLine` — чиста
   функція, ланцюжок `:free`, `openrouter.ts` з `server-only`), Server Action `suggestLine` (getViewer → модель → рядок,
   без запису), поле «Purchase description» і «Suggest lines» у формі нової закупівлі; `cases.json` з 10 golden cases PM,
