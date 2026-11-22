@@ -15,7 +15,18 @@ if (!res.ok) {
   console.error(`GET ${URL} → HTTP ${res.status}`);
   process.exit(1);
 }
-const { data } = await res.json();
+let body;
+try {
+  body = await res.json();
+} catch (error) {
+  console.error(`ai:models — відповідь OpenRouter не є JSON: ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
+}
+if (!Array.isArray(body?.data)) {
+  console.error("ai:models — відповідь OpenRouter не містить масиву моделей.");
+  process.exit(1);
+}
+const data = body.data;
 
 const isZero = (v) => v === undefined || v === null || Number(v) === 0;
 const rows = data

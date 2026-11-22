@@ -26,12 +26,18 @@ if (!res.ok) {
   process.exit(1);
 }
 
-const body = await res.json();
+let body;
+try {
+  body = await res.json();
+} catch (error) {
+  console.error(`ai:quota — відповідь OpenRouter не є JSON: ${error instanceof Error ? error.message : String(error)}`);
+  process.exit(1);
+}
 const q = body?.data?.free_model_daily_requests;
 if (!q || typeof q.remaining !== "number") {
-  console.log("ai:quota — у відповіді немає free_model_daily_requests (формат змінився?).");
-  process.exit(0);
+  console.error("ai:quota — відповідь OpenRouter не містить коректної квоти (free_model_daily_requests).");
+  process.exit(1);
 }
 console.log(`Безкоштовні запити сьогодні (UTC): використано ${q.used} із ${q.limit}, лишилось ${q.remaining}.`);
-// Живий прогін golden cases: 10 викликів моделі + до 10 викликів судді.
-if (q.remaining < 20) console.log("Для повного живого прогону golden cases потрібно до 20 запитів — краще завтра.");
+// Живий прогін golden cases: 10 викликів моделі (судді немає — очікуване перевіряє код).
+if (q.remaining < 10) console.log("Для повного живого прогону golden cases потрібно 10 запитів — краще завтра.");

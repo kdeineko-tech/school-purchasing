@@ -3,7 +3,8 @@
 
 export const SUGGEST_PROMPT_VERSION = "suggest-v2";
 
-// Опис покупки обмежено: довший текст обрізаємо до виклику моделі (design.md, «AI»).
+// Опис покупки обмежено: довший текст дія suggestLine відхиляє до виклику моделі (поле має maxLength);
+// обрізання у wrapDescription — лише другий захист.
 export const MAX_DESCRIPTION_LENGTH = 1_000;
 
 export const SUGGEST_INSTRUCTIONS = [

@@ -7,6 +7,7 @@ import { useActionState, useEffect, useState } from "react";
 import { Alert, Button, Input } from "@/components/ui";
 import { MESSAGES } from "@/lib/org/messages";
 import type { PurchaseLineInput } from "@/lib/purchases/form";
+import { MAX_DESCRIPTION_LENGTH } from "@/lib/ai/prompts/suggest";
 import { suggestLine, type SuggestState } from "./suggest-action";
 
 export function LineSuggestion({ onLine }: { onLine: (line: PurchaseLineInput) => void }) {
@@ -51,6 +52,7 @@ export function SuggestControls({
         <Input
           name="description"
           required
+          maxLength={MAX_DESCRIPTION_LENGTH}
           value={description}
           onChange={(e) => onDescription(e.target.value)}
           data-testid="purchase-description"
