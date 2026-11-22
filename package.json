@@ -27,7 +27,8 @@
     "test:e2e": "playwright test",
     "uat": "node scripts/uat/run.mjs",
     "uat:nc": "node scripts/uat/run.mjs --negative-controls",
-    "uat:review": "node scripts/uat/review.mjs && node scripts/uat/report.mjs"
+    "uat:review": "node scripts/uat/review.mjs && node scripts/uat/report.mjs",
+    "eval:spec-review": "node evals/spec-review/run.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
