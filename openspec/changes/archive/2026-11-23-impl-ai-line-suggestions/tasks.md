@@ -11,6 +11,6 @@
 
 ## 2. Прод і UAT
 
-- [ ] 2.1 `OPENROUTER_API_KEY` у Vercel Production; UAT на проді: специфікації Playwright AC-AI-01 (рядок заповнено,
+- [x] 2.1 `OPENROUTER_API_KEY` у Vercel Production; UAT на проді: специфікації Playwright AC-AI-01 (рядок заповнено,
   закупівлю не подано без «Submit») і AC-AI-02 (відмова) — звіт у `docs/qa/uat/<дата>/`; archive `impl-ai-line-suggestions`.
   Done when: AC-AI-01, AC-AI-02 — UAT-запис на проді; «eval готовий» у чаті команди.

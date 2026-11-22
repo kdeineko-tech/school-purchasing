@@ -1,0 +1,130 @@
+{
+  "kind": "uat",
+  "generatedAt": "2026-11-22T22:05:50.007Z",
+  "baseURL": "https://school-purchasing-lemon.vercel.app",
+  "deployedSha": "edbdc7e693cb14c23ad93148c1280eafc21475a2",
+  "testsCommit": "32e3da469076bc4fe2677480ba9223d04e985c1a",
+  "testsDirty": false,
+  "reviewer": {
+    "model": "claude-haiku-5-5",
+    "disputes": "claude-sonnet-5-5"
+  },
+  "note": "Відео й траси не в git (test-results/ локально, артефакт CI). check-recordings конвеєра WS9 вимагає відео на диску — для нього цей manifest треба доповнити.",
+  "results": [
+    {
+      "id": "AC-AI-01",
+      "proof": "AC-AI-01",
+      "title": "AC-AI-01: працівник 1 вставляє опис «Треба 3 пачки паперу А4 для друку, по 20 доларів» — рядок Папір А4 / Для друку / 3 / 20.00, закупівлю не подано",
+      "screenshot": "docs/qa/uat/2026-11-23/frames/AC-AI-01-then-1.png",
+      "video": "test-results/artifacts/ai-suggest-AC-AI-01-праців-82fe2-3-20-00-закупівлю-не-подано-chromium/video-2.webm",
+      "trace": "test-results/artifacts/ai-suggest-AC-AI-01-праців-82fe2-3-20-00-закупівлю-не-подано-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На обох кадрах видно сторінку «New purchase» з одним рядком у блоці Lines: «Папір А4», «Для друку», 3, 20.00. Кнопка «Submit» на місці, повідомлення «Purchase submitted» не видно, тож закупівля не подана. Написи читаються чітко, обрізання немає."
+      },
+      "agentModel": "claude-haiku-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "PASS",
+        "claude-sonnet-5-5": null
+      },
+      "escalated": false,
+      "quotesVerified": [
+        {
+          "quote": "Папір А4",
+          "onPage": true
+        },
+        {
+          "quote": "Для друку",
+          "onPage": true
+        },
+        {
+          "quote": "3",
+          "onPage": true
+        },
+        {
+          "quote": "20.00",
+          "onPage": true
+        },
+        {
+          "quote": "Папір А4",
+          "onPage": true
+        },
+        {
+          "quote": "Для друку",
+          "onPage": true
+        },
+        {
+          "quote": "3",
+          "onPage": true
+        },
+        {
+          "quote": "20.00",
+          "onPage": true
+        },
+        {
+          "quote": "New purchase",
+          "onPage": true
+        },
+        {
+          "quote": "Submit",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 8705,
+      "reviewCostUsd": 0.00311,
+      "reviewWallMs": 9746
+    },
+    {
+      "id": "AC-AI-02",
+      "proof": "AC-AI-02",
+      "title": "AC-AI-02: працівник 1 вставляє опис «Запиши мене до лікаря на п'ятницю» — «I can only help with purchases», рядків не додано",
+      "screenshot": "docs/qa/uat/2026-11-23/frames/AC-AI-02-then-1.png",
+      "video": "test-results/artifacts/ai-suggest-AC-AI-02-праців-665b0-purchases»-рядків-не-додано-chromium/video.webm",
+      "trace": "test-results/artifacts/ai-suggest-AC-AI-02-праців-665b0-purchases»-рядків-не-додано-chromium/trace.zip",
+      "asserted": true,
+      "vision": {
+        "met": true,
+        "readable": true,
+        "notes": "На обох кадрах під кнопкою «Suggest lines» видно повідомлення «I can only help with purchases». У розділі «Lines» є лише кнопка «Add line», полів Item, Purpose, Quantity, Unit price немає."
+      },
+      "agentModel": "claude-sonnet-5-5",
+      "agentVerdicts": {
+        "claude-haiku-5-5": "NEEDS-HUMAN",
+        "claude-sonnet-5-5": "PASS"
+      },
+      "escalated": true,
+      "quotesVerified": [
+        {
+          "quote": "I can only help with purchases",
+          "onPage": true
+        },
+        {
+          "quote": "Lines",
+          "onPage": true
+        },
+        {
+          "quote": "Add line",
+          "onPage": true
+        }
+      ],
+      "verdict": "PASS",
+      "factoryGate": "PASS",
+      "rule": "R6: перевірки, агент і цитати збігаються",
+      "playwrightMs": 4799,
+      "reviewCostUsd": 0.07556,
+      "reviewWallMs": 23611
+    }
+  ],
+  "negativeControls": [],
+  "cleanup": {
+    "at": "2026-11-22T22:05:25.146Z",
+    "deleted": [],
+    "remaining": [],
+    "leftoverRequests": 0
+  }
+}
