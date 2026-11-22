@@ -56,7 +56,7 @@ cases офлайн у CI і один живий звіт.
   інтернету витрачав би денний ліміт (AC-AI-05). Роль — з `public.profiles`; пропозиція лише для власної форми, чужих
   даних модель не отримує (кейс 9 — AC-AI-02).
 - Ключ `OPENROUTER_API_KEY` читає лише `src/lib/ai/openrouter.ts` з `import "server-only"`; без `NEXT_PUBLIC_`;
-  клієнтські компоненти його не імпортують (`tests/ai-key.test.ts`, `npm run check:boundary`).
+  клієнтські компоненти його не імпортують (`tests/ai-key.test.ts`).
 
 ## AI
 
