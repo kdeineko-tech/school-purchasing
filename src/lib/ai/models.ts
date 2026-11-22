@@ -12,10 +12,6 @@ export const PRODUCT_MODELS = [
   "nvidia/nemotron-3.5-super-vl:free",
 ] as const;
 
-// Суддя для живого eval — інша родина, ніж основна модель продукту (не оцінює відповіді своєї родини).
-// Якщо відповідь дала резервна super-vl, суддя тієї ж родини: колонка modelId у звіті це показує.
-export const JUDGE_MODEL = "nvidia/nemotron-3.5-super-vl:free";
-
 // Фабрики приймають ключ параметром і НЕ читають process.env: так їх можна імпортувати в eval-скрипті.
 // У коді застосунку модель бере лише src/lib/ai/openrouter.ts (server-only).
 export function makeProductModel(apiKey: string | undefined) {
@@ -30,9 +26,4 @@ export function makeProductModel(apiKey: string | undefined) {
     // Портативний параметр `reasoning` з AI SDK 7 цей провайдер не передає — лише його власний.
     reasoning: { effort: "low", exclude: true },
   });
-}
-
-export function makeJudgeModel(apiKey: string | undefined) {
-  const openrouter = createOpenRouter({ apiKey, appName: "QuitCode slice 4 eval" });
-  return openrouter.chat(JUDGE_MODEL);
 }
