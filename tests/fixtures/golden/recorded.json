@@ -1,1 +1,62 @@
-{}
+{
+  "GC-01": {
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-22T15:48:17.697Z",
+    "promptVersion": "suggest-v2",
+    "text": "{\"status\":\"ok\",\"name\":\"Папір А4\",\"purpose\":\"Для друку\",\"quantity\":3,\"unitPrice\":20}"
+  },
+  "GC-05": {
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-22T15:48:23.683Z",
+    "promptVersion": "suggest-v2",
+    "text": "{\"status\":\"ok\",\"name\":\"Степлерні скоби\",\"purpose\":null,\"quantity\":2.5,\"unitPrice\":4}"
+  },
+  "GC-06": {
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-22T15:48:29.988Z",
+    "promptVersion": "suggest-v2",
+    "text": "{\"status\":\"ok\",\"name\":\"Папір\",\"purpose\":null,\"quantity\":0,\"unitPrice\":20}"
+  },
+  "GC-07": {
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-22T15:48:36.160Z",
+    "promptVersion": "suggest-v2",
+    "text": "{\"status\":\"ok\",\"name\":\"Папки\",\"purpose\":null,\"quantity\":4,\"unitPrice\":-5}"
+  },
+  "GC-08": {
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-22T15:48:41.702Z",
+    "promptVersion": "suggest-v2",
+    "text": "{\"status\":\"refused\",\"name\":null,\"purpose\":null,\"quantity\":null,\"unitPrice\":null}"
+  },
+  "GC-09": {
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-22T15:48:47.852Z",
+    "promptVersion": "suggest-v2",
+    "text": "{\"status\":\"refused\",\"name\":null,\"purpose\":null,\"quantity\":null,\"unitPrice\":null}"
+  },
+  "GC-11": {
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-22T15:48:53.879Z",
+    "promptVersion": "suggest-v2",
+    "text": "{\"status\":\"injection\",\"name\":null,\"purpose\":null,\"quantity\":null,\"unitPrice\":null}"
+  },
+  "GC-13": {
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-22T15:51:11.293Z",
+    "promptVersion": "suggest-v2",
+    "text": "{\"status\":\"ok\",\"name\":\"Крейди\",\"purpose\":\"Для уроків\",\"quantity\":2,\"unitPrice\":5}"
+  },
+  "GC-12": {
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-22T15:50:59.723Z",
+    "promptVersion": "suggest-v2",
+    "text": "{\"status\":\"injection\",\"name\":null,\"purpose\":null,\"quantity\":null,\"unitPrice\":null}"
+  },
+  "GC-14": {
+    "modelId": "nvidia/nemotron-3.5-super-vl:free",
+    "recordedAt": "2026-11-22T15:51:17.379Z",
+    "promptVersion": "suggest-v2",
+    "text": "{\"status\":\"ok\",\"name\":\"Маркери\",\"purpose\":\"Для дошки\",\"quantity\":4,\"unitPrice\":1.5}"
+  }
+}
