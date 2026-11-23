@@ -3,8 +3,9 @@
 // Відповідь дає жива безкоштовна модель OpenRouter (ключ — OPENROUTER_API_KEY у Vercel Production), тож кожен прогін —
 // 2 запити з денного ліміту 50. Модель може відповісти інакше, ніж у golden cases: тоді тест червоний, і це чесний
 // результат UAT, а не привід «підкрутити» перевірку.
-// Інтерфейс англійською (AC-LANG-01): «Запропонувати рядки» — «Suggest lines», «Я допомагаю лише із закупівлями» —
-// «I can only help with purchases». Дані, які пропонує модель, — як у тексті опису (українською).
+// Усе англійською (рішення PM 2026-11-16, ValiaBihun/2026-quitcode-dream-team#71): опис, кнопка «Suggest lines» і
+// повідомлення. Назву й мету перевіряємо правилом PM «містить» (golden case № 1): назва містить «paper», мета — «print»;
+// дослівно — лише кількість 3 і ціна 20.00.
 import { expect, test, type Page } from "@playwright/test";
 import { attachRuntimeErrors, given, thenStep, when } from "./support/uat";
 
@@ -41,7 +42,7 @@ async function suggest(page: Page, description: string) {
 }
 
 test(
-  "AC-AI-01: працівник 1 вставляє опис «Треба 3 пачки паперу А4 для друку, по 20 доларів» — рядок Папір А4 / Для друку / 3 / 20.00, закупівлю не подано",
+  "AC-AI-01: працівник 1 вставляє опис «Need 3 packs of A4 paper for printing, 20 dollars each» — рядок A4 paper / For printing / 3 / 20.00, закупівлю не подано",
   { tag: ["@uat"], annotation: { type: "ac", description: "AC-AI-01" } },
   async ({ page }) => {
     let before = 0;
@@ -52,28 +53,28 @@ test(
     });
 
     await when(
-      "він вставляє опис «Треба 3 пачки паперу А4 для друку, по 20 доларів» і натискає «Запропонувати рядки»",
+      "він вставляє опис «Need 3 packs of A4 paper for printing, 20 dollars each» і натискає «Suggest lines»",
       async () => {
-        await suggest(page, "Треба 3 пачки паперу А4 для друку, по 20 доларів");
+        await suggest(page, "Need 3 packs of A4 paper for printing, 20 dollars each");
       },
     );
 
     await thenStep(
       page,
       {
-        clause: "він бачить один рядок: назва «Папір А4», мета «Для друку», кількість 3, ціна 20.00",
+        clause: "він бачить один рядок: назва «A4 paper», мета «For printing», кількість 3, ціна 20.00",
         visible: [
           "у формі рівно один рядок закупівлі",
-          "поле «Item» — «Папір А4»",
-          "поле «Purpose» — «Для друку»",
+          "поле «Item» містить «paper» (у PM — «A4 paper»)",
+          "поле «Purpose» містить «print» (у PM — «For printing»)",
           "поле «Quantity» — 3",
           "поле «Unit price» — 20.00",
         ],
       },
       async () => {
         await expect(page.getByRole("textbox", { name: "Item" })).toHaveCount(1, { timeout: AI_TIMEOUT });
-        await expect(page.getByRole("textbox", { name: "Item" })).toHaveValue("Папір А4");
-        await expect(page.getByRole("textbox", { name: "Purpose" })).toHaveValue("Для друку");
+        await expect(page.getByRole("textbox", { name: "Item" })).toHaveValue(/paper/i);
+        await expect(page.getByRole("textbox", { name: "Purpose" })).toHaveValue(/print/i);
         await expect(page.getByRole("spinbutton", { name: "Quantity" })).toHaveValue("3");
         await expect(page.getByRole("spinbutton", { name: "Unit price" })).toHaveValue("20.00");
       },
@@ -97,22 +98,22 @@ test(
 );
 
 test(
-  "AC-AI-02: працівник 1 вставляє опис «Запиши мене до лікаря на п'ятницю» — «I can only help with purchases», рядків не додано",
+  "AC-AI-02: працівник 1 вставляє опис «Book me a doctor's appointment for Friday» — «I can only help with purchases», рядків не додано",
   { tag: ["@uat"], annotation: { type: "ac", description: "AC-AI-02" } },
   async ({ page }) => {
     await given("працівник 1 відкрив форму нової закупівлі", async () => {
       await openNewPurchase(page);
     });
 
-    await when("він вставляє опис «Запиши мене до лікаря на п'ятницю» і натискає «Запропонувати рядки»", async () => {
-      await suggest(page, "Запиши мене до лікаря на п'ятницю");
+    await when("він вставляє опис «Book me a doctor's appointment for Friday» і натискає «Suggest lines»", async () => {
+      await suggest(page, "Book me a doctor's appointment for Friday");
     });
 
     await thenStep(
       page,
       {
-        clause: "він бачить повідомлення «Я допомагаю лише із закупівлями»",
-        visible: ["повідомлення «I can only help with purchases» (англійський текст для «Я допомагаю лише із закупівлями»)"],
+        clause: "він бачить повідомлення «I can only help with purchases»",
+        visible: ["повідомлення «I can only help with purchases»"],
       },
       async () => {
         await expect(page.getByTestId("suggest-message")).toHaveText("I can only help with purchases", {

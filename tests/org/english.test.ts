@@ -30,9 +30,7 @@ describe("інтерфейс англійською", () => {
   it("AC-LANG-01: у текстах сторінок, компонентів і повідомлень немає жодного українського слова", () => {
     const files = execSync("git ls-files src", { encoding: "utf8" })
       .split("\n")
-      // Промпт моделі (src/lib/ai/prompts/) користувач не бачить: українські приклади в ньому — для моделі, яка
-      // читає опис українською. Те, що бачить користувач, — повідомлення з MESSAGES, їх перевіряє цей самий тест.
-      .filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith("database.types.ts") && !f.startsWith("src/lib/ai/prompts/"));
+      .filter((f) => /\.(ts|tsx)$/.test(f) && !f.endsWith("database.types.ts"));
     expect(files.length).toBeGreaterThan(0);
 
     const ukrainian = files.flatMap((file) =>
