@@ -34,6 +34,10 @@ updates:
       # 24.11.2026). Тримаємо 1.6.27. Прибрати цей рядок разом із переходом на TypeScript 6 окремим PR.
       - dependency-name: "@vitest/eslint-plugin"
         versions: [">=1.6.28"]
+      # OpenSpec закріплено на 1.14.1 разом із глобальним CLI тієї ж версії (AGENTS.md «Стек і версії»): скіли й
+      # команди /opsx:* у .claude/ і .cursor/ згенеровано цією версією. Груповий PR #86 підняв би його до 1.17.0 без
+      # ADR (знахідка CodeRabbit у #90, 24.11.2026). Оновлення — окремим PR з ADR і `openspec update` (профіль custom).
+      - dependency-name: "@fission-ai/openspec"
     open-pull-requests-limit: 5
 
   - package-ecosystem: github-actions
