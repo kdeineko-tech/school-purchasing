@@ -4,6 +4,7 @@
 // Запис увімкнено для КОЖНОГО тесту, не лише для впалих: для PM зелений прогін — такий самий доказ, як червоний.
 import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
+import { bypassHeaders } from "./scripts/uat/target.mjs";
 
 // Локально — значення з .env.local (DEMO_USER_PASSWORD, ключі Supabase). Файл не друкуємо й не комітимо.
 // У CI .env.local немає: змінні дає workflow.
@@ -20,6 +21,8 @@ const noRecording = { video: "off", trace: "off", screenshot: "off" } as const;
 
 export default defineConfig({
   testDir: "tests/e2e",
+  // Розгорнута адреса + секретний ключ: спершу звіряємо, що застосунок і .env.local — та сама база (scripts/uat/target.mjs).
+  globalSetup: "./scripts/uat/target.mjs",
   testMatch: "**/*.spec.ts",
   outputDir: "test-results/artifacts",
   forbidOnly: !!process.env.CI,
@@ -36,6 +39,9 @@ export default defineConfig({
   use: {
     ...devices["Desktop Chrome"],
     baseURL,
+    // Захищена адреса Vercel (staging): заголовок обходу лише з VERCEL_AUTOMATION_BYPASS_SECRET (.env.local) і лише на
+    // розгорнутій адресі. Браузер ходить лише до застосунку (Supabase — з сервера), тож заголовок не йде стороннім.
+    extraHTTPHeaders: deployed ? bypassHeaders() : {},
     locale: "uk-UA",
     timezoneId: "Europe/Kyiv",
     viewport: { width: 1280, height: 800 },
