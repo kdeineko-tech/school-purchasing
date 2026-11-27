@@ -24,8 +24,8 @@ export type DeployEnv = Record<string, string | undefined>;
 
 /**
  * Лише рядки «at … файл:рядок:колонка» зі стеку. Заголовок «Назва: текст помилки» відрізаємо цілим (текст може бути
- * багаторядковим і містити дані користувача), абсолютний шлях скорочуємо до .next/…, src/… чи node_modules/…,
- * щоб у чат не потрапило ім'я користувача ОС з локального шляху.
+ * багаторядковим і містити дані користувача), абсолютний шлях скорочуємо до .next/…, src/… чи node_modules/…, а будь-який
+ * інший — до назви файла, щоб у чат не потрапили каталоги й ім'я користувача ОС з локального шляху.
  */
 export function stackFrames(error: unknown): string[] {
   if (!(error instanceof Error) || typeof error.stack !== "string") return [];
@@ -38,6 +38,8 @@ export function stackFrames(error: unknown): string[] {
     .map((line) => line.trim())
     .filter((line) => line.startsWith("at ") && /:\d+:\d+\)?$/.test(line))
     .map((line) => line.replace(/(?:[A-Za-z]:)?[\\/][^\s()]*?[\\/](\.next|src|node_modules)[\\/]/g, "$1/"))
+    // Решта абсолютних шляхів (поза .next, src, node_modules) — лише назва файла з рядком і колонкою.
+    .map((line) => line.replace(/(^at |\()(?:file:\/\/)?(?:[A-Za-z]:)?[\\/][^\s()]*[\\/]([^\\/\s()]+:\d+:\d+\)?)$/, "$1$2"))
     .slice(0, STACK_FRAMES)
     .map((line) => line.slice(0, FRAME_MAX));
 }
@@ -51,9 +53,13 @@ function errorDigest(error: unknown): string {
   return typeof raw === "string" ? raw.slice(0, 40) : "";
 }
 
-/** Ключ для паузи між однаковими повідомленнями: маршрут + digest (або назва помилки). */
+/**
+ * Ключ для паузи між однаковими повідомленнями: маршрут + digest; без digest — назва помилки й очищені рядки стеку
+ * (не error.message), щоб різні помилки одного класу на тому самому маршруті не глушили одна одну.
+ */
 export function dedupeKey(error: unknown, ctx: ErrorContext): string {
-  return `${ctx.routePath}|${errorDigest(error) || errorName(error)}`;
+  const fingerprint = errorDigest(error) || [errorName(error), ...stackFrames(error)].join("\n");
+  return `${ctx.routePath}|${fingerprint}`;
 }
 
 /** Текст повідомлення: маршрут, тип, метод, назва помилки, digest, середовище, деплой, до 5 рядків стеку. */

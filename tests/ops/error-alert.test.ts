@@ -34,6 +34,21 @@ describe("stackFrames", () => {
     expect(stackFrames(error)).toEqual(["at load (.next/server/chunks/ssr/page.js:10:5)", "at src/lib/x.ts:3:7"]);
   });
 
+  it("шлях поза .next, src і node_modules — лише назва файла, без каталогів і імені користувача ОС", () => {
+    const error = errorWithStack(
+      [
+        "TypeError: x",
+        "    at run (/Users/synthetic-user/project/lib/worker.js:10:5)",
+        "    at C:\\Users\\synthetic-user\\tool\\main.js:2:3",
+        "    at load (file:///home/synthetic-user/app/server.mjs:7:1)",
+      ].join("\n"),
+      "x",
+    );
+    const frames = stackFrames(error);
+    expect(frames).toEqual(["at run (worker.js:10:5)", "at main.js:2:3", "at load (server.mjs:7:1)"]);
+    expect(frames.join("\n")).not.toContain("synthetic-user");
+  });
+
   it("не більше 5 рядків, кожен до 160 символів; не Error — порожньо", () => {
     const frames = Array.from({ length: 8 }, (_, i) => `    at f${i} (src/${"a".repeat(200)}.ts:${i}:1)`);
     const result = stackFrames(errorWithStack(["TypeError: x", ...frames].join("\n"), "x"));
@@ -72,6 +87,22 @@ describe("shouldSend", () => {
     expect(shouldSend(key, 1_000 + SAME_ERROR_PAUSE_MS - 1, seen)).toBe(false);
     expect(shouldSend(key, 1_000 + SAME_ERROR_PAUSE_MS, seen)).toBe(true);
     expect(shouldSend(dedupeKey(new Error("x"), { ...ctx, routePath: "/other" }), 1_000, seen)).toBe(true);
+  });
+});
+
+describe("dedupeKey", () => {
+  it("без digest різні місця помилки одного класу дають різні ключі, однакові — той самий; текст помилки не в ключі", () => {
+    const here = errorWithStack(`TypeError: ${SECRET_TEXT}\n    at a (src/a.ts:1:2)`);
+    const there = errorWithStack(`TypeError: ${SECRET_TEXT}\n    at b (src/b.ts:3:4)`);
+    const hereAgain = errorWithStack(`TypeError: other text\n    at a (src/a.ts:1:2)`, "other text");
+    expect(dedupeKey(here, ctx)).not.toBe(dedupeKey(there, ctx));
+    expect(dedupeKey(here, ctx)).toBe(dedupeKey(hereAgain, ctx));
+    expect(dedupeKey(here, ctx)).not.toContain("MARKER-9c1e");
+  });
+
+  it("з digest ключ — маршрут і digest", () => {
+    const error = Object.assign(new Error("x"), { digest: "777" });
+    expect(dedupeKey(error, ctx)).toBe("/requests/[id]|777");
   });
 });
 
