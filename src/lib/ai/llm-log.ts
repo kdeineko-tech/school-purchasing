@@ -36,6 +36,9 @@ export type LlmCall = {
   errorKind?: string;
 };
 
+/** Коди причин збою: FailureReason з src/lib/ai/suggest.ts і no_key (ключа немає — модель не викликали). */
+export const LLM_ERROR_KINDS = ["no_key", "rate_limited", "timeout", "invalid_output", "provider_error"] as const;
+
 /** Схема llm.call: єдиний список полів, які взагалі можуть потрапити в журнал. */
 export const LLM_CALL_SCHEMA = {
   requestId: "token",
@@ -48,7 +51,7 @@ export const LLM_CALL_SCHEMA = {
   outputTokens: "int",
   costUsd: "number",
   promptVersion: "token",
-  errorKind: "token",
+  errorKind: LLM_ERROR_KINDS, // перелік, не "token": код причини відомий наперед
 } as const satisfies LogSchema;
 
 /** Пише рядок llm.call: unavailable — рівнем error (видно у фільтрі level:error), решта — info. Повертає рядок. */

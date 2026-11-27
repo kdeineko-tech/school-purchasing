@@ -119,6 +119,16 @@ describe("llm.call", () => {
     }
   });
 
+  it("errorKind — лише код зі списку: коротке слово без пробілів (маркер) не пишеться", () => {
+    const line = logLlmCall({ ...base, state: "unavailable", errorKind: "MARKER-7f3a" });
+    expect(line).not.toContain("MARKER-7f3a");
+    expect(JSON.parse(line)).not.toHaveProperty("errorKind");
+    expect(JSON.parse(logLlmCall({ ...base, state: "unavailable", errorKind: "no_key" }))).toHaveProperty(
+      "errorKind",
+      "no_key",
+    );
+  });
+
   it("невідомий стан і некоректні числа не пишуться", () => {
     const line = logLlmCall({
       ...base,
