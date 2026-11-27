@@ -12,7 +12,7 @@ import { LineSuggestionSchema, type LineSuggestion } from "./schema";
 export type FailureReason = "invalid_output" | "rate_limited" | "timeout" | "provider_error";
 
 export type ProposeResult =
-  | { ok: true; suggestion: LineSuggestion; modelId: string }
+  | { ok: true; suggestion: LineSuggestion; modelId: string; usage: { inputTokens?: number; outputTokens?: number } }
   | { ok: false; reason: FailureReason; message: string };
 
 export type ProposeOptions = { maxRetries?: number; timeoutMs?: number };
@@ -32,7 +32,9 @@ export async function proposeLine(description: string, model: LanguageModel, opt
       maxRetries: opts.maxRetries ?? 0,
       timeout: opts.timeoutMs ?? SUGGEST_TIMEOUT_MS,
     });
-    return { ok: true, suggestion: result.output, modelId: result.response.modelId };
+    // usage — для журналу llm.call (src/lib/ai/llm-log.ts): лише числа токенів, без тексту.
+    const usage = { inputTokens: result.usage?.inputTokens, outputTokens: result.usage?.outputTokens };
+    return { ok: true, suggestion: result.output, modelId: result.response.modelId, usage };
   } catch (error) {
     return classifyError(error);
   }
