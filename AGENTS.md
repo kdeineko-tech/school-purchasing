@@ -20,7 +20,7 @@ merge. Вимоги пише PM людською мовою у своєму ре
 ## Стек і версії (не оновлювати без ADR)
 
 Node 24.x · Next.js 16.4 (App Router, `src/`, без Cache Components) · React 19.3 · TypeScript ^5 · ESLint ^9 ·
-Tailwind 4 · `@supabase/supabase-js` 2.117 + `@supabase/ssr` 0.12 · Supabase CLI 2.120 (devDependency) ·
+Tailwind 4 · `@supabase/supabase-js` 2.119 + `@supabase/ssr` 0.12 · Supabase CLI 2.122 (devDependency; ADR 0007) ·
 OpenSpec 1.14.1 (devDependency + глобальний CLI тієї ж версії) · Vitest 5 · Vercel Hobby.
 Не «оновлюй усе до latest»: TypeScript 7 і ESLint 10 цей шаблон не перевіряв.
 
