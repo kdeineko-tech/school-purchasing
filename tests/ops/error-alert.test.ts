@@ -54,10 +54,10 @@ describe("errorAlertText", () => {
       VERCEL_DEPLOYMENT_ID: "dpl_1",
       VERCEL_GIT_COMMIT_SHA: "abcdef1234",
     });
-    expect(text).toContain("Середовище: staging (гілка staging)");
-    expect(text).toContain("Маршрут: GET /requests/[id] (render, App Router)");
-    expect(text).toContain("Помилка: TypeError, digest 12345");
-    expect(text).toContain("коміт abcdef1");
+    expect(text).toContain("Environment: staging (branch staging)");
+    expect(text).toContain("Route: GET /requests/[id] (render, App Router)");
+    expect(text).toContain("Error: TypeError, digest 12345");
+    expect(text).toContain("commit abcdef1");
     expect(text).toContain("at f (src/a.ts:1:2)");
     expect(text).not.toContain("MARKER-9c1e");
     expect(text).not.toContain("@example.test");

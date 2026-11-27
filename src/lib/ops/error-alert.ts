@@ -6,6 +6,7 @@
 // Повний стек — у Runtime Logs Vercel (на Hobby — 1 година) за digest чи часом і маршрутом.
 // Секрети (лише назви): TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID — серверні змінні Vercel (Production і Preview), без
 // NEXT_PUBLIC_. Немає змінних — нічого не надсилаємо.
+// Підписи повідомлення — англійською: у src/ не має бути кирилиці поза коментарями (тест AC-LANG-01).
 
 export const STACK_FRAMES = 5;
 export const SAME_ERROR_PAUSE_MS = 60_000; // та сама помилка на тому самому маршруті — не частіше разу на хвилину
@@ -63,12 +64,12 @@ export function errorAlertText(error: unknown, ctx: ErrorContext, env: DeployEnv
   const branch = env.VERCEL_GIT_COMMIT_REF;
   const frames = stackFrames(error);
   return [
-    "ПОМИЛКА СЕРВЕРА",
-    `Середовище: ${where}${branch ? ` (гілка ${branch})` : ""}`,
-    `Маршрут: ${ctx.method} ${ctx.routePath} (${ctx.routeType}, ${ctx.routerKind})`,
-    `Помилка: ${name}${digest ? `, digest ${digest}` : ""}`,
-    `Деплой: ${env.VERCEL_DEPLOYMENT_ID ?? "?"}, коміт ${(env.VERCEL_GIT_COMMIT_SHA ?? "local").slice(0, 7)}`,
-    ...(frames.length ? ["Стек (верхні рядки):", ...frames] : []),
+    "SERVER ERROR",
+    `Environment: ${where}${branch ? ` (branch ${branch})` : ""}`,
+    `Route: ${ctx.method} ${ctx.routePath} (${ctx.routeType}, ${ctx.routerKind})`,
+    `Error: ${name}${digest ? `, digest ${digest}` : ""}`,
+    `Deploy: ${env.VERCEL_DEPLOYMENT_ID ?? "?"}, commit ${(env.VERCEL_GIT_COMMIT_SHA ?? "local").slice(0, 7)}`,
+    ...(frames.length ? ["Stack (top frames):", ...frames] : []),
   ].join("\n");
 }
 
