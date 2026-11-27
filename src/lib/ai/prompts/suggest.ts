@@ -23,7 +23,14 @@ export const SUGGEST_INSTRUCTIONS = [
 ].join("\n");
 
 // Недовірений текст завжди загортаємо як дані: теги-межі з самого опису вирізаємо, довжину обмежуємо.
+// Вирізаємо в циклі до стабільного результату: за один прохід «</descr<description>iption>» склеювався б у
+// закриваючий тег межі; пробіли після «<» («< /description>») теж рахуємо тегом (огляд WS10, #17).
 export function wrapDescription(text: string): string {
-  const clean = text.replace(/<\/?\s*description[^>]*>/gi, "").slice(0, MAX_DESCRIPTION_LENGTH);
-  return `<description>\n${clean}\n</description>`;
+  let clean = text;
+  let previous: string;
+  do {
+    previous = clean;
+    clean = clean.replace(/<\s*\/?\s*description\b[^>]*>/gi, "");
+  } while (clean !== previous);
+  return `<description>\n${clean.slice(0, MAX_DESCRIPTION_LENGTH)}\n</description>`;
 }
