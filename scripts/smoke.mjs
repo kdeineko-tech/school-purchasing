@@ -113,8 +113,8 @@ async function main() {
     } catch {
       health = { status: r.status, location: r.location };
     }
-    // sha=local — Vercel не віддає VERCEL_GIT_COMMIT_SHA: чекати марно.
-    if (!expectSha || health.sha === expectSha || health.sha === "local") break;
+    // sha=local чи sha немає взагалі — Vercel не віддає VERCEL_GIT_COMMIT_SHA або це не наш health: чекати марно.
+    if (!expectSha || health.sha === expectSha || health.sha === "local" || !health.sha) break;
     if (attempt < 6) await new Promise((res) => setTimeout(res, 20_000));
   }
   if (!health) {
@@ -134,6 +134,9 @@ async function main() {
   }
   if (expectSha && health?.sha === "local") {
     fail.push(`"/api/health": sha=local — у Vercel увімкніть Settings → Environment Variables → «Automatically expose System Environment Variables» і зробіть Redeploy`);
+  } else if (expectSha && health && health.status === 200 && !health.sha) {
+    // Без sha коміт не звірити — інакше smoke пройшов би для невідомого деплою (знахідка CodeRabbit у #93).
+    fail.push(`"/api/health": немає sha — коміт деплою не можна звірити з ${expectSha.slice(0, 7)}`);
   } else if (expectSha && health?.sha && health.sha !== expectSha) {
     const why = target === "deploy" ? "адреса деплою показує інший коміт — чи та адреса в client_payload.url?" : "деплой main не пройшов чи зроблено Instant Rollback?";
     fail.push(`${base} показує ${String(health.sha).slice(0, 7)}, а очікувався ${expectSha.slice(0, 7)} — ${why}`);
