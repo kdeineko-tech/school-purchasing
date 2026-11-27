@@ -154,6 +154,15 @@ jobs:
             echo "::error title=db-deploy-staging::SUPABASE_DB_URL не схожий на рядок Session pooler (postgres.<ref>:…@…:5432). Скопіюйте його з Connect у проєкті staging."
             exit 1
           fi
+          # pgx (Supabase CLI) бере користувача й з query (`?user=…`, зокрема `%75ser`) — і він перекрив би `postgres.<ref>`,
+          # який ми щойно звірили. Такий рядок відхиляємо (знахідка CodeRabbit у #92). Query в журнал не друкуємо.
+          query=""
+          case "$SUPABASE_DB_URL" in *\?*) query="${SUPABASE_DB_URL#*\?}" ;; esac
+          query=$(printf '%b' "$(printf '%s' "${query%%#*}" | sed -E 's/%([0-9A-Fa-f]{2})/\\x\1/g')" | tr 'A-Z' 'a-z')
+          if printf '%s' "$query" | grep -qE '(^|&)[[:space:]]*user[[:space:]]*='; then
+            echo "::error title=db-deploy-staging::SUPABASE_DB_URL в environment staging містить параметр user у query — він перекрив би postgres.<ref>. Скопіюйте рядок з Connect без змін."
+            exit 1
+          fi
           if [ -z "$STAGING_REF" ] || [ -z "$PROD_REF" ] || [ "$STAGING_REF" = "$PROD_REF" ]; then
             echo "::error title=db-deploy-staging::Задайте змінні репо SUPABASE_STAGING_REF і SUPABASE_PROD_REF (різні)."
             exit 1
@@ -226,6 +235,15 @@ jobs:
             ref=$(printf '%s' "$SUPABASE_DB_URL" | sed -n -E 's#^postgres(ql)?://postgres\.([a-z0-9]+):.*$#\2#p')
             if [ -z "$ref" ]; then
               echo "::error title=db-deploy::SUPABASE_DB_URL в environment production не схожий на рядок Session pooler (postgres.<ref>:…@…:5432). Скопіюйте його з Connect у прод-проєкті."
+              exit 1
+            fi
+            # pgx (Supabase CLI) бере користувача й з query (`?user=…`, зокрема `%75ser`) — і він перекрив би `postgres.<ref>`,
+            # який ми щойно звірили. Такий рядок відхиляємо (знахідка CodeRabbit у #92). Query в журнал не друкуємо.
+            query=""
+            case "$SUPABASE_DB_URL" in *\?*) query="${SUPABASE_DB_URL#*\?}" ;; esac
+            query=$(printf '%b' "$(printf '%s' "${query%%#*}" | sed -E 's/%([0-9A-Fa-f]{2})/\\x\1/g')" | tr 'A-Z' 'a-z')
+            if printf '%s' "$query" | grep -qE '(^|&)[[:space:]]*user[[:space:]]*='; then
+              echo "::error title=db-deploy::SUPABASE_DB_URL в environment production містить параметр user у query — він перекрив би postgres.<ref>. Скопіюйте рядок з Connect без змін."
               exit 1
             fi
             if [ "$ref" != "$PROD_REF" ]; then
