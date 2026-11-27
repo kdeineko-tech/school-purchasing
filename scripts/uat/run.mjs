@@ -11,6 +11,7 @@ import { pack } from "./pack.mjs";
 import { review } from "./review.mjs";
 import { combine } from "./combine.mjs";
 import { report } from "./report.mjs";
+import { bypassHeaders } from "./target.mjs";
 import { ROOT, WORK, rel } from "./lib.mjs";
 
 const argv = process.argv.slice(2);
@@ -26,6 +27,8 @@ const flag = (name) => {
   return i >= 0;
 };
 
+// Як у playwright.config.ts: VERCEL_AUTOMATION_BYPASS_SECRET для /api/health захищеної адреси (значення не друкуємо).
+if (existsSync(".env.local")) process.loadEnvFile(".env.local");
 const url = (take("--url") ?? process.env.UAT_BASE_URL)?.replace(/\/+$/, "");
 const negativeControls = flag("--negative-controls");
 const skipReview = flag("--skip-review");
@@ -40,7 +43,7 @@ const git = (...a) => {
 async function deployedSha(base) {
   if (!base) return null;
   try {
-    const res = await fetch(`${base}/api/health`, { redirect: "manual" });
+    const res = await fetch(`${base}/api/health`, { headers: bypassHeaders(), redirect: "manual" });
     if (!res.headers.get("content-type")?.includes("json")) return null;
     return (await res.json()).sha ?? null;
   } catch {

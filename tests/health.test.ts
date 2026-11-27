@@ -1,6 +1,6 @@
 // D0: /api/health відрізняє «база відповіла» від «база недоступна, призупинена чи ключ хибний».
 import { describe, expect, it } from "vitest";
-import { classifyDbProbe } from "@/lib/health";
+import { appEnvFrom, classifyDbProbe, supabaseRefFromUrl } from "@/lib/health";
 
 describe("classifyDbProbe (/api/health)", () => {
   it("рахує базу живою, коли запит пройшов або Postgres відмовив у правах (42501)", () => {
@@ -45,5 +45,30 @@ describe("classifyDbProbe (/api/health)", () => {
       reason: "status-401-PGRST301",
     });
     expect(classifyDbProbe({ status: 401, error: { code: "PGRST303", message: "JWT claims" } }).db).toBe("down");
+  });
+});
+
+// WS11: staging — по /api/health видно середовище (APP_ENV) і базу (ref проєкту Supabase).
+describe("supabaseRefFromUrl (/api/health, поле supabaseRef)", () => {
+  it("бере ref — перший сегмент хоста https://<ref>.supabase.co", () => {
+    expect(supabaseRefFromUrl("https://abcdefghijklmnopqrst.supabase.co")).toBe("abcdefghijklmnopqrst");
+    expect(supabaseRefFromUrl("https://abcdefghijklmnopqrst.supabase.co/")).toBe("abcdefghijklmnopqrst");
+  });
+
+  it("повертає null без змінної, для локального Supabase і для адреси не того вигляду", () => {
+    expect(supabaseRefFromUrl(undefined)).toBeNull();
+    expect(supabaseRefFromUrl("")).toBeNull();
+    expect(supabaseRefFromUrl("http://127.0.0.1:54321")).toBeNull();
+    expect(supabaseRefFromUrl("https://abcdefghijklmnopqrst.supabase.co.evil.example")).toBeNull();
+    expect(supabaseRefFromUrl("not a url")).toBeNull();
+  });
+});
+
+describe("appEnvFrom (/api/health, поле appEnv)", () => {
+  it("повертає значення APP_ENV, а без нього — null", () => {
+    expect(appEnvFrom("staging")).toBe("staging");
+    expect(appEnvFrom(" staging\n")).toBe("staging");
+    expect(appEnvFrom(undefined)).toBeNull();
+    expect(appEnvFrom("  ")).toBeNull();
   });
 });
