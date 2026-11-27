@@ -14,11 +14,32 @@
 //   - x-vercel-set-bypass-cookie НЕ надсилаємо: Vercel відповів би редіректом із Set-Cookie, а redirect:"manual"
 //     побачив би 3xx замість сторінки.
 //   - SMOKE_TARGET=deploy (ставить job deploy у smoke.yml) змінює лише підказки в повідомленнях про збій.
+//   - Секрет обходу йде лише туди, де він потрібен (знахідки CodeRabbit у #93): лише по https (http:// із секретом —
+//     зупинка до першого запиту) і, якщо задано SMOKE_BYPASS_HOST_PATTERN (регулярний вираз хоста; ставить smoke.yml
+//     для job deploy), лише на хост, що йому відповідає. Інший хост — без заголовка, з попередженням у журналі.
 const [rawBase = process.env.PROD_URL ?? "", expectSha = ""] = process.argv.slice(2);
 // client_payload.url від Vercel може прийти хостом без схеми — додаємо https://.
 const base = (/^https?:\/\//.test(rawBase) ? rawBase : rawBase ? `https://${rawBase}` : "").replace(/\/+$/, "");
-const bypass = (process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "").trim();
+const secret = (process.env.VERCEL_AUTOMATION_BYPASS_SECRET ?? "").trim();
 const target = process.env.SMOKE_TARGET === "deploy" ? "deploy" : "prod";
+
+/** Чи можна надсилати секрет обходу на цю адресу: null — так; рядок — чому ні (без значення секрету). */
+function bypassRefusal(baseUrl, hostPattern) {
+  let url;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    return "адреса не розбирається";
+  }
+  if (url.protocol !== "https:") return "секрет обходу надсилаємо лише через https://";
+  if (hostPattern && !new RegExp(hostPattern).test(url.hostname)) {
+    return `хост ${url.hostname} не відповідає SMOKE_BYPASS_HOST_PATTERN — це не деплой нашого проєкту Vercel`;
+  }
+  return null;
+}
+
+const refusal = secret && base ? bypassRefusal(base, process.env.SMOKE_BYPASS_HOST_PATTERN?.trim()) : null;
+const bypass = secret && !refusal ? secret : "";
 const headers = { "user-agent": "smoke/2.0 (WS11)" };
 if (bypass) headers["x-vercel-protection-bypass"] = bypass;
 
@@ -129,6 +150,11 @@ async function main() {
 if (!base) {
   console.error("Використання: node scripts/smoke.mjs <base-url> [expected-sha]  (або змінна PROD_URL)");
   process.exitCode = 2;
+} else if (refusal && base.startsWith("http://")) {
+  // http:// із секретом — помилка налаштування: зупиняємось до першого запиту, щоб секрет не пішов відкритим текстом.
+  console.log(`::error title=smoke ${base}::${refusal}. Вкажіть адресу з https://.`);
+  process.exitCode = 1;
 } else {
+  if (refusal) console.log(`::warning title=smoke ${base}::Секрет обходу не надіслано: ${refusal}.`);
   process.exitCode = await main();
 }

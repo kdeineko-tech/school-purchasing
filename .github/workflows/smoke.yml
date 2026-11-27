@@ -122,6 +122,11 @@ jobs:
       SMOKE_TARGET: deploy
       # Значення — лише з GitHub Secrets; скрипт додає заголовок x-vercel-protection-bypass і не друкує секрет.
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      # Секрет обходу — лише на деплої нашого проєкту в нашому scope Vercel (адреси preview і гілок:
+      # school-purchasing-<…>-kate-bdb7.vercel.app) і лише по https. Адреса з події чи поля url, що не відповідає
+      # шаблону, перевіряється без заголовка (знахідка CodeRabbit у #93: client_payload.url — дані події, не довіра).
+      SMOKE_BYPASS_HOST_PATTERN: '^school-purchasing-[a-z0-9-]+-kate-bdb7\.vercel\.app$'
+      EVENT_NAME: ${{ github.event_name }}
     steps:
       # repository_dispatch завжди бере останній коміт main — нам звідти потрібен лише scripts/smoke.mjs.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -135,6 +140,12 @@ jobs:
         run: |
           if [ -z "$DEPLOY_URL" ]; then
             echo "::error title=smoke::Немає адреси деплою (client_payload.url чи поле url ручного запуску)"
+            exit 1
+          fi
+          # Подія Vercel без коміту — аномалія: без sha smoke не звірить, що на адресі саме цей деплой (знахідка
+          # CodeRabbit у #93). Ручний запуск без sha дозволено.
+          if [ "$EVENT_NAME" = "repository_dispatch" ] && [ -z "$EXPECT_SHA" ]; then
+            echo "::error title=smoke::Подія deployment.success без client_payload.git.sha — коміт деплою не можна звірити"
             exit 1
           fi
           if [ -z "$VERCEL_AUTOMATION_BYPASS_SECRET" ]; then
