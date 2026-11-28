@@ -10,16 +10,17 @@
 # Джерело: шаблон курсу 2026-quitcode-11-devops-operations-hw/materials/ops-kit (smoke v2) поверх власного D0 (WS8).
 # Власні доповнення: ручний прод-запуск лише з main; у scripts/smoke.mjs — тайм-аут запиту, редірект "/" лише на
 # /login того самого застосунку, будь-який код "/" крім 200 і 3xx на /login — збій.
-# Це НЕ обов'язкова перевірка ruleset-у. Події status, repository_dispatch і schedule GitHub запускає ЛИШЕ з файлу на
+# Це НЕ обов'язкова перевірка ruleset-у. Події repository_dispatch і schedule GitHub запускає ЛИШЕ з файлу на
 # main: до merge — лише локально (npm run smoke) або Run workflow з main після merge (поле url → job deploy).
 # Захист Vercel: якщо вмикаєте Vercel Authentication — Standard Protection (прод відкритий: D0 і перевірка курсу
 # читають прод без входу), не All Deployments. Після перегенерації секрету обходу — оновити секрет у GitHub і Redeploy.
 name: smoke
 
 on:
-  # Прод після деплою: commit status «Vercel» = success на коміті main. Кожен інший commit status (CodeRabbit тощо)
-  # створює в Actions пропущений (skipped) прогін — це шум, не збій.
-  status:
+  # Подію status (commit status «Vercel» = success) прибрано після дрилу 2026-11-28
+  # (docs/incidents/2026-11-28-staging-publishable-key.md): у github.event.branches GitHub кладе ВСІ гілки, що містять
+  # коміт, тож деплой staging на коміті, який уже є в історії main, запускав job prod і хибний алерт «прод показує
+  # інший коміт». Прод після деплою ловить repository_dispatch з environment == production.
   # Vercel шле repository_dispatch після кожного деплою: production → job "prod", усе інше (preview, staging) → "deploy".
   repository_dispatch:
     types: [vercel.deployment.success]
@@ -47,19 +48,18 @@ concurrency:
 
 jobs:
   prod:
-    # Поведінка — як у D0: розклад, ручний запуск без url (лише з main: з іншої гілки github.sha не збігся б із
-    # продом — прогін пропущено, а не червоний), статус Vercel на main, production-подія Vercel.
+    # Розклад, ручний запуск без url (лише з main: з іншої гілки github.sha не збігся б із продом — прогін пропущено,
+    # а не червоний) і production-подія Vercel. Лише ці три: tests/smoke-workflow.test.ts падає, якщо сюди повернеться
+    # подія status чи github.event.branches (хибний прод-алерт від деплою staging, дріл 2026-11-28).
     if: >-
       github.event_name == 'schedule' ||
       (github.event_name == 'workflow_dispatch' && inputs.url == '' && github.ref_name == github.event.repository.default_branch) ||
-      (github.event_name == 'status' && github.event.context == 'Vercel' && github.event.state == 'success' &&
-       contains(github.event.branches.*.name, github.event.repository.default_branch)) ||
       (github.event_name == 'repository_dispatch' && github.event.client_payload.environment == 'production')
     runs-on: ubuntu-latest
     timeout-minutes: 6
     env:
       PROD_URL: ${{ vars.PROD_URL }}
-      # Очікуваний коміт: щойно розгорнутий (status / repository_dispatch) або HEAD main (schedule, ручний запуск з main).
+      # Очікуваний коміт: щойно розгорнутий (repository_dispatch) або HEAD main (schedule, ручний запуск з main).
       EXPECT_SHA: ${{ github.event.client_payload.git.sha || github.event.sha || github.sha }}
       # Прод не за захистом (Standard Protection), але заголовок не шкодить, якщо колись увімкнуть All Deployments.
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
@@ -75,6 +75,17 @@ jobs:
         run: |
           if [ -z "$PROD_URL" ]; then
             echo "::error title=smoke::Немає змінної репо PROD_URL — Settings → Secrets and variables → Actions → Variables → PROD_URL = https://<проєкт>.vercel.app"
+            exit 1
+          fi
+      # Як у job deploy: production-подія Vercel без коміту деплою — явний збій, а не тихе порівняння проду з HEAD main
+      # (EXPECT_SHA тоді впав би на github.sha і міг дати хибну тривогу). Розклад і ручний запуск звіряють з HEAD main.
+      - name: Коміт деплою передано
+        if: github.event_name == 'repository_dispatch'
+        env:
+          PAYLOAD_SHA: ${{ github.event.client_payload.git.sha }}
+        run: |
+          if [ -z "$PAYLOAD_SHA" ]; then
+            echo "::error title=smoke::Подія deployment.success без client_payload.git.sha — коміт прод-деплою не можна звірити"
             exit 1
           fi
       - name: Прод = main, сторінка входу відкривається, база відповідає
