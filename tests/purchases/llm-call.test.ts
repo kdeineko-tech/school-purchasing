@@ -5,6 +5,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { suggestLine } from "@/app/purchases/new/suggest-action";
 import { SUGGEST_PROMPT_VERSION } from "@/lib/ai/prompts/suggest";
+import { WRITE_TIMEOUT_MS } from "@/lib/ai/ai-call-store";
 import { createClient } from "@/lib/supabase/server";
 import { fakeDb, form, P1, PRIMARY, viewer } from "./fake-db";
 import { signIn, withViewer } from "../support/viewer";
@@ -204,5 +205,27 @@ describe("журнал ai_calls з дії suggestLine (SLO-2)", () => {
     expect(String(warn.mock.calls[0][0])).toContain('"ai_calls.write_failed"');
     expect(String(warn.mock.calls[0][0])).toContain("42501");
     expect(String(warn.mock.calls[0][0])).not.toContain(MARKER);
+  });
+
+  it("запис у ai_calls не відповідає 2 с — пропозиція не чекає, у консолі код timeout", async () => {
+    rpc.mockImplementation((fn: string) =>
+      fn === "log_ai_call" ? new Promise(() => {}) : Promise.resolve({ data: null, error: null }),
+    );
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    openRouterReturns(() =>
+      answer("nvidia/nemotron-3.5-super-vl:free", { status: "ok", name: "A4 paper", purpose: "For printing", quantity: 3, unitPrice: 20 }),
+    );
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    try {
+      const pending = suggestLine(null, form({ description: DESCRIPTION }));
+      await vi.advanceTimersByTimeAsync(WRITE_TIMEOUT_MS);
+      const state = await pending;
+
+      expect(state).toMatchObject({ kind: "line" });
+      expect(warn).toHaveBeenCalledTimes(1);
+      expect(String(warn.mock.calls[0][0])).toContain('"code":"timeout"');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -141,6 +141,8 @@ SLO-2 PM: частка запитів «Suggest lines», після яких л�
 днів, бюджет помилок 5%. Джерело — таблиця `public.ai_calls` у базі проду: рядок на кожен виклик моделі (ті самі поля,
 що `llm.call`, без опису, промпту й відповіді моделі), рядки не видаляються — зберігаються довше за потрібні 35 днів.
 Помилки вводу (порожній чи задовгий опис) туди не пишуться: модель не викликали, у знаменник SLO-2 вони не входять.
+Запис best-effort: якщо `log_ai_call` завершився помилкою чи не встиг за 2 с (у Vercel Logs — `ai_calls.write_failed`),
+рядка немає, а пропозиція все одно повертається. Такий виклик не входить у SQL нижче, тож підсумок може бути неповним.
 «Недоступний» = `state = 'unavailable'` (ліміт, таймаут, відповідь не за схемою, збій постачальника, немає ключа);
 відмова на сторонній запит (`refused`) і ін'єкція (`injection`) — сервіс відповів як треба, це не збій.
 
@@ -177,7 +179,8 @@ where created_at >= (date_trunc('day', now() at time zone 'Europe/Kyiv') - inter
 ```sql
 select error_kind, count(*)
 from public.ai_calls
-where state = 'unavailable' and created_at >= now() - interval '28 days'
+where state = 'unavailable'
+  and created_at >= (date_trunc('day', now() at time zone 'Europe/Kyiv') - interval '27 days') at time zone 'Europe/Kyiv'
 group by 1
 order by 2 desc;
 ```

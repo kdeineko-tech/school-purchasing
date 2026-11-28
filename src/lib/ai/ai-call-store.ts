@@ -3,13 +3,21 @@
 // llm.call, — без опису, промпту й відповіді моделі. Запис best-effort: збій журналу не має ламати пропозицію рядка,
 // тож помилку лише пишемо в консоль кодом (без тексту користувача) і йдемо далі. Без import "server-only": модуль
 // імпортує дія форми, а createClient (next/headers) і так працює лише на сервері.
+// Строк запису — WRITE_TIMEOUT_MS: база не відповідає — пропозиція не чекає, у консолі код "timeout". Promise.race, а
+// не .abortSignal() будівника: сам запит не скасовується, але дія вже повернула відповідь.
 import { createClient } from "@/lib/supabase/server";
 import type { LlmCall } from "@/lib/ai/llm-log";
 
+export const WRITE_TIMEOUT_MS = 2_000;
+
 export async function recordAiCall(call: LlmCall): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
     const supabase = await createClient();
-    const { error } = await supabase.rpc("log_ai_call", {
+    const timeout = new Promise<{ error: { code: string } }>((resolve) => {
+      timer = setTimeout(() => resolve({ error: { code: "timeout" } }), WRITE_TIMEOUT_MS);
+    });
+    const write = supabase.rpc("log_ai_call", {
       p_request_id: call.requestId,
       p_route: call.route,
       p_model: call.model,
@@ -22,8 +30,11 @@ export async function recordAiCall(call: LlmCall): Promise<void> {
       p_cost_usd: call.costUsd ?? null,
       p_prompt_version: call.promptVersion,
     });
+    const { error } = await Promise.race([write, timeout]);
     if (error) console.warn(JSON.stringify({ event: "ai_calls.write_failed", code: error.code ?? "unknown" }));
   } catch {
     console.warn(JSON.stringify({ event: "ai_calls.write_failed", code: "exception" }));
+  } finally {
+    clearTimeout(timer);
   }
 }

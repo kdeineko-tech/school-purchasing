@@ -4,6 +4,8 @@
 --
 -- Рядок — ті самі поля, що й llm.call (src/lib/ai/llm-log.ts): БЕЗ опису, промпту й відповіді моделі — таких колонок
 -- немає. Хто питав — лише user_id (auth.uid()), щоб зловживання прямим викликом rpc можна було знайти й прибрати.
+-- Профіль видалено — рядок лишається з user_id = null (on delete set null): журнал зберігається 35+ днів, а
+-- знаменник SLO-2 за минулі дні не змінюється.
 -- Помилки вводу (порожній чи задовгий опис) сюди не пишуться: модель не викликали, це не збій сервісу (SLO-2).
 --
 -- Строк зберігання: рядки не видаляються ні застосунком, ні cron — тобто «не менше 35 днів» виконується з запасом.
@@ -16,7 +18,7 @@
 create table public.ai_calls (
   id bigint generated always as identity primary key,
   created_at timestamptz not null default now(),
-  user_id uuid not null references public.profiles (id) on delete cascade,
+  user_id uuid references public.profiles (id) on delete set null,
   request_id uuid not null,
   route text not null check (char_length(route) <= 100),
   model text not null check (char_length(model) <= 200),
