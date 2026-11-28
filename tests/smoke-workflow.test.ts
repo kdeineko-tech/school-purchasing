@@ -36,4 +36,12 @@ describe("smoke.yml: прод-перевірку запускає лише де�
     expect(prodIf).not.toContain("'status'");
     expect(prodIf).not.toContain("github.event.branches");
   });
+
+  it("job prod: production-подія без client_payload.git.sha — явний збій, а не порівняння з HEAD main", () => {
+    const guard = section(prodJob, /^ {6}- name: Коміт деплою передано/m, /^ {6}- /m);
+    expect(guard).toContain("if: github.event_name == 'repository_dispatch'");
+    expect(guard).toContain("PAYLOAD_SHA: ${{ github.event.client_payload.git.sha }}");
+    expect(guard).toMatch(/if \[ -z "\$PAYLOAD_SHA" \]; then[\s\S]*exit 1/);
+    expect(prodJob.indexOf("Коміт деплою передано")).toBeLessThan(prodJob.indexOf("node scripts/smoke.mjs"));
+  });
 });

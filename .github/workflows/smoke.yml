@@ -77,6 +77,17 @@ jobs:
             echo "::error title=smoke::Немає змінної репо PROD_URL — Settings → Secrets and variables → Actions → Variables → PROD_URL = https://<проєкт>.vercel.app"
             exit 1
           fi
+      # Як у job deploy: production-подія Vercel без коміту деплою — явний збій, а не тихе порівняння проду з HEAD main
+      # (EXPECT_SHA тоді впав би на github.sha і міг дати хибну тривогу). Розклад і ручний запуск звіряють з HEAD main.
+      - name: Коміт деплою передано
+        if: github.event_name == 'repository_dispatch'
+        env:
+          PAYLOAD_SHA: ${{ github.event.client_payload.git.sha }}
+        run: |
+          if [ -z "$PAYLOAD_SHA" ]; then
+            echo "::error title=smoke::Подія deployment.success без client_payload.git.sha — коміт прод-деплою не можна звірити"
+            exit 1
+          fi
       - name: Прод = main, сторінка входу відкривається, база відповідає
         run: node scripts/smoke.mjs "$PROD_URL" "$EXPECT_SHA"
       - name: Алерт людині в Telegram (лише якщо щось червоне)
