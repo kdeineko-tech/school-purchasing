@@ -128,15 +128,59 @@ Supabase Free ставить проєкт на паузу після 7 днів 
 | Observability Vercel | Vercel → Observability | 12 годин (Hobby) |
 | Журнали збірки | Vercel → Deployments → деплой → Build Logs | поки є деплой |
 | Журнали Supabase (API, Postgres, Auth) | Supabase → Logs | **1 день** (Free) |
+| Журнал AI-помічника для SLO-2 (`ai_calls`) | база проду, таблиця `public.ai_calls`; SQL — нижче | поки є база (рядки не видаляються) |
 | Прогони GitHub Actions (smoke, CI) | Actions | 90 днів (типове значення GitHub для публічного репо) |
 | Алерти smoke і трекер помилок сервера | Telegram-група «Alerts✨» (власний `onRequestError`, без Sentry): маршрут, тип, назва помилки, digest, до 5 рядків стеку | поки їх не видалили |
 
 Висновок для чергового: розбираємо **одразу**, потрібні рядки журналу копіюємо в issue інциденту (без даних
 користувачів). Повний стек — у Vercel Logs за `digest` чи часом і маршрутом з повідомлення «SERVER ERROR».
 
-**Відома прогалина (SLO-2 PM):** SLO-2 міряє частку запитів AI-помічника без стану «недоступний» за 28 днів і
-потребує журналу в базі (≥ 35 днів). Зараз `llm.call` пише лише в журнали Vercel (1 година) — за 28 днів SLO-2 не
-виміряти. Потрібна окрема задача: таблиця журналу AI-запитів (міграція, без тексту опису) і два SQL-запити сюди.
+### SLO-2: AI-помічник (журнал `ai_calls`)
+
+SLO-2 PM: частка запитів «Suggest lines», після яких людина бачить пропозицію, а не «недоступний», — ціль 95% за 28
+днів, бюджет помилок 5%. Джерело — таблиця `public.ai_calls` у базі проду: рядок на кожен виклик моделі (ті самі поля,
+що `llm.call`, без опису, промпту й відповіді моделі), рядки не видаляються — зберігаються довше за потрібні 35 днів.
+Помилки вводу (порожній чи задовгий опис) туди не пишуться: модель не викликали, у знаменник SLO-2 вони не входять.
+«Недоступний» = `state = 'unavailable'` (ліміт, таймаут, відповідь не за схемою, збій постачальника, немає ключа);
+відмова на сторонній запит (`refused`) і ін'єкція (`injection`) — сервіс відповів як треба, це не збій.
+
+Рахуємо в Supabase → SQL Editor проєкту **проду** (лише `select`; DDL у SQL Editor — ніколи). Доба — за Києвом.
+
+Щодня — частка за кожну з останніх 28 діб:
+
+```sql
+select (created_at at time zone 'Europe/Kyiv')::date as day,
+       count(*) as requests,
+       count(*) filter (where state = 'unavailable') as unavailable,
+       round(100.0 * count(*) filter (where state <> 'unavailable') / count(*), 1) as good_pct
+from public.ai_calls
+where created_at >= (date_trunc('day', now() at time zone 'Europe/Kyiv') - interval '27 days') at time zone 'Europe/Kyiv'
+group by 1
+order by 1 desc;
+```
+
+Підсумок за 28 днів і залишок бюджету помилок (5% запитів):
+
+```sql
+select count(*) as requests,
+       count(*) filter (where state = 'unavailable') as unavailable,
+       round(100.0 * count(*) filter (where state <> 'unavailable') / nullif(count(*), 0), 1) as good_pct,
+       floor(0.05 * count(*)) - count(*) filter (where state = 'unavailable') as budget_left
+from public.ai_calls
+where created_at >= (date_trunc('day', now() at time zone 'Europe/Kyiv') - interval '27 days') at time zone 'Europe/Kyiv';
+```
+
+`budget_left` < 0 — бюджет вичерпано: за операційними вимогами помічник лишається штатно недоступним, форма працює
+вручну, черговий розбирає причину за `error_kind` (`rate_limited` — ліміт постачальника, `timeout` — повільна
+відповідь):
+
+```sql
+select error_kind, count(*)
+from public.ai_calls
+where state = 'unavailable' and created_at >= now() - interval '28 days'
+group by 1
+order by 2 desc;
+```
 
 ## 6. Staging
 
@@ -183,5 +227,4 @@ claude --settings .claude/settings.incident.json --mcp-config .mcp.incident.json
 | Preview і staging відкриті без входу у Vercel | дані синтетичні, вхід у застосунок — паролем | увімкнути Standard Protection + `VERCEL_AUTOMATION_BYPASS_SECRET` |
 | Smoke шле bypass-заголовок на будь-який хост за шаблоном `^school-purchasing-[a-z0-9-]+-kate-bdb7\.vercel\.app$` (лише https). Хост з такою назвою міг би створити лише власник команди Vercel `kate-bdb7` | шаблон прив'язаний до нашої команди Vercel; адреса береться з `repository_dispatch` нашого проєкту | звузити до точних хостів staging і preview нашого проєкту |
 | Резервних копій бази немає (RPO «не гарантовано», #83 розділ 3) | дані навчальні, відновлюються з міграцій і сиду | щоденний `backup.yml` або платний тариф |
-| SLO-2 не вимірюється за 28 днів (розділ 5) | AI-помічник необов'язковий: форма працює вручну | таблиця журналу AI-запитів у базі |
 | Одна людина на чергуванні | навчальний продукт, SEV1 — у робочий час | резервний черговий |

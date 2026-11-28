@@ -285,6 +285,22 @@ export type Database = {
         Args: { p_purchase_id: string };
         Returns: { kind: string; created_at: string; actor_name: string }[];
       };
+      log_ai_call: {
+        Args: {
+          p_request_id: string;
+          p_route: string;
+          p_model: string;
+          p_fallback_used: boolean;
+          p_state: string;
+          p_error_kind: string | null;
+          p_latency_ms: number;
+          p_input_tokens: number | null;
+          p_output_tokens: number | null;
+          p_cost_usd: number | null;
+          p_prompt_version: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;

@@ -63,7 +63,8 @@ describe("дія suggestLine", () => {
       line: { name: "A4 paper", purpose: "For printing", quantity: "3", unitPrice: "20.00" },
       description: "Need 3 packs of A4 paper for printing, 20 dollars each",
     });
-    expect(db.rpc).not.toHaveBeenCalled();
+    // Заявки немає: єдиний виклик бази — технічний рядок журналу ai_calls (SLO-2), без submit_purchase і таблиць.
+    expect(db.rpc.mock.calls.map((c: unknown[]) => c[0])).toEqual(["log_ai_call"]);
     expect(db.from).not.toHaveBeenCalled();
   });
 
@@ -77,7 +78,8 @@ describe("дія suggestLine", () => {
     );
 
     expect(state).toMatchObject({ kind: "message", message: MESSAGES.aiInjection });
-    expect(db.rpc).not.toHaveBeenCalled();
+    // Заявки немає: єдиний виклик бази — технічний рядок журналу ai_calls (SLO-2), без submit_purchase і таблиць.
+    expect(db.rpc.mock.calls.map((c: unknown[]) => c[0])).toEqual(["log_ai_call"]);
     expect(db.from).not.toHaveBeenCalled();
   });
 

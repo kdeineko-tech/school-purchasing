@@ -43,11 +43,13 @@ function llmLines(...spies: ReturnType<typeof vi.spyOn>[]) {
 
 let info: ReturnType<typeof vi.spyOn>;
 let error: ReturnType<typeof vi.spyOn>;
+let rpc: ReturnType<typeof fakeDb>["rpc"];
 
 beforeEach(() => {
   vi.clearAllMocks();
-  const db = fakeDb({ departments: [PRIMARY], members: [{ profile_id: P1, department_id: PRIMARY.id }] }).client;
-  vi.mocked(createClient).mockResolvedValue(withViewer(db) as never);
+  const db = fakeDb({ departments: [PRIMARY], members: [{ profile_id: P1, department_id: PRIMARY.id }] });
+  rpc = db.rpc;
+  vi.mocked(createClient).mockResolvedValue(withViewer(db.client) as never);
   vi.stubEnv("OPENROUTER_API_KEY", "test-key-not-real");
   info = vi.spyOn(console, "info").mockImplementation(() => {});
   error = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -132,5 +134,75 @@ describe("llm.call з дії suggestLine", () => {
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(llmLines(info, error)).toHaveLength(0);
+  });
+});
+
+// SLO-2 операційних вимог PM (ValiaBihun/2026-quitcode-dream-team#83): той самий запис — у таблицю ai_calls через
+// rpc log_ai_call, бо Vercel Logs живуть 1 годину, а SLO рахуємо за 28 днів. Опису в аргументах rpc немає.
+describe("журнал ai_calls з дії suggestLine (SLO-2)", () => {
+  const logCalls = () => rpc.mock.calls.filter((c: unknown[]) => c[0] === "log_ai_call");
+
+  it("відповідь моделі — один виклик log_ai_call з полями llm.call; маркера й рядка з відповіді немає", async () => {
+    openRouterReturns(() =>
+      answer("nvidia/nemotron-3.5-super-vl:free", { status: "ok", name: "A4 paper", purpose: "For printing", quantity: 3, unitPrice: 20 }),
+    );
+
+    await suggestLine(null, form({ description: DESCRIPTION }));
+
+    const calls = logCalls();
+    expect(calls).toHaveLength(1);
+    const args = calls[0][1];
+    expect(JSON.stringify(args)).not.toContain(MARKER);
+    expect(JSON.stringify(args)).not.toContain("A4 paper");
+    expect(args).toMatchObject({
+      p_route: "/purchases/new",
+      p_model: "nvidia/nemotron-3.5-super-vl:free",
+      p_fallback_used: true,
+      p_state: "ok",
+      p_error_kind: null,
+      p_input_tokens: 612,
+      p_output_tokens: 44,
+      p_prompt_version: SUGGEST_PROMPT_VERSION,
+    });
+    expect(Number.isInteger(args.p_latency_ms)).toBe(true);
+    // той самий requestId, що в рядку llm.call: запис у базі й рядок журналу — одна подія
+    expect(args.p_request_id).toBe(JSON.parse(llmLines(info, error)[0]).requestId);
+  });
+
+  it("ліміт постачальника (429) — рядок unavailable з кодом rate_limited, без токенів", async () => {
+    openRouterReturns(() =>
+      Response.json({ error: { message: `free-model limit reached for ${MARKER}`, code: 429 } }, { status: 429 }),
+    );
+
+    await suggestLine(null, form({ description: DESCRIPTION }));
+
+    const [[, args]] = logCalls();
+    expect(args).toMatchObject({ p_state: "unavailable", p_error_kind: "rate_limited", p_input_tokens: null, p_output_tokens: null });
+    expect(JSON.stringify(args)).not.toContain(MARKER);
+  });
+
+  it("опис відхилено до моделі — у ai_calls нічого: помилка вводу не входить у знаменник SLO-2", async () => {
+    openRouterReturns(() => answer("x", {}));
+
+    await suggestLine(null, form({ description: "   " }));
+    await suggestLine(null, form({ description: "x".repeat(1_001) }));
+
+    expect(logCalls()).toHaveLength(0);
+  });
+
+  it("збій запису в ai_calls не ламає пропозицію: рядок повертається, у консолі лише код помилки", async () => {
+    rpc.mockResolvedValue({ data: null, error: { code: "42501", message: `permission denied ${MARKER}` } });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    openRouterReturns(() =>
+      answer("nvidia/nemotron-3.5-super-vl:free", { status: "ok", name: "A4 paper", purpose: "For printing", quantity: 3, unitPrice: 20 }),
+    );
+
+    const state = await suggestLine(null, form({ description: DESCRIPTION }));
+
+    expect(state).toMatchObject({ kind: "line" });
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0][0])).toContain('"ai_calls.write_failed"');
+    expect(String(warn.mock.calls[0][0])).toContain("42501");
+    expect(String(warn.mock.calls[0][0])).not.toContain(MARKER);
   });
 });
