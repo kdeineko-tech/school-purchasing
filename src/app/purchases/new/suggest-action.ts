@@ -1,14 +1,16 @@
 "use server";
 
 // AI-пропозиція рядка закупівлі (зріз 4, AC-AI-01 … AC-AI-06; design.md impl-ai-line-suggestions).
-// Дія НІЧОГО не пише в базу: повертає рядок у форму, а закупівлю подає сам працівник наявною дією «Submit»
-// (submitPurchase → submit_purchase, RLS) — тож «нової заявки немає» без натискання людини (AC-AI-01, AC-AI-06).
+// Дія не створює заявки й рядків закупівлі (пише лише технічний журнал ai_calls для SLO-2): повертає рядок у форму, а
+// закупівлю подає сам працівник наявною дією «Submit» (submitPurchase → submit_purchase, RLS) —
+// тож «нової заявки немає» без натискання людини (AC-AI-01, AC-AI-06).
 // Вхід перевіряється ДО виклику моделі: інакше будь-хто з інтернету витрачав би денний ліміт (AC-AI-05).
 import { redirect } from "next/navigation";
 import { getViewer } from "@/lib/org/viewer";
 import { MAX_DESCRIPTION_LENGTH, SUGGEST_PROMPT_VERSION } from "@/lib/ai/prompts/suggest";
 import { failureMessage, proposeLine, toOutcome, type ProposeResult, type SuggestionOutcome } from "@/lib/ai/suggest";
-import { isFallback, logLlmCall } from "@/lib/ai/llm-log";
+import { isFallback, logLlmCall, type LlmCall } from "@/lib/ai/llm-log";
+import { recordAiCall } from "@/lib/ai/ai-call-store";
 import { PRODUCT_MODELS } from "@/lib/ai/models";
 
 // `id` — щоб форма відрізнила нову відповідь від попередньої (той самий текст двічі поспіль).
@@ -31,13 +33,13 @@ export async function suggestLine(_prev: SuggestState, formData: FormData): Prom
   const { productModel } = await import("@/lib/ai/openrouter");
   const model = productModel();
   if (!model) {
-    logCall(null, 0);
+    await logCall(null, 0);
     return { kind: "message", message: failureMessage("no_key"), id, description };
   }
 
   const started = performance.now();
   const result = await proposeLine(description, model);
-  logCall(result, performance.now() - started);
+  await logCall(result, performance.now() - started);
   if (!result.ok) return { kind: "message", message: failureMessage(result.reason), id, description };
   return { ...toOutcome(result.suggestion), id, description };
 }
@@ -45,18 +47,19 @@ export async function suggestLine(_prev: SuggestState, formData: FormData): Prom
 // WS11, трек B: рівно один рядок llm.call на спробу пропозиції (src/lib/ai/llm-log.ts) — модель, затримка, токени,
 // стан, fallback, версія промпту, id запиту. Опису, промпту й відповіді моделі тут немає: у журнал іде лише result
 // без suggestion-полів, а схема журналу пропускає тільки дозволені поля вузького формату. null — ключа немає.
-function logCall(result: ProposeResult | null, latencyMs: number) {
+// Той самий запис — у таблицю ai_calls (SLO-2 операційних вимог PM: 28 днів, а Vercel Logs живуть 1 годину).
+async function logCall(result: ProposeResult | null, latencyMs: number) {
   const primary = PRODUCT_MODELS[0];
   const common = { requestId: crypto.randomUUID(), route: "/purchases/new", promptVersion: SUGGEST_PROMPT_VERSION, latencyMs };
-  if (result?.ok) {
-    logLlmCall({
-      ...common,
-      model: result.modelId,
-      fallbackUsed: isFallback(result.modelId, primary),
-      state: result.suggestion.status,
-      ...result.usage,
-    });
-    return;
-  }
-  logLlmCall({ ...common, model: primary, fallbackUsed: false, state: "unavailable", errorKind: result?.reason ?? "no_key" });
+  const call: LlmCall = result?.ok
+    ? {
+        ...common,
+        model: result.modelId,
+        fallbackUsed: isFallback(result.modelId, primary),
+        state: result.suggestion.status,
+        ...result.usage,
+      }
+    : { ...common, model: primary, fallbackUsed: false, state: "unavailable", errorKind: result?.reason ?? "no_key" };
+  logLlmCall(call);
+  await recordAiCall(call);
 }
